@@ -317,7 +317,7 @@ class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
                   left: 0,
                   right: 0,
                   top: 0,
-                  height: topInset + _kTopBarHeight + 28,
+                  height: topInset + _kTopBarHeight + 6,
                   child: IgnorePointer(
                     child: TweenAnimationBuilder<double>(
                       tween: Tween(end: isCollapsed ? 1 : 0),

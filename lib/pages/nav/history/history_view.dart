@@ -101,8 +101,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
             AppleSliverNavBar(
               title: L10n.of(context).history,
               heroTag: 'nav_history',
-              trailing: NavBarIconButton(
+              trailing: GlassIconButton(
                 icon: CupertinoIcons.trash,
+                sfSymbol: 'trash',
+                iconSize: 18,
+                tooltip: L10n.of(context).clear_history,
                 onPressed: () {
                   showAppleAlert<void>(
                     context: context,
@@ -125,10 +128,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                 },
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
+                preferredSize:
+                    const Size.fromHeight(AppleSearchField.height + 12),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: CupertinoSearchTextField(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: AppleSearchField(
                     placeholder: L10n.of(context).search,
                     onChanged: (value) {
                       ref

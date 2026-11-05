@@ -20,9 +20,14 @@ jobs:
   build_ios:
     name: Build iOS (unsigned IPA)
     # Needs Xcode 26 / the iOS 26 SDK: UIKit only renders Liquid Glass for
-    # apps built against it. The macos-15 image ships Xcode 26 side by side
-    # (selected below) and gets runners much faster than macos-26.
-    runs-on: macos-15
+    # apps built against it. Both images ship Xcode 26 (selected below).
+    # macOS runners are sometimes unavailable for one image for a while, so
+    # build on both and use whichever finishes; the IPAs are equivalent.
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-26, macos-15]
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -88,13 +93,14 @@ jobs:
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-ios
+          name: release-ios-${{ matrix.runner }}
           path: build/*.ipa
           if-no-files-found: error
 
   publish:
     name: Publish GitHub Release
-    if: startsWith(github.ref, 'refs/tags/')
+    # Publish as long as at least one of the builds produced an IPA.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/') }}
     needs: build_ios
     runs-on: ubuntu-latest
     permissions:
@@ -112,7 +118,9 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          path: /tmp/artifacts
+          pattern: release-ios-*
+          merge-multiple: true
+          path: /tmp/artifacts/release-ios
 
       - run: ls -R /tmp/artifacts
 

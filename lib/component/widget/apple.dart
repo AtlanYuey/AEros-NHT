@@ -245,7 +245,6 @@ class AppleSliverNavBar extends StatelessWidget {
         leadingWidget = GlassIconButton(
           icon: CupertinoIcons.back,
           sfSymbol: 'chevron.backward',
-          size: 40,
           iconSize: 18,
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.of(context).maybePop(),
@@ -294,7 +293,7 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   static const double _largeTitleHeight = 52;
 
   /// How far the scroll edge effect reaches past the bottom of the bar.
-  static const double _edgeOverhang = 28;
+  static const double _edgeOverhang = 6;
 
   double get _bottomHeight => bottom?.preferredSize.height ?? 0;
 
@@ -351,10 +350,7 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
             top: topPadding,
             height: _toolbarHeight,
             child: Padding(
-              padding: EdgeInsetsDirectional.only(
-                start: leading == null ? 16 : 12,
-                end: 10,
-              ),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
               child: NavigationToolbar(
                 leading: leading,
                 middle: AnimatedOpacity(
@@ -1052,51 +1048,154 @@ class ApplePullDownButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    final theme = Theme.of(context);
     return PopupMenuButton<T>(
       enabled: enabled,
       tooltip: title ?? '',
       padding: EdgeInsets.zero,
       position: PopupMenuPosition.under,
       offset: const Offset(0, 6),
-      constraints: const BoxConstraints(minWidth: 220, maxWidth: 280),
+      constraints: _kPullDownConstraints,
       onSelected: onSelected,
-      itemBuilder: (context) => [
-        if (title != null)
-          PopupMenuItem<T>(
-            enabled: false,
-            height: 30,
-            child: Text(
-              title!,
-              style: theme.textTheme.labelMedium,
-            ),
-          ),
-        ...items.entries.map(
-          (e) => PopupMenuItem<T>(
-            value: e.key,
-            height: 44,
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 26,
-                  child: e.key == selected
-                      ? Icon(CupertinoIcons.checkmark_alt,
-                          size: 18, color: palette.label)
-                      : null,
-                ),
-                Expanded(
-                  child: Text(
-                    e.value,
-                    style: theme.textTheme.bodyLarge,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      itemBuilder: (context) => _pullDownItems<T>(
+        context,
+        items: items,
+        selected: selected,
+        title: title,
+      ),
       child: child,
+    );
+  }
+}
+
+const BoxConstraints _kPullDownConstraints =
+    BoxConstraints(minWidth: 220, maxWidth: 280);
+
+List<PopupMenuEntry<T>> _pullDownItems<T>(
+  BuildContext context, {
+  required Map<T, String> items,
+  T? selected,
+  String? title,
+}) {
+  final palette = context.palette;
+  final theme = Theme.of(context);
+  return [
+    if (title != null)
+      PopupMenuItem<T>(
+        enabled: false,
+        height: 30,
+        child: Text(
+          title,
+          style: theme.textTheme.labelMedium,
+        ),
+      ),
+    ...items.entries.map(
+      (e) => PopupMenuItem<T>(
+        value: e.key,
+        height: 44,
+        child: Row(
+          children: [
+            SizedBox(
+              width: 26,
+              child: e.key == selected
+                  ? Icon(CupertinoIcons.checkmark_alt,
+                      size: 18, color: palette.label)
+                  : null,
+            ),
+            Expanded(
+              child: Text(
+                e.value,
+                style: theme.textTheme.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  ];
+}
+
+/// Opens the same menu as [ApplePullDownButton] below [anchor] (global
+/// coordinates), for triggers that are not Flutter buttons (e.g. native
+/// Liquid Glass buttons). Completes with the chosen value, or null.
+Future<T?> showApplePullDownMenu<T>({
+  required BuildContext context,
+  required Rect anchor,
+  required Map<T, String> items,
+  T? selected,
+  String? title,
+}) {
+  final overlay =
+      Overlay.of(context).context.findRenderObject()! as RenderBox;
+  final origin = overlay.localToGlobal(Offset.zero);
+  final below = anchor.shift(-origin).translate(0, 6);
+  return showMenu<T>(
+    context: context,
+    position: RelativeRect.fromRect(
+      Rect.fromLTRB(below.left, below.bottom, below.right, below.bottom),
+      Offset.zero & overlay.size,
+    ),
+    constraints: _kPullDownConstraints,
+    items: _pullDownItems<T>(
+      context,
+      items: items,
+      selected: selected,
+      title: title,
+    ),
+  );
+}
+
+/// iOS search field: a filled capsule, as in iOS 26.
+class AppleSearchField extends StatelessWidget {
+  const AppleSearchField({
+    super.key,
+    this.controller,
+    this.focusNode,
+    this.placeholder,
+    this.onChanged,
+    this.onSubmitted,
+    this.onSuffixTap,
+    this.autofocus = false,
+  });
+
+  /// Height of the field; the corners are fully rounded.
+  static const double height = 44;
+
+  final TextEditingController? controller;
+  final FocusNode? focusNode;
+  final String? placeholder;
+  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onSuffixTap;
+  final bool autofocus;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final dark = palette.brightness == Brightness.dark;
+    return SizedBox(
+      height: height,
+      child: CupertinoSearchTextField(
+        controller: controller,
+        focusNode: focusNode,
+        placeholder: placeholder,
+        autofocus: autofocus,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        onSuffixTap: onSuffixTap,
+        style: theme.textTheme.bodyLarge,
+        placeholderStyle: theme.textTheme.bodyLarge
+            ?.copyWith(color: palette.secondaryLabel),
+        // tertiarySystemFill
+        backgroundColor:
+            dark ? const Color(0x3D767680) : const Color(0x1F767680),
+        borderRadius: const BorderRadius.all(Radius.circular(height / 2)),
+        itemSize: 19,
+        itemColor: palette.secondaryLabel,
+        prefixInsets: const EdgeInsetsDirectional.fromSTEB(14, 0, 0, 2),
+        suffixInsets: const EdgeInsetsDirectional.fromSTEB(0, 0, 10, 2),
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 11, 8, 11),
+      ),
     );
   }
 }

@@ -121,33 +121,23 @@ class _FrontFilterButtons extends HookConsumerWidget {
         ref.watch(settingsProvider.select((s) => s.searchSortOnFrontPage));
     final frontLanguagesFilter =
         ref.watch(settingsProvider.select((s) => s.frontLanguagesFilter));
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        LanguagesFilterPopupButton(
-          onSelected: (LanguagesFilter value) async {
-            if (value == ref.read(settingsProvider).frontLanguagesFilter) {
-              return;
-            }
-            ref.read(settingsProvider.notifier).setFrontLanguagesFilter(value);
-            await ref.read(frontProvider.notifier).reloadData();
-          },
-          initValue: frontLanguagesFilter,
-        ),
-        SortPopupButton(
-          onSelected: (value) async {
-            // if not change, do nothing
-            if (value == searchSortOnFrontPage) {
-              return;
-            }
-            ref.read(settingsProvider.notifier).setSearchSortOnFrontPage(value);
-
-            // reload
-            await ref.read(frontProvider.notifier).reloadData();
-          },
-          initValue: searchSortOnFrontPage,
-        ),
-      ],
+    return NavFilterButtons(
+      language: frontLanguagesFilter,
+      onLanguageSelected: (LanguagesFilter value) async {
+        if (value == ref.read(settingsProvider).frontLanguagesFilter) {
+          return;
+        }
+        ref.read(settingsProvider.notifier).setFrontLanguagesFilter(value);
+        await ref.read(frontProvider.notifier).reloadData();
+      },
+      sort: searchSortOnFrontPage,
+      onSortSelected: (value) async {
+        if (value == ref.read(settingsProvider).searchSortOnFrontPage) {
+          return;
+        }
+        ref.read(settingsProvider.notifier).setSearchSortOnFrontPage(value);
+        await ref.read(frontProvider.notifier).reloadData();
+      },
     );
   }
 }

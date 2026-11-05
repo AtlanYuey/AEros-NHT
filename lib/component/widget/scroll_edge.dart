@@ -48,8 +48,8 @@ class ScrollEdgeEffect extends StatelessWidget {
     super.key,
     required this.color,
     this.visibility = 1.0,
-    this.maxBlur = 10.0,
-    this.maxOpacity = 0.82,
+    this.maxBlur = 8.0,
+    this.maxOpacity = 0.8,
     this.edge = AxisDirection.up,
   });
 
@@ -79,7 +79,7 @@ class ScrollEdgeEffect extends StatelessWidget {
   static double blurAt(double t) => 1 - _smoothstep(0.15, 1.0, t);
 
   /// Tint strength at [t].
-  static double tintAt(double t) => 1 - _smoothstep(0.3, 1.0, t);
+  static double tintAt(double t) => 1 - _smoothstep(0.45, 1.0, t);
 
   @override
   Widget build(BuildContext context) {

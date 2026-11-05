@@ -104,40 +104,33 @@ class _SearchPageState extends ConsumerState<SearchPage>
               title: L10n.of(context).search,
               heroTag: 'nav_search_$currentSearchDepth',
               automaticallyImplyLeading: canPop,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  LanguagesFilterPopupButton(
-                    onSelected: (LanguagesFilter value) async {
-                      if (value ==
-                          ref.read(settingsProvider).searchLanguagesFilter) {
-                        return;
-                      }
-                      ref
-                          .read(settingsProvider.notifier)
-                          .setSearchLanguagesFilter(value);
-                      await searchProviderNoti.reloadData();
-                    },
-                    initValue: ref.watch(settingsProvider
-                        .select((s) => s.searchLanguagesFilter)),
-                  ),
-                  SortPopupButton(
-                    onSelected: (value) async {
-                      if (value == ref.read(settingsProvider).searchSort) {
-                        return;
-                      }
-                      ref.read(settingsProvider.notifier).setSearchSort(value);
-                      await searchProviderNoti.reloadData();
-                    },
-                    initValue:
-                        ref.watch(settingsProvider.select((s) => s.searchSort)),
-                  ),
-                ],
+              trailing: NavFilterButtons(
+                language: ref.watch(
+                    settingsProvider.select((s) => s.searchLanguagesFilter)),
+                onLanguageSelected: (LanguagesFilter value) async {
+                  if (value ==
+                      ref.read(settingsProvider).searchLanguagesFilter) {
+                    return;
+                  }
+                  ref
+                      .read(settingsProvider.notifier)
+                      .setSearchLanguagesFilter(value);
+                  await searchProviderNoti.reloadData();
+                },
+                sort: ref.watch(settingsProvider.select((s) => s.searchSort)),
+                onSortSelected: (value) async {
+                  if (value == ref.read(settingsProvider).searchSort) {
+                    return;
+                  }
+                  ref.read(settingsProvider.notifier).setSearchSort(value);
+                  await searchProviderNoti.reloadData();
+                },
               ),
               bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(52),
+                preferredSize:
+                    const Size.fromHeight(AppleSearchField.height + 12),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   child: buildSearchBar(),
                 ),
               ),
@@ -165,11 +158,10 @@ class _SearchPageState extends ConsumerState<SearchPage>
       offset: const Offset(0, 8),
       constraints: const BoxConstraints(maxHeight: 360),
       builder: (context, controller, focusNode) {
-        return CupertinoSearchTextField(
+        return AppleSearchField(
           controller: controller,
           focusNode: focusNode,
           placeholder: L10n.of(context).search,
-          style: theme.textTheme.bodyLarge,
           onSubmitted: (value) {
             focusNode.unfocus();
             searchProviderNoti.search();

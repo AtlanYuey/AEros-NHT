@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:auto_route/auto_route.dart';
 import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
@@ -6,16 +8,19 @@ import 'package:eros_n/common/global.dart';
 import 'package:eros_n/common/provider/palette_generator.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/component/models/index.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/component/widget/blur_image.dart';
 import 'package:eros_n/component/widget/eros_cached_network_image.dart';
-import 'package:eros_n/component/widget/scrolling_fab.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:eros_n/network/request.dart';
 import 'package:eros_n/pages/enum.dart';
+import 'package:eros_n/pages/list_view/item/item_base.dart';
 import 'package:eros_n/pages/user/user_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,12 +30,26 @@ import 'package:intl/intl.dart';
 import 'package:nil/nil.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:path/path.dart' as path;
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 import 'gallery_provider.dart';
 import 'thumb_page.dart';
+
+/// Shows the extracted cover palette under the tags (debug builds only).
+const bool _kShowPaletteDebug = false;
+
+/// Height of the floating top bar (below the status bar).
+const double _kTopBarHeight = 52;
+
+/// Origin rect for the share sheet (required on iPad).
+Rect? shareOriginOf(BuildContext context) {
+  final box = context.findRenderObject() as RenderBox?;
+  if (box == null || !box.hasSize) {
+    return null;
+  }
+  return box.localToGlobal(Offset.zero) & box.size;
+}
 
 @RoutePage()
 class GalleryPage extends StatefulHookConsumerWidget {
@@ -48,18 +67,8 @@ class GalleryPage extends StatefulHookConsumerWidget {
 }
 
 class _GalleryPageState extends ConsumerState<GalleryPage> {
-  late ColorScheme colorScheme;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    colorScheme = Theme.of(context).colorScheme;
-  }
+  ColorScheme? tintColorScheme;
+  Color? _tintSeed;
 
   Color? getSeedColors(PaletteGenerator palette) {
     const int threshold = 30;
@@ -80,44 +89,48 @@ class _GalleryPageState extends ConsumerState<GalleryPage> {
         ref.watch(settingsProvider.select((s) => s.useGalleryTint));
     final thumbUrl =
         ref.watch(galleryProvider(widget.gid).select((g) => g.thumbUrl));
+    final baseTheme = Theme.of(context);
+    final brightness = baseTheme.brightness;
+
     if (useGalleryTint) {
       final paletteGenerator =
           ref.watch(paletteGeneratorProvider(thumbUrl ?? ''));
       paletteGenerator.whenData((palette) {
-        // logger.d(palette);
         final seedColor = getSeedColors(palette);
-        if (seedColor == null) {
+        if (seedColor == null || seedColor == _tintSeed) {
           return;
         }
-        final hslColor = HSLColor.fromColor(seedColor);
         final hsvColor = HSVColor.fromColor(seedColor);
-        logger.v('$seedColor, $hslColor, $hsvColor');
+        logger.t('$seedColor, $hsvColor');
         if (hsvColor.hue < 0.1) {
           return;
         }
-        final lightColorScheme = ColorScheme.fromSeed(
-          seedColor: seedColor.harmonizeWith(Theme.of(context).primaryColor),
-        );
-
-        final darkColorScheme = ColorScheme.fromSeed(
-          seedColor: seedColor.harmonizeWith(Theme.of(context).primaryColor),
-          brightness: Brightness.dark,
-        );
-
-        colorScheme = Theme.of(context).brightness == Brightness.light
-            ? lightColorScheme
-            : darkColorScheme;
-
-        setState(() {});
+        _tintSeed = seedColor;
+        final accent = seedColor.harmonizeWith(baseTheme.colorScheme.primary);
+        // Keep the tint readable: use a vivid tone of the cover color.
+        final tone = HSLColor.fromColor(accent)
+            .withSaturation(
+                (HSLColor.fromColor(accent).saturation).clamp(0.45, 0.9))
+            .withLightness(brightness == Brightness.dark ? 0.62 : 0.45)
+            .toColor();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              tintColorScheme = ThemeConfig.buildColorScheme(tone, brightness);
+            });
+          }
+        });
       });
     }
 
+    final ThemeData themeData =
+        useGalleryTint && tintColorScheme?.brightness == brightness
+            ? ThemeConfig.buildTheme(tintColorScheme!)
+            : baseTheme;
+
     return AnimatedTheme(
-      data: ThemeData.from(
-        colorScheme: colorScheme,
-        useMaterial3: true,
-      ),
-      duration: const Duration(milliseconds: 1000),
+      data: themeData,
+      duration: const Duration(milliseconds: 600),
       curve: Curves.easeInOut,
       child: GalleryPageBody(gid: widget.gid, heroTag: widget.heroTag),
     );
@@ -136,93 +149,88 @@ class GalleryPageBody extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final gallery = ref.read(galleryProvider(gid));
-    // logger.v('build gallery $gid ${gallery.title}');
-
     final thumbUrl = ref.watch(galleryProvider(gid).select((g) => g.thumbUrl));
     final title = ref.watch(galleryProvider(gid).select((g) => g.title));
     final url = ref.watch(galleryProvider(gid).select((g) => g.url));
     final images = ref.watch(galleryProvider(gid).select((g) => g.images));
-    final mediaId = ref.watch(galleryProvider(gid).select((g) => g.mediaId));
 
     final ScrollController scrollController = useScrollController();
     final ScrollController thumbScrollController = useScrollController();
 
+    // `collapsed` = the header has scrolled under the top bar.
+    final collapsed = useMemoized(() => ValueNotifier<bool>(false));
+    useEffect(() {
+      void listener() {
+        final threshold = _GalleryHeader.height(context) -
+            MediaQuery.paddingOf(context).top -
+            _kTopBarHeight +
+            40;
+        final value =
+            scrollController.hasClients && scrollController.offset > threshold;
+        if (collapsed.value != value) {
+          collapsed.value = value;
+        }
+      }
+
+      scrollController.addListener(listener);
+      return () {
+        scrollController.removeListener(listener);
+        collapsed.dispose();
+      };
+    }, [scrollController]);
+
+    final large = context.isTablet;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       extendBody: true,
-      appBar: AppBar(
-        backgroundColor: MaterialStateColor.resolveWith((states) {
-          if (states.contains(MaterialState.scrolledUnder)) {
-            return Theme.of(context).colorScheme.surface;
-          }
-          return Colors.transparent;
-        }),
-        // systemOverlayStyle: Theme.of(context).brightness == Brightness.light
-        //     ? SystemUiOverlayStyle.dark
-        //     : SystemUiOverlayStyle.light,
-        // systemOverlayStyle: Theme.of(context).brightness == Brightness.light
-        //     ? const SystemUiOverlayStyle(
-        //         systemNavigationBarColor: Colors.transparent,
-        //         systemNavigationBarDividerColor: Colors.transparent,
-        //         systemNavigationBarIconBrightness: Brightness.dark,
-        //         statusBarColor: Colors.transparent,
-        //         // statusBarIconBrightness: Brightness.dark,
-        //       )
-        //     : const SystemUiOverlayStyle(
-        //         systemNavigationBarColor: Colors.transparent,
-        //         systemNavigationBarDividerColor: Colors.transparent,
-        //         statusBarColor: Colors.transparent,
-        //         // statusBarIconBrightness: Brightness.light,
-        //       ),
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          systemNavigationBarColor: Colors.transparent,
-          systemNavigationBarDividerColor: Colors.transparent,
-          statusBarColor: Colors.transparent,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {
-              final shareText = 'title:${title.englishTitle}\n$url';
-              logger.d(shareText);
-              Share.share(shareText);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      floatingActionButton: ScrollingFab(
-        onPressed: () {
-          RouteUtil.goRead(context, ref);
+      appBar: _GalleryTopBar(
+        title: title.englishTitle ?? '',
+        collapsed: collapsed,
+        alwaysShowTitle: false,
+        onShare: (shareContext) {
+          final shareText = 'title:${title.englishTitle}\n$url';
+          logger.d(shareText);
+          Share.share(
+            shareText,
+            sharePositionOrigin: shareOriginOf(shareContext),
+          );
         },
-        scrollController: scrollController,
-        label: Consumer(builder: (context, ref, child) {
-          final currentPageIndex =
-              ref.watch(galleryProvider(gid).select((g) => g.currentPageIndex));
-          final label = currentPageIndex == 0
-              ? L10n.of(context).read
-              : '${L10n.of(context).resume} ${currentPageIndex + 1}';
-          return Text(label);
-        }),
-        icon: const Icon(Icons.play_arrow),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButton: large
+          ? null
+          : ValueListenableBuilder<bool>(
+              valueListenable: collapsed,
+              builder: (context, isCollapsed, child) {
+                return IgnorePointer(
+                  ignoring: !isCollapsed,
+                  child: AnimatedSlide(
+                    offset: isCollapsed ? Offset.zero : const Offset(0, 1.5),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedOpacity(
+                      opacity: isCollapsed ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: child,
+                    ),
+                  ),
+                );
+              },
+              child: _ReadButton(gid: gid, floating: true),
+            ),
       body: LayoutBuilder(builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
-        final large = context.isTablet;
 
         const kMinWidget = 386.0;
 
-        final widget =
+        final width =
             maxWidth / 2 - kMinWidget > 50 ? kMinWidget : maxWidth / 2;
 
         return Row(
           children: [
             AnimatedContainer(
-              width: large ? widget : maxWidth,
+              width: large ? width : maxWidth,
               duration: const Duration(milliseconds: 400),
               child: GalleryDetailBody(
                 gid: gid,
@@ -240,14 +248,17 @@ class GalleryPageBody extends HookConsumerWidget {
                 child: Stack(
                   children: [
                     SizedBox(
-                      height: context.isTablet ? 420 : 460,
+                      height: _GalleryHeader.height(context),
                       child: _BackGround(thumbUrl: thumbUrl),
                     ),
                     SafeArea(
                       bottom: false,
-                      child: ThumbBody(
-                        gid: gid,
-                        scrollController: thumbScrollController,
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: _kTopBarHeight),
+                        child: ThumbBody(
+                          gid: gid,
+                          scrollController: thumbScrollController,
+                        ),
                       ),
                     ),
                   ],
@@ -256,6 +267,106 @@ class GalleryPageBody extends HookConsumerWidget {
           ],
         );
       }),
+    );
+  }
+}
+
+/// Transparent top bar with glass buttons; frosts and shows the title once
+/// the header scrolls away (iOS 26 style).
+class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
+  const _GalleryTopBar({
+    required this.title,
+    required this.collapsed,
+    required this.onShare,
+    this.alwaysShowTitle = false,
+  });
+
+  final String title;
+  final ValueListenable<bool> collapsed;
+  final void Function(BuildContext context) onShare;
+  final bool alwaysShowTitle;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(_kTopBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final topInset = MediaQuery.paddingOf(context).top;
+    return ValueListenableBuilder<bool>(
+      valueListenable: collapsed,
+      builder: (context, isCollapsed, _) {
+        final dark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+          child: SizedBox(
+            height: topInset + _kTopBarHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedOpacity(
+                  opacity: isCollapsed ? 1 : 0,
+                  duration: const Duration(milliseconds: 220),
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: palette.bar,
+                          border: Border(
+                            bottom: BorderSide(
+                                color: palette.separator, width: 0.0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: topInset,
+                    left: MediaQuery.paddingOf(context).left + 12,
+                    right: MediaQuery.paddingOf(context).right + 12,
+                  ),
+                  child: Row(
+                    children: [
+                      GlassIconButton(
+                        icon: CupertinoIcons.chevron_back,
+                        tooltip:
+                            MaterialLocalizations.of(context).backButtonTooltip,
+                        onPressed: () => Navigator.of(context).maybePop(),
+                      ),
+                      Expanded(
+                        child: AnimatedOpacity(
+                          opacity: isCollapsed || alwaysShowTitle ? 1 : 0,
+                          duration: const Duration(milliseconds: 220),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Builder(builder: (context) {
+                        return GlassIconButton(
+                          icon: CupertinoIcons.share,
+                          tooltip: L10n.of(context).share,
+                          onPressed: () => onShare(context),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -269,35 +380,38 @@ class _BackGround extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShaderMask(
-      shaderCallback: (Rect bounds) {
-        return LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              // Theme.of(context).canvasColor,
-              // Colors.black,
-              Colors.transparent,
-              Theme.of(context).canvasColor,
-              // Colors.white,
-            ]).createShader(
-          Rect.fromLTRB(0, 0, bounds.width, bounds.height - 0),
-        );
-      },
-      blendMode: BlendMode.dstOut,
-      child: ClipRect(
-        child: BlurImage(
-          sigma: 4,
-          color: Theme.of(context).canvasColor.withOpacity(0.5),
-          child: thumbUrl != null
-              ? ErosCachedNetworkImage(
-                  imageUrl: thumbUrl,
-                  filterQuality: FilterQuality.medium,
-                  fit: BoxFit.cover,
-                )
-              : const SizedBox(),
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRect(
+          child: BlurImage(
+            sigma: 36,
+            color: bg.withValues(alpha: 0.35),
+            child: thumbUrl != null
+                ? ErosCachedNetworkImage(
+                    imageUrl: thumbUrl!,
+                    filterQuality: FilterQuality.low,
+                    fit: BoxFit.cover,
+                  )
+                : const SizedBox(),
+          ),
         ),
-      ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: const [0.0, 0.55, 1.0],
+              colors: [
+                bg.withValues(alpha: 0.0),
+                bg.withValues(alpha: 0.35),
+                bg,
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -326,92 +440,139 @@ class GalleryDetailBody extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return RefreshIndicator(
-      onRefresh: ref.read(galleryProvider(gid).notifier).reloadData,
-      edgeOffset: MediaQuery.of(context).padding.top,
-      child: CustomScrollView(
-        physics: const ClampingScrollPhysics(),
-        controller: scrollController,
-        slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: context.isTablet ? 420 : 460,
-              child: Stack(
-                alignment: Alignment.bottomLeft,
-                children: [
-                  backGround ?? const SizedBox(),
-                  Container(
-                    padding: EdgeInsets.only(
-                      left: context.mediaQueryPadding.left + 16,
-                      right: context.mediaQueryPadding.right + 16,
-                      top: 16,
-                      bottom: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SelectableText(
-                          title.englishTitle ?? '',
-                          style: Theme.of(context).textTheme.titleLarge,
-                          maxLines: context.isTablet ? 2 : 3,
-                          minLines: 1,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          height: 240,
-                          child: Row(
-                            // crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 封面
-                              Container(
-                                width: 140,
-                                margin: const EdgeInsets.only(right: 12),
-                                alignment: Alignment.center,
-                                child: Hero(
-                                  tag: '${heroTag ?? ''}_$thumbUrl',
-                                  child: Card(
-                                    margin: const EdgeInsets.all(0),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: AspectRatio(
-                                      aspectRatio: (images.thumbnail.imgWidth ??
-                                              300) /
-                                          (images.thumbnail.imgHeight ?? 400),
-                                      child: thumbUrl == null
-                                          ? nil
-                                          : ErosCachedNetworkImage(
-                                              imageUrl: thumbUrl,
-                                              fit: BoxFit.cover,
-                                            ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: HeadInfoView(gid: gid, context: context),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // ThumbsView(gid: gid),
-          DetailView(
+    return CustomScrollView(
+      physics: kAppleScrollPhysics,
+      controller: scrollController,
+      slivers: [
+        SliverToBoxAdapter(
+          child: _GalleryHeader(
             gid: gid,
-            showThumbs: !large,
+            title: title,
+            heroTag: heroTag,
+            thumbUrl: thumbUrl,
+            images: images,
+            backGround: backGround,
           ),
-        ],
-      ),
+        ),
+        CupertinoSliverRefreshControl(
+          onRefresh: ref.read(galleryProvider(gid).notifier).reloadData,
+        ),
+        DetailView(
+          gid: gid,
+          showThumbs: !large,
+        ),
+      ],
     );
   }
 }
 
+class _GalleryHeader extends StatelessWidget {
+  const _GalleryHeader({
+    required this.gid,
+    required this.title,
+    required this.heroTag,
+    required this.thumbUrl,
+    required this.images,
+    this.backGround,
+  });
+
+  final int gid;
+  final GalleryTitle title;
+  final String? heroTag;
+  final String? thumbUrl;
+  final GalleryImages images;
+  final Widget? backGround;
+
+  static const double _coverWidth = 132;
+
+  static double height(BuildContext context) =>
+      MediaQuery.paddingOf(context).top + _kTopBarHeight + 246;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final padding = MediaQuery.paddingOf(context);
+    final aspectRatio = (images.thumbnail.imgWidth ?? 300) /
+        (images.thumbnail.imgHeight ?? 400);
+    final coverHeight = (_coverWidth / aspectRatio).clamp(120.0, 200.0);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: height(context),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              backGround ?? const SizedBox(),
+              Padding(
+                padding: EdgeInsets.only(
+                  left: padding.left + 20,
+                  right: padding.right + 20,
+                  top: padding.top + _kTopBarHeight + 8,
+                  bottom: 4,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      width: _coverWidth,
+                      height: coverHeight,
+                      child: Hero(
+                        tag: '${heroTag ?? ''}_$thumbUrl',
+                        child: CoverArtwork(
+                          radius: 12,
+                          child: thumbUrl == null
+                              ? nil
+                              : ErosCachedNetworkImage(
+                                  imageUrl: thumbUrl!,
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Flexible(
+                            child: SelectableText(
+                              title.englishTitle ?? '',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.2,
+                              ),
+                              maxLines: 5,
+                              minLines: 1,
+                            ),
+                          ),
+                          HeadInfoView(gid: gid, context: context),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(
+            left: padding.left + 20,
+            right: padding.right + 20,
+            top: 16,
+          ),
+          child: ToolBarView(gid: gid),
+        ),
+        _StatsRow(gid: gid),
+      ],
+    );
+  }
+}
+
+/// Japanese title and artists beneath the main title.
 class HeadInfoView extends StatelessWidget {
   const HeadInfoView({
     super.key,
@@ -424,137 +585,174 @@ class HeadInfoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.only(right: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 8),
-          // 副标题
-          Consumer(
-            builder: (context, ref, child) {
-              final japaneseTitle =
-                  ref.watch(galleryProvider(gid)).title.japaneseTitle;
-              return SelectableText(
-                japaneseTitle ?? '',
-                style: Theme.of(context).textTheme.bodySmall,
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Consumer(
+          builder: (context, ref, child) {
+            final japaneseTitle =
+                ref.watch(galleryProvider(gid)).title.japaneseTitle;
+            if (japaneseTitle == null || japaneseTitle.isEmpty) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: SelectableText(
+                japaneseTitle,
+                style: theme.textTheme.bodySmall,
                 textAlign: TextAlign.start,
                 minLines: 1,
                 maxLines: 2,
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 12,
-            runSpacing: 2,
-            children: [
-              Text(
-                '#$gid',
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.start,
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.favorite,
-                    size: 12,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 4),
-                  Consumer(builder: (context, ref, child) {
-                    final numFavorites =
-                        ref.watch(galleryProvider(gid)).numFavorites;
-                    return Text(
-                      '${numFavorites ?? '··'}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                      textAlign: TextAlign.start,
-                    );
-                  }),
-                ],
+            );
+          },
+        ),
+        Consumer(builder: (context, ref, child) {
+          final isTagTranslate = ref
+              .watch(settingsProvider.select((value) => value.isTagTranslate));
+
+          final artistTags = ref
+              .watch(galleryProvider(gid))
+              .tags
+              .where((e) => e.type == 'Artists')
+              .toList();
+
+          if (artistTags.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          final textStyle = theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          );
+
+          final children = <Widget>[];
+          for (var i = 0; i < artistTags.length; i++) {
+            final tag = artistTags[i];
+            children.add(GestureDetector(
+              onTap: () => RouteUtil.goSearch(tag: tag),
+              child: Text(
+                isTagTranslate
+                    ? tag.translatedName ?? tag.name ?? ''
+                    : tag.name ?? '',
+                style: textStyle,
               ),
-              Consumer(builder: (context, ref, child) {
-                final uploadedDate =
-                    ref.watch(galleryProvider(gid)).uploadedDate;
-                final uploadedDateStr = uploadedDate != null
-                    ? DateFormat('yyyy-MM-dd').format(uploadedDate)
-                    : '··';
-                return Text(
-                  uploadedDateStr,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  textAlign: TextAlign.start,
-                );
-              }),
-            ],
-          ),
-          const SizedBox(height: 8),
-          // 作者
-          Expanded(
-            child: SingleChildScrollView(
-              child: Consumer(builder: (context, ref, child) {
-                final isTagTranslate = ref.watch(
-                    settingsProvider.select((value) => value.isTagTranslate));
+            ));
+            if (i != artistTags.length - 1) {
+              children.add(Text(', ', style: textStyle));
+            }
+          }
 
-                final artistTags = ref
-                    .watch(galleryProvider(gid))
-                    .tags
-                    .where((e) => e.type == 'Artists')
-                    .toList();
+          return Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Wrap(children: children),
+          );
+        }),
+      ],
+    );
+  }
+}
 
-                final textStyle = Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.primary);
+/// App Store style metadata strip (pages · favorites · date · id).
+class _StatsRow extends HookConsumerWidget {
+  const _StatsRow({required this.gid});
 
-                final artistTagsWidgets = artistTags
-                    .map((tag) => TextButton(
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 0),
-                          minimumSize: const Size(0, 0),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                        ),
-                        onPressed: () {
-                          RouteUtil.goSearch(tag: tag);
-                        },
-                        child: isTagTranslate
-                            ? Text(
-                                tag.translatedName ?? tag.name ?? '',
-                                style: textStyle,
-                              )
-                            : Text(tag.name ?? '', style: textStyle)))
-                    .toList();
+  final int gid;
 
-                // with separator
-                final artistTagsWidgetsWithSeparator = artistTagsWidgets
-                    .expand((element) => [
-                          element,
-                          Text('/',
-                              style: Theme.of(context).textTheme.bodySmall)
-                        ])
-                    .toList();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final pages =
+        ref.watch(galleryProvider(gid).select((g) => g.images.pages.length));
+    final numFavorites =
+        ref.watch(galleryProvider(gid).select((g) => g.numFavorites));
+    final uploadedDate =
+        ref.watch(galleryProvider(gid).select((g) => g.uploadedDate));
 
-                // remove last separator
-                if (artistTagsWidgetsWithSeparator.isNotEmpty) {
-                  artistTagsWidgetsWithSeparator.removeLast();
-                }
-
-                return Wrap(
-                  spacing: 0,
-                  runSpacing: 0,
-                  runAlignment: WrapAlignment.center,
-                  children: artistTagsWidgetsWithSeparator,
-                );
-              }),
+    Widget item(String label, String value, {IconData? icon}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label.toUpperCase(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+              ),
             ),
-          ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 15, color: palette.secondaryLabel),
+                  const SizedBox(width: 3),
+                ],
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: palette.secondaryLabel,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
-          ToolBarView(gid: gid),
-        ],
+    Widget separator() =>
+        Container(width: 0.5, height: 30, color: palette.separator);
+
+    final items = <Widget>[
+      item(L10n.of(context).pages, pages > 0 ? '$pages' : '··'),
+      separator(),
+      item(
+        L10n.of(context).favorites,
+        numFavorites == null
+            ? '··'
+            : NumberFormat.compact().format(numFavorites),
+        icon: CupertinoIcons.heart_fill,
       ),
+      separator(),
+      item(
+        L10n.of(context).uploaded,
+        uploadedDate != null
+            ? DateFormat('yyyy-MM-dd').format(uploadedDate)
+            : '··',
+      ),
+      separator(),
+      item('ID', '#$gid'),
+    ];
+
+    return Column(
+      children: [
+        const SizedBox(height: 18),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(color: palette.separator),
+        ),
+        SizedBox(
+          height: 66,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            children:
+                items.map((e) => Center(child: e)).toList(growable: false),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(color: palette.separator),
+        ),
+      ],
     );
   }
 }
@@ -573,11 +771,13 @@ class DetailView extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pageStatus =
         ref.watch(pageStateProvider(gid).select((state) => state.pageStatus));
-    logger.v('DetailView build $pageStatus');
+    logger.t('DetailView build $pageStatus');
     if (pageStatus == PageStatus.loading) {
       return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
+        hasScrollBody: false,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 80),
+          child: AppleLoading(),
         ),
       );
     } else {
@@ -585,15 +785,14 @@ class DetailView extends HookConsumerWidget {
         top: false,
         bottom: false,
         sliver: MultiSliver(children: [
+          const SizedBox(height: 8),
           TagsView(gid: gid),
-          if (kDebugMode) PaletteGeneratorWidget(gid: gid),
-          if (showThumbs) const SizedBox(height: 8),
+          if (kDebugMode && _kShowPaletteDebug)
+            PaletteGeneratorWidget(gid: gid),
           if (showThumbs) ThumbListView(gid: gid),
-          const SizedBox(height: 8),
           MoreLikeListView(gid: gid),
-          const SizedBox(height: 8),
           CommentsListView(gid: gid),
-          const SizedBox(height: 150),
+          SizedBox(height: 120 + MediaQuery.paddingOf(context).bottom),
         ]),
       );
     }
@@ -769,103 +968,6 @@ class PaletteGeneratorWidget extends HookConsumerWidget {
   }
 }
 
-class TagsView extends HookConsumerWidget {
-  const TagsView({
-    Key? key,
-    required this.gid,
-  }) : super(key: key);
-
-  final int gid;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final tags = ref.watch(galleryProvider(gid)).tags;
-    // tags group by type
-    final tagsGroupByType = <String, List<Tag>>{};
-    for (final tag in tags) {
-      if (tag.type == 'Artists') {
-        continue;
-      }
-
-      if (tagsGroupByType.containsKey(tag.type)) {
-        tagsGroupByType[tag.type]?.add(tag);
-      } else {
-        tagsGroupByType[tag.type!] = [tag];
-      }
-    }
-
-    const buttonPadding = EdgeInsets.symmetric(horizontal: 8, vertical: 3);
-
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      sliver: MultiSliver(
-        children: tagsGroupByType.entries.map((entry) {
-          final type = entry.key;
-          final tags = entry.value;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  padding: buttonPadding,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                  ),
-                ),
-                child: Text(
-                  // type,
-                  _getTagTypeTranslate(context, type),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: tags.map((Tag tag) {
-                    return OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        padding: buttonPadding,
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                      ),
-                      child: Consumer(builder: (context, ref, child) {
-                        final isTagTranslate = ref.watch(settingsProvider
-                            .select((value) => value.isTagTranslate));
-                        return Text(
-                          isTagTranslate
-                              ? tag.translatedName ?? ''
-                              : tag.name ?? '',
-                        );
-                      }),
-                      onPressed: () {
-                        RouteUtil.goSearch(tag: tag);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ).paddingOnly(bottom: 8);
-        }).toList(),
-      ),
-    );
-  }
-}
-
 String _getTagTypeTranslate(BuildContext context, String tagType) {
   switch (tagType) {
     case 'Parodies':
@@ -887,6 +989,243 @@ String _getTagTypeTranslate(BuildContext context, String tagType) {
   }
 }
 
+class TagsView extends HookConsumerWidget {
+  const TagsView({
+    Key? key,
+    required this.gid,
+  }) : super(key: key);
+
+  final int gid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tags = ref.watch(galleryProvider(gid)).tags;
+    final isTagTranslate =
+        ref.watch(settingsProvider.select((value) => value.isTagTranslate));
+    final theme = Theme.of(context);
+
+    // tags group by type
+    final tagsGroupByType = <String, List<Tag>>{};
+    for (final tag in tags) {
+      if (tag.type == 'Artists' || tag.type == null) {
+        continue;
+      }
+      tagsGroupByType.putIfAbsent(tag.type!, () => <Tag>[]).add(tag);
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: MultiSliver(
+        children: tagsGroupByType.entries.map((entry) {
+          final type = entry.key;
+          final tags = entry.value;
+          return Padding(
+            padding: const EdgeInsets.only(top: 10, bottom: 6),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getTagTypeTranslate(context, type),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: tags.map((Tag tag) {
+                    return AppleTagChip(
+                      label: isTagTranslate
+                          ? tag.translatedName ?? tag.name ?? ''
+                          : tag.name ?? '',
+                      onTap: () {
+                        RouteUtil.goSearch(tag: tag);
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+/// Primary "Read / Resume" capsule.
+class _ReadButton extends HookConsumerWidget {
+  const _ReadButton({required this.gid, this.floating = false});
+
+  final int gid;
+  final bool floating;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentPageIndex =
+        ref.watch(galleryProvider(gid).select((g) => g.currentPageIndex));
+    final label = currentPageIndex == 0
+        ? L10n.of(context).read
+        : '${L10n.of(context).resume} · ${currentPageIndex + 1}';
+
+    final button = CapsuleButton(
+      label: label,
+      icon: currentPageIndex == 0
+          ? CupertinoIcons.book_fill
+          : CupertinoIcons.play_fill,
+      height: floating ? 50 : 46,
+      expand: !floating,
+      onPressed: () {
+        HapticFeedback.lightImpact();
+        RouteUtil.goRead(context, ref);
+      },
+    );
+
+    if (!floating) {
+      return button;
+    }
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color:
+                Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: button,
+      ),
+    );
+  }
+}
+
+/// Circular tinted action (favorite / torrent).
+class _CircleAction extends StatelessWidget {
+  const _CircleAction({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+    this.active = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final palette = context.palette;
+    return Tooltip(
+      message: label,
+      child: PressableScale(
+        onTap: onPressed,
+        scale: 0.9,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: active ? scheme.primary : palette.tertiaryFill,
+          ),
+          child: Icon(
+            icon,
+            size: 21,
+            color: active ? scheme.onPrimary : scheme.primary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ToolBarView extends HookConsumerWidget {
+  const ToolBarView({Key? key, required this.gid}) : super(key: key);
+
+  final int gid;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gallery = ref.watch(galleryProvider(gid));
+    final isUserLogin = ref.watch(userProvider.select((user) => user.isLogin));
+    final isFavorited = gallery.isFavorited ?? false;
+    final downloading = useState(false);
+
+    return Row(
+      children: [
+        Expanded(child: _ReadButton(gid: gid)),
+        const SizedBox(width: 12),
+        _CircleAction(
+          icon: isFavorited ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
+          label: isFavorited
+              ? L10n.of(context).favorited
+              : L10n.of(context).favorite,
+          active: isFavorited,
+          onPressed: isUserLogin
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  ref.read(galleryProvider(gid).notifier).toggleFavorite();
+                }
+              : null,
+        ),
+        const SizedBox(width: 12),
+        Builder(builder: (buttonContext) {
+          return _CircleAction(
+            icon: downloading.value
+                ? CupertinoIcons.hourglass
+                : CupertinoIcons.arrow_down_doc,
+            label: L10n.of(context).torrent,
+            onPressed: isUserLogin && !downloading.value
+                ? () async {
+                    late String savePath;
+                    final origin = shareOriginOf(buttonContext);
+                    downloading.value = true;
+                    try {
+                      await nhDownload(
+                          url: '/g/${gallery.gid}/download',
+                          savePath: (Headers headers) {
+                            logger.d(headers);
+                            final contentDisposition =
+                                headers.value('content-disposition');
+                            final filename = contentDisposition
+                                    ?.split(RegExp(r"filename(=|\*=UTF-8'')"))
+                                    .last ??
+                                '';
+                            final fileNameDecode =
+                                Uri.decodeFull(filename).replaceAll('/', '_');
+                            logger.d(fileNameDecode);
+                            savePath = path.joinAll([
+                              Global.tempPath,
+                              'torrent',
+                              '${gallery.gid}',
+                              fileNameDecode
+                            ]);
+                            return savePath;
+                          });
+                    } finally {
+                      downloading.value = false;
+                    }
+                    await Share.shareXFiles(
+                      [XFile(savePath)],
+                      sharePositionOrigin: origin,
+                    );
+                  }
+                : null,
+          );
+        }),
+      ],
+    );
+  }
+}
+
 class ThumbListView extends HookConsumerWidget {
   const ThumbListView({
     Key? key,
@@ -897,23 +1236,20 @@ class ThumbListView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    logger.v('ThumbListView build');
+    logger.t('ThumbListView build');
     final pages = ref
         .watch(galleryProvider(gid).select((gallery) => gallery.images.pages));
     final mediaId =
         ref.watch(galleryProvider(gid).select((gallery) => gallery.mediaId));
+    if (pages.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return MultiSliver(
       children: [
-        ListTile(
-          title: Text(L10n.of(context).thumbs),
-          trailing: Text(
-            '${L10n.of(context).more} ${pages.length}',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.primary),
-          ),
-          onTap: () {
+        AppleSectionHeader(
+          title: L10n.of(context).thumbs,
+          actionLabel: L10n.of(context).see_all,
+          onAction: () {
             erosRouter.push(ThumbRoute(
               gid: gid,
               colorScheme: Theme.of(context).colorScheme,
@@ -921,24 +1257,28 @@ class ThumbListView extends HookConsumerWidget {
           },
         ),
         SizedBox(
-          height: 200,
+          height: 186,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             itemCount: pages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 0),
+            separatorBuilder: (context, index) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
               final GalleryImage image = pages[index];
-              return Consumer(
-                  child: GestureDetector(
-                    onTap: () async {
-                      RouteUtil.goRead(context, ref, index: index);
-                    },
-                    child: Center(
+              return PressableScale(
+                onTap: () async {
+                  RouteUtil.goRead(context, ref, index: index);
+                },
+                child: Column(
+                  children: [
+                    Expanded(
                       child: AspectRatio(
-                        aspectRatio: image.imgWidth! / image.imgHeight!,
-                        child: Card(
-                          clipBehavior: Clip.antiAlias,
+                        aspectRatio:
+                            (image.imgWidth ?? 300) / (image.imgHeight ?? 400),
+                        child: CoverArtwork(
+                          radius: 8,
+                          shadow: false,
                           child: Hero(
                             tag: '${gid}_$index',
                             child: mediaId == null
@@ -952,15 +1292,14 @@ class ThumbListView extends HookConsumerWidget {
                         ),
                       ),
                     ),
-                  ),
-                  builder: (context, ref, child) {
-                    final currentIndex = ref.watch(galleryProvider(gid)
-                        .select((gallery) => gallery.currentPageIndex));
-                    return HeroMode(
-                      enabled: true,
-                      child: child!,
-                    );
-                  });
+                    const SizedBox(height: 6),
+                    Text(
+                      '${index + 1}',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                ),
+              );
             },
           ),
         ),
@@ -977,82 +1316,66 @@ class MoreLikeListView extends HookConsumerWidget {
 
   final int gid;
 
+  static const double _coverWidth = 120;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final moreLikeGallerys = ref.watch(galleryProvider(gid)).moreLikeGallerys;
     final heroTag = useMemoized(() => 'more_like_$gid');
+    final theme = Theme.of(context);
+    if (moreLikeGallerys.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return MultiSliver(
       children: [
-        ListTile(title: Text(L10n.of(context).more_like_this)),
+        AppleSectionHeader(title: L10n.of(context).more_like_this),
         SizedBox(
-          height: 280,
+          height: _coverWidth * 4 / 3 + 52,
           child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
             itemCount: moreLikeGallerys.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 0),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final likeGallery = moreLikeGallerys[index];
-              final aspectRatio = likeGallery.images.thumbnail.imgWidth! /
-                  likeGallery.images.thumbnail.imgHeight!;
-              return GestureDetector(
+              return PressableScale(
                 onTap: () {
                   RouteUtil.goGallery(ref, likeGallery, heroTag: heroTag);
                 },
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: aspectRatio,
-                          child: Hero(
-                            tag: '${heroTag}_${likeGallery.thumbUrl}',
-                            child: Card(
-                              clipBehavior: Clip.antiAlias,
-                              child: Container(
-                                foregroundDecoration:
-                                    (likeGallery.languageCode == 'ja' ||
-                                            likeGallery.languageCode == null)
-                                        ? null
-                                        : RotatedCornerDecoration.withColor(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary
-                                                .withOpacity(0.8),
-                                      badgeSize: const Size(38, 28),
-                                            // geometry: const BadgeGeometry(
-                                            //     width: 38, height: 28),
-                                            textSpan: TextSpan(
-                                              text: likeGallery.languageCode
-                                                      ?.toUpperCase() ??
-                                                  '',
-                                              style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                          ),
-                                child: ErosCachedNetworkImage(
-                                  imageUrl: likeGallery.thumbUrl ?? '',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                child: SizedBox(
+                  width: _coverWidth,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: _coverWidth,
+                        height: _coverWidth * 4 / 3,
+                        child: Hero(
+                          tag: '${heroTag}_${likeGallery.thumbUrl}',
+                          child: CoverArtwork(
+                            languageCode: likeGallery.languageCode,
+                            child: ErosCachedNetworkImage(
+                              imageUrl: likeGallery.thumbUrl ?? '',
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SizedBox(
-                      height: 80,
-                      width: aspectRatio * 200,
-                      child: Text(
+                      const SizedBox(height: 7),
+                      Text(
                         likeGallery.title.englishTitle ?? '',
-                        style: Theme.of(context).textTheme.caption,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                          height: 1.25,
+                        ),
                         textAlign: TextAlign.start,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 5,
+                        maxLines: 2,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -1074,126 +1397,114 @@ class CommentsListView extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final comments = ref.watch(galleryProvider(gid)).comments;
+    final palette = context.palette;
+    final theme = Theme.of(context);
+
+    void openComments() {
+      erosRouter.push(CommentsRoute(
+        gid: gid,
+        colorScheme: Theme.of(context).colorScheme,
+      ));
+    }
 
     return MultiSliver(
       children: [
-        ListTile(
-          title: Text(L10n.of(context).comments),
-          trailing: Text(
-            '${L10n.of(context).more} ${comments.length}',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Theme.of(context).colorScheme.primary),
-          ),
-          onTap: () {
-            erosRouter.push(CommentsRoute(
-              gid: gid,
-              colorScheme: Theme.of(context).colorScheme,
-            ));
-          },
+        AppleSectionHeader(
+          title: L10n.of(context).comments,
+          actionLabel: comments.isEmpty
+              ? null
+              : '${L10n.of(context).see_all} (${comments.length})',
+          onAction: openComments,
         ),
         if (comments.isEmpty)
-          const SizedBox(height: 8)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: PressableScale(
+              onTap: openComments,
+              child: Container(
+                height: 64,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  color: palette.secondaryBackground,
+                  shape: const RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(16)),
+                  ),
+                ),
+                child: Text(
+                  L10n.of(context).write_comment,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: palette.secondaryLabel),
+                ),
+              ),
+            ),
+          )
         else
           SizedBox(
-            height: 190,
+            height: 168,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               itemCount: comments.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 0),
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 final Comment comment = comments[index];
                 final date = DateTime.fromMillisecondsSinceEpoch(
                     (comment.postDate ?? 0) * 1000);
                 final dateFormatted =
                     DateFormat('yyyy-MM-dd HH:mm').format(date.toLocal());
-                return SizedBox(
-                  width: 280,
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    child: InkWell(
-                      onTap: () {
-                        erosRouter.push(CommentsRoute(
-                            gid: gid,
-                            colorScheme: Theme.of(context).colorScheme));
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                return PressableScale(
+                  scale: 0.98,
+                  onTap: openComments,
+                  child: Container(
+                    width: 290,
+                    padding: const EdgeInsets.all(14),
+                    decoration: ShapeDecoration(
+                      color: palette.secondaryBackground,
+                      shape: const RoundedSuperellipseBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(18)),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
-                                    borderRadius: BorderRadius.circular(24),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        spreadRadius: 1,
-                                        blurRadius: 7,
-                                        offset: const Offset(
-                                            0, 2), // changes position of shadow
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipOval(
-                                    child: SizedBox(
-                                      height: 48,
-                                      width: 48,
-                                      child: ErosCachedNetworkImage(
-                                        imageUrl:
-                                            'https://i.${NHConst.baseHost}/${comment.poster?.avatarUrl ?? ''}',
-                                        fit: BoxFit.cover,
-                                        placeholder: (_, __) => Container(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    comment.poster?.username ?? '',
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
-                                    maxLines: 2,
-                                  ),
-                                ),
-                              ],
+                            CommentAvatar(
+                              avatarUrl: comment.poster?.avatarUrl,
+                              size: 34,
                             ),
+                            const SizedBox(width: 10),
                             Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.only(
-                                    left: 12, right: 8, top: 12),
-                                child: Text(
-                                  comment.commentText ?? '',
-                                  style: Theme.of(context).textTheme.bodyText2,
-                                  // textAlign: TextAlign.start,
-                                  softWrap: true,
-                                  maxLines: 4,
-                                  overflow: TextOverflow.ellipsis,
-                                  textScaleFactor: 0.9,
-                                ),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 12),
-                              child: Text(
-                                dateFormatted,
-                                style: Theme.of(context).textTheme.caption,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    comment.poster?.username ?? '',
+                                    style: theme.textTheme.titleSmall,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    dateFormatted,
+                                    style: theme.textTheme.labelMedium,
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                      ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: Text(
+                            comment.commentText ?? '',
+                            style: theme.textTheme.bodyMedium,
+                            softWrap: true,
+                            maxLines: 4,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -1205,89 +1516,35 @@ class CommentsListView extends HookConsumerWidget {
   }
 }
 
-class ToolBarView extends HookConsumerWidget {
-  const ToolBarView({Key? key, required this.gid}) : super(key: key);
+/// Round avatar for comment posters.
+class CommentAvatar extends StatelessWidget {
+  const CommentAvatar({super.key, required this.avatarUrl, this.size = 40});
 
-  final int gid;
+  final String? avatarUrl;
+  final double size;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    const iconSize = 28.0;
-    final gallery = ref.watch(galleryProvider(gid));
-    final isUserLogin = ref.watch(userProvider.select((user) => user.isLogin));
-    return Container(
-      padding: context.isTablet
-          ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
-          : const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-      child: Row(
-        mainAxisAlignment: context.isTablet
-            ? MainAxisAlignment.spaceAround
-            : MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.download_outlined, size: iconSize),
-            color: Theme.of(context).colorScheme.primary,
-            // color: Colors.blue
-            //     .harmonizeWith(Theme.of(context).colorScheme.primary),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon:
-                const Icon(Icons.energy_savings_leaf_outlined, size: iconSize),
-            color: Theme.of(context).colorScheme.primary,
-            // color: Colors.green
-            //     .harmonizeWith(Theme.of(context).colorScheme.primary),
-            onPressed: isUserLogin
-                ? () async {
-                    // launch torrent
-                    // logger.d('launch torrent ${NHConst.baseUrl}${gallery.torrentUrl}');
-                    // launchUrlString('${NHConst.baseUrl}${gallery.torrentUrl}');
-
-                    // final savePathFB =
-                    //     path.joinAll([Global.extStorePath, gallery.gid ?? '']);
-                    late String savePath;
-
-                    await nhDownload(
-                        url: '/g/${gallery.gid}/download',
-                        savePath: (Headers headers) {
-                          logger.d(headers);
-                          final contentDisposition =
-                              headers.value('content-disposition');
-                          final filename = contentDisposition
-                                  ?.split(RegExp(r"filename(=|\*=UTF-8'')"))
-                                  .last ??
-                              '';
-                          final fileNameDecode =
-                              Uri.decodeFull(filename).replaceAll('/', '_');
-                          logger.d(fileNameDecode);
-                          savePath = path.joinAll([
-                            Global.tempPath,
-                            'torrent',
-                            '${gallery.gid}',
-                            fileNameDecode
-                          ]);
-                          return savePath;
-                        });
-                    Share.shareFiles([savePath]);
-                  }
-                : null,
-          ),
-          // 收藏按钮
-          IconButton(
-            icon: (gallery.isFavorited ?? false)
-                ? const Icon(Icons.favorite, size: iconSize)
-                : const Icon(Icons.favorite_border_outlined, size: iconSize),
-            color: Theme.of(context).colorScheme.primary,
-            // color: Colors.redAccent
-            //     .harmonizeWith(Theme.of(context).colorScheme.primary),
-            onPressed: isUserLogin
-                ? () {
-                    ref.read(galleryProvider(gid).notifier).toggleFavorite();
-                  }
-                : null,
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final placeholder = Container(
+      color: CupertinoColors.systemGrey3.resolveFrom(context),
+      child: Icon(
+        CupertinoIcons.person_fill,
+        size: size * 0.6,
+        color: Colors.white,
+      ),
+    );
+    return ClipOval(
+      child: SizedBox(
+        height: size,
+        width: size,
+        child: (avatarUrl ?? '').isEmpty
+            ? placeholder
+            : ErosCachedNetworkImage(
+                imageUrl: 'https://i.${NHConst.baseHost}/$avatarUrl',
+                fit: BoxFit.cover,
+                placeholder: (_, __) => placeholder,
+                errorWidget: (_, __, ___) => placeholder,
+              ),
       ),
     );
   }

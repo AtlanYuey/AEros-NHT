@@ -71,7 +71,7 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    logger.v('build MyApp');
+    logger.t('build MyApp');
     final themeMode =
         ref.watch(settingsProvider.select((settings) => settings.themeMode));
 
@@ -82,64 +82,38 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
         .watch(settingsProvider.select((settings) => settings.themeColorLabel));
 
     final dynamicColor = themeColorLabel == ThemeConfig.dynamicThemeColorLabel;
-    final themeSeedColor = ThemeConfig.colorMap[themeColorLabel] ??
-        ThemeConfig.colorMap[ThemeConfig.defaultThemeColorLabel]!;
 
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme lightColorScheme;
-        ColorScheme darkColorScheme;
-
         final supportDynamicColors =
             lightDynamic != null && darkDynamic != null;
 
-        logger.v('supportDynamicColors: $supportDynamicColors');
+        logger.t('supportDynamicColors: $supportDynamicColors');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ref
               .read(settingsProvider.notifier)
               .setSupportDynamicColors(supportDynamicColors);
         });
 
+        late final Color lightAccent;
+        late final Color darkAccent;
         if (supportDynamicColors && dynamicColor) {
-          lightColorScheme = lightDynamic.harmonized();
-          darkColorScheme = darkDynamic.harmonized();
+          lightAccent = lightDynamic.harmonized().primary;
+          darkAccent = darkDynamic.harmonized().primary;
         } else {
-          lightColorScheme = ColorScheme.fromSeed(
-            seedColor: themeSeedColor,
-          );
-          darkColorScheme = ColorScheme.fromSeed(
-            seedColor: themeSeedColor,
-            brightness: Brightness.dark,
-          );
+          lightAccent = ThemeConfig.accentOf(themeColorLabel, Brightness.light);
+          darkAccent = ThemeConfig.accentOf(themeColorLabel, Brightness.dark);
         }
 
-        ThemeConfig.lightColorScheme = lightColorScheme;
-        ThemeConfig.lightTheme = ThemeData(
-          colorScheme: lightColorScheme,
-          useMaterial3: true,
-          dividerTheme: const DividerThemeData(
-            color: Colors.black12,
-            thickness: 1,
-            space: 0,
-          ),
-          bottomSheetTheme: BottomSheetThemeData(
-            backgroundColor: lightColorScheme.surfaceVariant,
-          ),
-        );
+        ThemeConfig.lightColorScheme =
+            ThemeConfig.buildColorScheme(lightAccent, Brightness.light);
+        ThemeConfig.lightTheme =
+            ThemeConfig.buildTheme(ThemeConfig.lightColorScheme);
 
-        ThemeConfig.darkColorScheme = darkColorScheme;
-        ThemeConfig.darkTheme = ThemeData(
-          colorScheme: darkColorScheme,
-          useMaterial3: true,
-          dividerTheme: const DividerThemeData(
-            color: Colors.white24,
-            thickness: 1,
-            space: 0,
-          ),
-          bottomSheetTheme: BottomSheetThemeData(
-            backgroundColor: darkColorScheme.surfaceVariant,
-          ),
-        );
+        ThemeConfig.darkColorScheme =
+            ThemeConfig.buildColorScheme(darkAccent, Brightness.dark);
+        ThemeConfig.darkTheme =
+            ThemeConfig.buildTheme(ThemeConfig.darkColorScheme);
 
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,

@@ -2,13 +2,14 @@ import 'package:eros_n/common/enum.dart';
 import 'package:eros_n/common/extension.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/component/models/gallery.dart';
-import 'package:eros_n/component/models/index.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/pages/list_view/item/item_base.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 
+/// Masonry tile. The regular variant shows the artwork with the title and
+/// tags beneath; the compact variant overlays them on a soft gradient.
 class ItemWaterfallFlowCard extends HookConsumerWidget {
   const ItemWaterfallFlowCard({
     Key? key,
@@ -28,30 +29,22 @@ class ItemWaterfallFlowCard extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showTags = ref.watch(settingsProvider.select((s) => s.showTags));
-    Widget item = Column(
+    final Widget item = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         buildCoverImage(context, compact, showTags),
-        if (!compact) buildTitle(),
-        if (!compact) SimpleTagsView(simpleTags: gallery.simpleTags),
+        if (!compact) buildTitle(context),
+        if (!compact)
+          SimpleTagsView(
+            simpleTags: gallery.simpleTags,
+            padding: const EdgeInsets.only(left: 2, right: 2, bottom: 4),
+          ),
       ],
     );
 
-    if (!compact) {
-      item = Card(
-        // clipBehavior: Clip.antiAlias,
-        margin: const EdgeInsets.all(0),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: item,
-        ),
-      );
-    }
-
-    return GestureDetector(
+    return PressableScale(
       onTap: () async {
-        // items
         await RouteUtil.goGallery(ref, gallery, heroTag: tabTag);
       },
       child: item,
@@ -59,83 +52,58 @@ class ItemWaterfallFlowCard extends HookConsumerWidget {
   }
 
   Widget buildCoverImage(BuildContext context, bool compact, bool showTags) {
-    Widget coverImage = Container(
-      foregroundDecoration: (gallery.languageCode == 'ja' ||
-              gallery.languageCode == null)
-          ? null
-          : RotatedCornerDecoration.withColor(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.8),
-              badgeSize: const Size(38, 28),
-              textSpan: TextSpan(
-                text: gallery.languageCode?.toUpperCase() ?? '',
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
-              ),
-            ),
-      child: CoverImg(
-        imgUrl: gallery.thumbUrl ?? '',
-        fit: BoxFit.contain,
-      ),
+    Widget coverImage = CoverImg(
+      imgUrl: gallery.thumbUrl ?? '',
+      fit: BoxFit.contain,
     );
 
     if (compact) {
       coverImage = Stack(
+        fit: StackFit.expand,
         children: [
-          ShaderMask(
-            shaderCallback: (rect) {
-              return LinearGradient(
+          coverImage,
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.transparent,
-                  Colors.transparent,
-                  // Colors.transparent,
-                  if (showTags) Colors.black.withOpacity(0.5),
-                  if (showTags)
-                    Colors.black.withOpacity(0.7)
-                  else
-                    Colors.black.withOpacity(0.55),
-                ],
-              ).createShader(rect);
-            },
-            blendMode: BlendMode.darken,
-            child: coverImage,
+                stops: [0.45, 1],
+                colors: [Colors.transparent, Color(0xB3000000)],
+              ),
+            ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Spacer(),
-              SizedBox(
-                height: 20,
-                child: SimpleTagsView(
-                  simpleTags: gallery.simpleTags,
-                  tagLayoutOnItem: TagLayoutOnItem.singleLine,
-                  color: Colors.white,
-                  borderColor: Colors.transparent,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                alignment: Alignment.bottomCenter,
-                child: Text(
-                  (gallery.title.englishTitle ?? '').prettyTitle,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  height: 20,
+                  child: SimpleTagsView(
+                    simpleTags: gallery.simpleTags,
+                    tagLayoutOnItem: TagLayoutOnItem.singleLine,
                     color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.8),
-                        offset: const Offset(0, 0),
-                        blurRadius: 2,
-                      ),
-                    ],
+                    borderColor: Colors.white.withValues(alpha: 0.18),
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                  child: Text(
+                    (gallery.title.englishTitle ?? '').prettyTitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2,
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       );
@@ -146,31 +114,28 @@ class ItemWaterfallFlowCard extends HookConsumerWidget {
       child: AspectRatio(
         aspectRatio: (gallery.images.thumbnail.imgWidth ?? 300) /
             (gallery.images.thumbnail.imgHeight ?? 400),
-        child: Card(
-          margin: const EdgeInsets.all(0),
-          clipBehavior: Clip.antiAlias,
+        child: CoverArtwork(
+          radius: 12,
+          languageCode: gallery.languageCode,
           child: coverImage,
         ),
       ),
     );
   }
 
-  Widget buildTitle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            (gallery.title.englishTitle ?? '').prettyTitle,
-            textAlign: TextAlign.start,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-                // fontWeight: FontWeight.w500,
-                ),
-          ),
-        ],
+  Widget buildTitle(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(2, 8, 2, 6),
+      child: Text(
+        (gallery.title.englishTitle ?? '').prettyTitle,
+        textAlign: TextAlign.start,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+              height: 1.25,
+            ),
       ),
     );
   }

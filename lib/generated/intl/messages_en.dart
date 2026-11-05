@@ -25,6 +25,21 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "see_all": MessageLookupByLibrary.simpleMessage("See All"),
+        "pages": MessageLookupByLibrary.simpleMessage("Pages"),
+        "uploaded": MessageLookupByLibrary.simpleMessage("Uploaded"),
+        "favorite": MessageLookupByLibrary.simpleMessage("Favorite"),
+        "favorited": MessageLookupByLibrary.simpleMessage("Favorited"),
+        "torrent": MessageLookupByLibrary.simpleMessage("Torrent"),
+        "accent_color": MessageLookupByLibrary.simpleMessage("Accent Color"),
+        "sign_in_tip": MessageLookupByLibrary.simpleMessage("Sign in to sync your favorites"),
+        "account": MessageLookupByLibrary.simpleMessage("Account"),
+        "version": MessageLookupByLibrary.simpleMessage("Version"),
+        "write_comment": MessageLookupByLibrary.simpleMessage("Write a comment…"),
+        "no_comments": MessageLookupByLibrary.simpleMessage("No Comments"),
+        "logout_tip": MessageLookupByLibrary.simpleMessage("Are you sure you want to log out?"),
+        "feature_unavailable": MessageLookupByLibrary.simpleMessage("Feature in development, currently unavailable"),
+        "reading": MessageLookupByLibrary.simpleMessage("Reading"),
         "about": MessageLookupByLibrary.simpleMessage("About"),
         "advanced": MessageLookupByLibrary.simpleMessage("Advanced"),
         "all": MessageLookupByLibrary.simpleMessage("All"),

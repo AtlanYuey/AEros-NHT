@@ -1,42 +1,42 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:eros_n/common/provider/tag_translate_provider.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/generated/l10n.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-import 'setting_base.dart';
-
 @RoutePage()
-class AdvancedSettingPage extends StatelessWidget {
+class AdvancedSettingPage extends HookConsumerWidget {
   const AdvancedSettingPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(L10n.of(context).advanced),
-      ),
-      body: ListView(
-        children: <Widget>[
-          SmallTitle(title: L10n.of(context).tag),
-          Consumer(builder: (context, ref, child) {
-            final allNhTag = ref.watch(allNhTagProvider);
-            return ListTile(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final allNhTag = ref.watch(allNhTagProvider);
+    return AppleGroupedPage(
+      title: L10n.of(context).advanced,
+      children: [
+        AppleSection(
+          header: L10n.of(context).tag,
+          footer: 'Long press to update',
+          children: [
+            AppleListTile(
               title: Text(L10n.of(context).tags_data),
-              // subtitle: Text('total: ${ref.watch(tagTranslateProvider).total}, long press to update'),
-              subtitle: allNhTag.when(
-                data: (data) =>
-                    Text('total: ${data.length}, long press to update'),
-                loading: () => Text('loading...'),
-                error: (error, stack) => Text('error: $error'),
+              value: allNhTag.when(
+                data: (data) => '${data.length}',
+                loading: () => '…',
+                error: (error, stack) => 'error',
               ),
+              trailing: allNhTag.isLoading
+                  ? const CupertinoActivityIndicator(radius: 8)
+                  : null,
               onLongPress: () {
                 ref.read(tagTranslateProvider.notifier).updateNhTags();
               },
-            );
-          }),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

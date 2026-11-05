@@ -1,92 +1,106 @@
-import 'dart:math';
-
-import 'package:eros_n/generated/l10n.dart';
-import 'package:eros_n/utils/get_utils/extensions/context_extensions.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class SmallTitle extends StatelessWidget {
-  const SmallTitle({Key? key, required this.title}) : super(key: key);
+/// Row that shows the current value and opens an iOS action sheet with
+/// all options (the selected one carries a checkmark).
+class AppleOptionTile<T> extends StatelessWidget {
+  const AppleOptionTile({
+    super.key,
+    required this.title,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.leading,
+    this.subtitle,
+  });
+
   final String title;
+  final Map<T, String> options;
+  final T value;
+  final ValueChanged<T> onChanged;
+  final Widget? leading;
+  final Widget? subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-          left: max(context.mediaQueryPadding.left, 16), top: 16, bottom: 6),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-              fontWeight: FontWeight.w500,
-            ),
-      ),
+    return AppleListTile(
+      leading: leading,
+      title: Text(title),
+      subtitle: subtitle,
+      value: options[value],
+      showChevron: true,
+      onTap: () async {
+        final result = await showAppleOptionsSheet<T>(
+          context: context,
+          title: title,
+          options: options,
+          selected: value,
+        );
+        if (result != null) {
+          onChanged(result);
+        }
+      },
     );
   }
 }
 
-class RadioDialogListTile<T> extends StatelessWidget {
-  const RadioDialogListTile(
-      {Key? key,
-      this.title,
-      this.subtitle,
-      this.onChanged,
-      this.dialogTitle,
-      this.groupValue,
-      required this.radioTitleMap})
-      : super(key: key);
+/// Row with a title, the current value and an iOS slider beneath.
+class AppleSliderTile extends StatelessWidget {
+  const AppleSliderTile({
+    super.key,
+    required this.title,
+    required this.valueLabel,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+    this.divisions,
+  });
 
-  final Widget? title;
-  final Widget? subtitle;
-  final ValueChanged<T>? onChanged;
-  final Widget? dialogTitle;
-  final T? groupValue;
-  final Map<T, Widget> radioTitleMap;
+  final String title;
+  final String valueLabel;
+  final double value;
+  final double min;
+  final double max;
+  final int? divisions;
+  final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    void onChanged(T? value) {
-      if (value != null) {
-        this.onChanged?.call(value);
-        Navigator.of(context).pop();
-      }
-    }
-
-    final children = radioTitleMap.entries
-        .map((e) => RadioListTile<T>(
-              title: e.value,
-              value: e.key,
-              groupValue: groupValue,
-              onChanged: onChanged,
-              activeColor: Theme.of(context).colorScheme.primary,
-            ))
-        .toList();
-
-    return ListTile(
-      title: title,
-      subtitle: subtitle ?? radioTitleMap[groupValue],
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) {
-            return AlertDialog(
-              contentPadding: const EdgeInsets.only(top: 16),
-              title: dialogTitle ?? title,
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: children,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(L10n.of(context).cancel),
+    final theme = Theme.of(context);
+    final palette = context.palette;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(title, style: theme.textTheme.bodyLarge)),
+              Text(
+                valueLabel,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: palette.secondaryLabel,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
-              ],
-            );
-          },
-        );
-      },
+              ),
+            ],
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoSlider(
+              value: value.clamp(min, max),
+              min: min,
+              max: max,
+              divisions: divisions,
+              activeColor: theme.colorScheme.primary,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -6,6 +6,10 @@ import 'package:eros_n/pages/nav/index/index_provider.dart';
 import 'package:eros_n/pages/user/user_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:eros_n/utils/get_utils/extensions/context_extensions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -31,126 +35,165 @@ class _MorePageState extends ConsumerState<MorePage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final palette = context.palette;
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Text(L10n.of(context).more),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
+      backgroundColor: palette.groupedBackground,
+      body: CustomScrollView(
         controller: scrollController,
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Consumer(builder: (context, ref, child) {
-                final user = ref.watch(userProvider);
-                if (!user.isLogin) {
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Icon(
-                        Icons.person,
-                        color: Theme.of(context).colorScheme.onPrimary,
+        physics: kAppleScrollPhysics,
+        slivers: [
+          AppleSliverNavBar(
+            title: L10n.of(context).more,
+            heroTag: 'nav_more',
+            pageBackgroundColor: palette.groupedBackground,
+            backgroundColor: palette.brightness == Brightness.dark
+                ? palette.bar
+                : const Color(0xEBF2F2F7),
+          ),
+          SliverSafeArea(
+            top: false,
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const _AccountSection(),
+                AppleSection(
+                  dividerIndent: 59,
+                  children: [
+                    AppleListTile(
+                      leading: const AppleIconBadge(
+                        icon: CupertinoIcons.arrow_down_circle_fill,
+                        color: CupertinoColors.systemBlue,
                       ),
-                    ),
-                    title: Text(L10n.of(context).login),
-                    onTap: () {
-                      erosRouter.pushNamed(NHRoutes.login);
-                    },
-                  );
-                } else {
-                  return ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      backgroundImage: user.avatarUrl != null
-                          ? CachedNetworkImageProvider(user.avatarUrl ?? '')
-                          : null,
-                    ),
-                    title: Text(user.userName ?? '...'),
-                    onTap: () {
-                      // dialog to logout
-                      showDialog(
+                      title: Text(L10n.of(context).download),
+                      onTap: () {
+                        showAppleAlert<void>(
                           context: context,
-                          builder: (context) {
-                            logger.d('logout $user');
-                            return AlertDialog(
-                              title: Text(L10n.of(context).logout),
-                              content: Text('Are you sure to logout?'),
-                              actions: <Widget>[
-                                TextButton(
-                                  child: Text(L10n.of(context).cancel),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                                TextButton(
-                                  child: Text(L10n.of(context).logout),
-                                  onPressed: () {
-                                    ref.read(userProvider.notifier).logout();
-                                    Navigator.of(context).pop();
-                                  },
-                                ),
-                              ],
-                            );
-                          });
-                    },
-                  );
-                }
-              }),
+                          title: L10n.of(context).download,
+                          message: L10n.of(context).feature_unavailable,
+                          actions: [
+                            AppleAlertAction(
+                              label: L10n.of(context).ok,
+                              isDefault: true,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                AppleSection(
+                  dividerIndent: 59,
+                  children: [
+                    AppleListTile(
+                      leading: const AppleIconBadge(
+                        icon: CupertinoIcons.gear_alt_fill,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                      title: Text(L10n.of(context).settings),
+                      onTap: () {
+                        erosRouter.pushNamed(NHRoutes.settings);
+                      },
+                    ),
+                    AppleListTile(
+                      leading: const AppleIconBadge(
+                        icon: CupertinoIcons.info_circle_fill,
+                        color: CupertinoColors.systemIndigo,
+                      ),
+                      title: Text(L10n.of(context).about),
+                      onTap: () {
+                        erosRouter.pushNamed(NHRoutes.about);
+                      },
+                    ),
+                  ],
+                ),
+                SizedBox(height: 40 + context.mediaQueryPadding.bottom),
+              ]),
             ),
-            const Divider(height: 1.0),
-            ListTile(
-              leading: const Icon(Icons.download_outlined),
-              iconColor: Theme.of(context).colorScheme.primary,
-              title: Text(L10n.of(context).download),
-              onTap: () {
-                // Navigator.pushNamed(context, '/download');
-                // showDialog
-                showDialog(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(L10n.of(context).download),
-                        content: Text(
-                            'Feature in development, currently unavailable'),
-                        actions: <Widget>[
-                          TextButton(
-                            child: Text(L10n.of(context).ok),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    });
-              },
-            ),
-            const Divider(height: 1.0),
-            ListTile(
-              leading: const Icon(Icons.settings_outlined),
-              iconColor: Theme.of(context).colorScheme.primary,
-              title: Text(L10n.of(context).settings),
-              onTap: () {
-                erosRouter.pushNamed(NHRoutes.settings);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              iconColor: Theme.of(context).colorScheme.primary,
-              title: Text(L10n.of(context).about),
-              onTap: () {
-                erosRouter.pushNamed(NHRoutes.about);
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class _AccountSection extends HookConsumerWidget {
+  const _AccountSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
+    final palette = context.palette;
+    final theme = Theme.of(context);
+
+    final avatar = Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            CupertinoColors.systemGrey2.resolveFrom(context),
+            CupertinoColors.systemGrey.resolveFrom(context),
+          ],
+        ),
+        image: user.isLogin && user.avatarUrl != null
+            ? DecorationImage(
+                image: CachedNetworkImageProvider(user.avatarUrl ?? ''),
+                fit: BoxFit.cover,
+              )
+            : null,
+      ),
+      child: user.isLogin && user.avatarUrl != null
+          ? null
+          : const Icon(CupertinoIcons.person_fill,
+              color: Colors.white, size: 34),
+    );
+
+    return AppleSection(
+      children: [
+        AppleListTile(
+          minHeight: 84,
+          leading: avatar,
+          title: Text(
+            user.isLogin ? (user.userName ?? '...') : L10n.of(context).login,
+            style: theme.textTheme.titleLarge,
+          ),
+          subtitle: Text(
+            user.isLogin ? 'nhentai.net' : L10n.of(context).sign_in_tip,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: palette.secondaryLabel),
+          ),
+          onTap: () {
+            if (!user.isLogin) {
+              erosRouter.pushNamed(NHRoutes.login);
+              return;
+            }
+            logger.d('logout $user');
+            showAppleAlert<void>(
+              context: context,
+              title: L10n.of(context).logout,
+              message: L10n.of(context).logout_tip,
+              actions: [
+                AppleAlertAction(
+                  label: L10n.of(context).cancel,
+                  isDefault: true,
+                ),
+                AppleAlertAction(
+                  label: L10n.of(context).logout,
+                  isDestructive: true,
+                  onPressed: () {
+                    ref.read(userProvider.notifier).logout();
+                  },
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
 }

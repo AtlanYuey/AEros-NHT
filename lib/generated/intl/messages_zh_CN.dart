@@ -24,6 +24,21 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "see_all": MessageLookupByLibrary.simpleMessage("查看全部"),
+        "pages": MessageLookupByLibrary.simpleMessage("页数"),
+        "uploaded": MessageLookupByLibrary.simpleMessage("上传"),
+        "favorite": MessageLookupByLibrary.simpleMessage("收藏"),
+        "favorited": MessageLookupByLibrary.simpleMessage("已收藏"),
+        "torrent": MessageLookupByLibrary.simpleMessage("种子"),
+        "accent_color": MessageLookupByLibrary.simpleMessage("强调色"),
+        "sign_in_tip": MessageLookupByLibrary.simpleMessage("登录以同步你的收藏"),
+        "account": MessageLookupByLibrary.simpleMessage("账户"),
+        "version": MessageLookupByLibrary.simpleMessage("版本"),
+        "write_comment": MessageLookupByLibrary.simpleMessage("写下你的评论…"),
+        "no_comments": MessageLookupByLibrary.simpleMessage("暂无评论"),
+        "logout_tip": MessageLookupByLibrary.simpleMessage("确定要退出登录吗？"),
+        "feature_unavailable": MessageLookupByLibrary.simpleMessage("功能开发中，暂不可用"),
+        "reading": MessageLookupByLibrary.simpleMessage("阅读"),
         "about": MessageLookupByLibrary.simpleMessage("关于"),
         "advanced": MessageLookupByLibrary.simpleMessage("高级"),
         "all": MessageLookupByLibrary.simpleMessage("全部"),

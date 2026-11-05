@@ -31,11 +31,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
-        child: Text(
-          'Eros-N',
-          style: TextStyle(fontSize: 40),
+        child: ClipRSuperellipse(
+          borderRadius: BorderRadius.circular(22),
+          child: Image.asset(
+            'assets/images/app_icon.png',
+            width: 96,
+            height: 96,
+          ),
         ),
       ),
     );

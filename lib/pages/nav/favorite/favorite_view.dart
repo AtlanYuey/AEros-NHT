@@ -5,6 +5,9 @@ import 'package:eros_n/pages/list_view/list_view.dart';
 import 'package:eros_n/pages/user/user_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/common/global.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -70,64 +73,49 @@ class _FavoritePageState extends ConsumerState<FavoritePage>
         ref.watch(userProvider.select((user) => user.isLogin));
     super.build(context);
     return Scaffold(
-      body: RefreshIndicator(
-        edgeOffset: MediaQuery.of(context).padding.top + kToolbarHeight,
-        onRefresh: isUserLoggedIn
-            ? ref.read(favoriteProvider.notifier).reloadData
-            : () async {},
-        child: SizeCacheWidget(
-          child: CustomScrollView(
-            controller: scrollController,
-            physics: const ClampingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                title: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    children: [
-                      Text(L10n.of(context).favorites),
-                    ],
-                  ),
-                  onTap: () {
-                    scrollController.animateTo(0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.ease);
-                  },
-                ),
-                floating: true,
-                pinned: true,
-                bottom: const PreferredSize(
-                  preferredSize: Size.fromHeight(0),
-                  child: SizedBox(height: 0),
+      body: SizeCacheWidget(
+        child: CustomScrollView(
+          controller: scrollController,
+          physics: kAppleScrollPhysics,
+          slivers: [
+            AppleSliverNavBar(
+              title: L10n.of(context).favorites,
+              heroTag: 'nav_favorite',
+            ),
+            if (isUserLoggedIn) ...[
+              CupertinoSliverRefreshControl(
+                onRefresh: ref.read(favoriteProvider.notifier).reloadData,
+              ),
+              SliverSafeArea(
+                top: false,
+                bottom: false,
+                sliver: MultiSliver(
+                  children: [
+                    const FavoriteListView(),
+                    Consumer(builder: (context, ref, _) {
+                      final state = ref.watch(favoriteProvider);
+                      return EndIndicator(
+                        loadStatus: state.status,
+                      );
+                    }),
+                  ],
                 ),
               ),
-              if (isUserLoggedIn)
-                SliverSafeArea(
-                  top: false,
-                  bottom: false,
-                  sliver: MultiSliver(
-                    children: [
-                      const FavoriteListView(),
-                      Consumer(builder: (context, ref, _) {
-                        final state = ref.watch(favoriteProvider);
-                        return EndIndicator(
-                          loadStatus: state.status,
-                        );
-                      }),
-                    ],
-                  ),
-                )
-              else
-                SliverFillRemaining(
-                  child: Center(
-                    child: Text(
-                      L10n.of(context).please_login_first,
-                      style: Theme.of(context).textTheme.bodyText1,
-                    ),
+            ] else
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: AppleEmptyState(
+                  icon: CupertinoIcons.heart,
+                  title: L10n.of(context).favorites,
+                  message: L10n.of(context).please_login_first,
+                  action: CapsuleButton(
+                    label: L10n.of(context).login,
+                    icon: CupertinoIcons.person_crop_circle,
+                    onPressed: () => erosRouter.pushNamed(NHRoutes.login),
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -145,13 +133,12 @@ class FavoriteListView extends HookConsumerWidget {
     final List<Gallery> galleryList = ref.watch(favoriteGallerysProvider);
     final state = ref.watch(favoriteProvider);
     logger
-        .v('FavoriteListView build ,galleryList.length: ${galleryList.length}');
+        .t('FavoriteListView build ,galleryList.length: ${galleryList.length}');
 
     if (state.isLoading) {
       return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        hasScrollBody: false,
+        child: AppleLoading(),
       );
     }
     return GallerySliverList(

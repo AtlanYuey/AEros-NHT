@@ -1,508 +1,305 @@
 import 'package:auto_route/auto_route.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:eros_n/common/enum.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/common/provider/tag_translate_provider.dart';
 import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/generated/l10n.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:keframe/keframe.dart';
 
 import 'setting_base.dart';
 
 @RoutePage()
-class AppearanceSettingPage extends StatelessWidget {
+class AppearanceSettingPage extends HookConsumerWidget {
   const AppearanceSettingPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(L10n.of(context).appearance),
-      ),
-      body: ListView(
-        children: <Widget>[
-          /// Theme
-          SmallTitle(title: L10n.of(context).theme),
-          // ThemeMode
-          Consumer(builder: (context, ref, child) {
-            final themeMode = ref.watch(
-                settingsProvider.select((settings) => settings.themeMode));
-            return RadioDialogListTile<ThemeMode>(
-              title: Text(L10n.of(context).theme_mode),
-              groupValue: themeMode,
-              radioTitleMap: {
-                ThemeMode.system: Text(L10n.of(context).system),
-                ThemeMode.light: Text(L10n.of(context).light),
-                ThemeMode.dark: Text(L10n.of(context).dark),
-                // TagLayoutOnCard.row: Text('Row'),
-              },
-              onChanged: (value) {
-                ref.read(settingsProvider.notifier).setThemeMode(value);
-              },
-            );
-          }),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode =
+        ref.watch(settingsProvider.select((settings) => settings.themeMode));
+    final useGalleryTint = ref
+        .watch(settingsProvider.select((settings) => settings.useGalleryTint));
+    final listModel =
+        ref.watch(settingsProvider.select((settings) => settings.listModel));
+    final showTags =
+        ref.watch(settingsProvider.select((settings) => settings.showTags));
+    final tagLayoutOnItem = ref
+        .watch(settingsProvider.select((settings) => settings.tagLayoutOnItem));
+    final isTagTranslate = ref
+        .watch(settingsProvider.select((settings) => settings.isTagTranslate));
+    final tagTranslateInfo = ref.watch(tagTranslateProvider);
+    final isCoverBlur =
+        ref.watch(settingsProvider.select((settings) => settings.isCoverBlur));
 
-          // Switch dynamic color
-          // Consumer(builder: (context, ref, child) {
-          //   final dynamicColor = ref.watch(
-          //       settingsProvider.select((settings) => settings.dynamicColor));
-          //   return ListTile(
-          //     title: Text(L10n.of(context).dynamic_color),
-          //     subtitle: Text(L10n.of(context).dynamic_color_tip),
-          //     trailing: Switch(
-          //       activeColor: Theme.of(context).colorScheme.primary,
-          //       value: dynamicColor,
-          //       onChanged: (value) {
-          //         ref.read(settingsProvider.notifier).setDynamicColor(value);
-          //       },
-          //     ),
-          //   );
-          // }),
-
-          Consumer(builder: (context, ref, child) {
-            final supportDynamicColors = ref.watch(settingsProvider
-                .select((settings) => settings.supportDynamicColors));
-            final themeColorLabel = ref.watch(settingsProvider
-                .select((settings) => settings.themeColorLabel));
-
-            final colorMap = <String, Color?>{};
-            if (supportDynamicColors) {
-              colorMap.addAll({ThemeConfig.dynamicThemeColorLabel: null});
-            }
-            colorMap.addAll(ThemeConfig.colorMap);
-
-            if (!supportDynamicColors &&
-                themeColorLabel == ThemeConfig.dynamicThemeColorLabel) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                ref
-                    .read(settingsProvider.notifier)
-                    .setThemeColorLabel(ThemeConfig.defaultThemeColorLabel);
-              });
-            }
-
-            return ListTile(
-              title: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(L10n.of(context).theme),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 0),
-              subtitle: SizedBox(
-                height: 200,
-                child: ListView.separated(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  scrollDirection: Axis.horizontal,
-                  itemBuilder: (context, index) {
-                    final color = colorMap.entries.toList()[index];
-
-                    Widget selector = ThemeSelector(
-                      seedColor: color.value,
-                      selected: color.key ==
-                          ref.watch(settingsProvider
-                              .select((settings) => settings.themeColorLabel)),
-                      name: color.key,
-                      onTap: () {
-                        ref
-                            .read(settingsProvider.notifier)
-                            .setThemeColorLabel(color.key);
-                      },
-                    );
-
-                    return selector;
-
-                    return FrameSeparateWidget(
-                      index: index,
-                      placeHolder: const ThemeSelector(
-                        seedColor: Colors.black,
-                        selected: false,
-                        name: '',
-                      ),
-                      child: selector,
-                    );
+    return AppleGroupedPage(
+      title: L10n.of(context).appearance,
+      children: [
+        AppleSection(
+          header: L10n.of(context).theme,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlidingSegmentedControl<ThemeMode>(
+                  groupValue: themeMode,
+                  children: {
+                    ThemeMode.system: _SegmentLabel(
+                      icon: CupertinoIcons.circle_lefthalf_fill,
+                      label: L10n.of(context).system,
+                    ),
+                    ThemeMode.light: _SegmentLabel(
+                      icon: CupertinoIcons.sun_max_fill,
+                      label: L10n.of(context).light,
+                    ),
+                    ThemeMode.dark: _SegmentLabel(
+                      icon: CupertinoIcons.moon_fill,
+                      label: L10n.of(context).dark,
+                    ),
                   },
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 10),
-                  itemCount: ThemeConfig.colorMap.length,
+                  onValueChanged: (value) {
+                    if (value != null) {
+                      HapticFeedback.selectionClick();
+                      ref.read(settingsProvider.notifier).setThemeMode(value);
+                    }
+                  },
                 ),
               ),
-            );
-          }),
-
-          // switch useGalleryTint
-          Consumer(builder: (context, ref, child) {
-            final useGalleryTint = ref.watch(
-                settingsProvider.select((settings) => settings.useGalleryTint));
-            return ListTile(
+            ),
+            const _AccentColorPicker(),
+            AppleSwitchTile(
               title: Text(L10n.of(context).use_gallery_tint),
               subtitle: Text(L10n.of(context).use_gallery_tint_tip),
-              trailing: Switch(
-                activeColor: Theme.of(context).colorScheme.primary,
-                value: useGalleryTint,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).setUseGalleryTint(value);
-                },
-              ),
-            );
-          }),
-
-          const Divider(height: 1.0),
-
-          /// List Style
-          SmallTitle(title: L10n.of(context).list_style),
-          // switch list model
-          Consumer(builder: (context, ref, child) {
-            final listModel = ref.watch(
-                settingsProvider.select((settings) => settings.listModel));
-            return RadioDialogListTile<ListModel>(
-              title: Text(L10n.of(context).list_model),
-              groupValue: listModel,
-              radioTitleMap: {
-                ListModel.list: Text(L10n.of(context).list),
-                ListModel.grid: Text(L10n.of(context).grid),
-                ListModel.waterfall: Text(L10n.of(context).waterfall),
-                ListModel.waterfallCompact:
-                    Text(L10n.of(context).waterfall_compact),
+              value: useGalleryTint,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).setUseGalleryTint(value);
+              },
+            ),
+          ],
+        ),
+        AppleSection(
+          header: L10n.of(context).list_style,
+          children: [
+            AppleOptionTile<ListModel>(
+              title: L10n.of(context).list_model,
+              value: listModel,
+              options: {
+                ListModel.list: L10n.of(context).list,
+                ListModel.grid: L10n.of(context).grid,
+                ListModel.waterfall: L10n.of(context).waterfall,
+                ListModel.waterfallCompact: L10n.of(context).waterfall_compact,
               },
               onChanged: (value) {
                 ref.read(settingsProvider.notifier).setListModel(value);
               },
-            );
-          }),
-          // Switch show tags
-          Consumer(builder: (context, ref, child) {
-            final showTags = ref.watch(
-                settingsProvider.select((settings) => settings.showTags));
-            return ListTile(
+            ),
+            AppleSwitchTile(
               title: Text(L10n.of(context).show_tags),
               subtitle: Text(L10n.of(context).show_tags_tip),
-              trailing: Switch(
-                activeColor: Theme.of(context).colorScheme.primary,
-                value: showTags,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).setShowTags(value);
-                },
-              ),
+              value: showTags,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).setShowTags(value);
+              },
               onLongPress: () {
                 ref.read(tagTranslateProvider.notifier).updateNhTags();
               },
-            );
-          }),
-          Consumer(builder: (context, ref, child) {
-            final tagLayoutOnItem = ref.watch(settingsProvider
-                .select((settings) => settings.tagLayoutOnItem));
-            return RadioDialogListTile<TagLayoutOnItem>(
-              title: Text(L10n.of(context).tag_layout_on_item),
-              groupValue: tagLayoutOnItem,
-              radioTitleMap: {
-                TagLayoutOnItem.wrap: Text(L10n.of(context).wrap),
-                TagLayoutOnItem.singleLine: Text(L10n.of(context).single_line),
-                // TagLayoutOnCard.row: Text('Row'),
+            ),
+            AppleOptionTile<TagLayoutOnItem>(
+              title: L10n.of(context).tag_layout_on_item,
+              value: tagLayoutOnItem,
+              options: {
+                TagLayoutOnItem.wrap: L10n.of(context).wrap,
+                TagLayoutOnItem.singleLine: L10n.of(context).single_line,
               },
               onChanged: (value) {
                 ref.read(settingsProvider.notifier).setTagLayoutOnItem(value);
               },
-            );
-          }),
-
-          // Switch tag translate
-          Consumer(builder: (context, ref, child) {
-            final isTagTranslate = ref.watch(
-                settingsProvider.select((settings) => settings.isTagTranslate));
-            final tagTranslateInfo = ref.watch(tagTranslateProvider);
-            return ListTile(
+            ),
+            AppleSwitchTile(
               title: Text(L10n.of(context).tag_translation),
               subtitle: Text(L10n.of(context)
                   .tag_translation_tip(tagTranslateInfo.version ?? '')),
-              trailing: Switch(
-                activeColor: Theme.of(context).colorScheme.primary,
-                value: isTagTranslate,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).setTagTranslate(value);
-                },
-              ),
+              value: isTagTranslate,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).setTagTranslate(value);
+              },
               onLongPress: () {
                 ref.read(tagTranslateProvider.notifier).updateDb(force: true);
               },
-            );
-          }),
-
-          Consumer(builder: (context, ref, child) {
-            final isCoverBlur = ref.watch(
-                settingsProvider.select((settings) => settings.isCoverBlur));
-            return ListTile(
+            ),
+            AppleSwitchTile(
               title: Text(L10n.of(context).cover_blur),
-              subtitle: Text('Blur cover image in list'),
-              trailing: Switch(
-                activeColor: Theme.of(context).colorScheme.primary,
-                value: isCoverBlur,
-                onChanged: (value) {
-                  ref.read(settingsProvider.notifier).setCoverBlur(value);
-                },
-              ),
-            );
-          }),
+              value: isCoverBlur,
+              onChanged: (value) {
+                ref.read(settingsProvider.notifier).setCoverBlur(value);
+              },
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SegmentLabel extends StatelessWidget {
+  const _SegmentLabel({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: context.palette.label),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class ThemeSelector extends StatelessWidget {
-  const ThemeSelector({
-    Key? key,
-    required this.seedColor,
-    required this.selected,
-    required this.name,
-    this.dynamic = false,
-    this.onTap,
-  }) : super(key: key);
-  final Color? seedColor;
-  final bool selected;
-  final bool dynamic;
-  final String name;
-  final VoidCallback? onTap;
+/// Row of color swatches, like the accent color picker on macOS.
+class _AccentColorPicker extends HookConsumerWidget {
+  const _AccentColorPicker();
 
   @override
-  Widget build(BuildContext context) {
-    late ColorScheme lightColorScheme;
-    late ColorScheme darkColorScheme;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final supportDynamicColors = ref.watch(
+        settingsProvider.select((settings) => settings.supportDynamicColors));
+    final themeColorLabel = ref
+        .watch(settingsProvider.select((settings) => settings.themeColorLabel));
+    final brightness = Theme.of(context).brightness;
 
-    if (dynamic || seedColor == null) {
-      return DynamicColorBuilder(
-        builder: (lightDynamic, darkDynamic) {
-          if (lightDynamic != null && darkDynamic != null) {
-            lightColorScheme = lightDynamic.harmonized();
-            darkColorScheme = darkDynamic.harmonized();
-          } else {
-            return const SizedBox();
-          }
+    final labels = <String>[
+      if (supportDynamicColors) ThemeConfig.dynamicThemeColorLabel,
+      ...ThemeConfig.accentColors.keys,
+    ];
 
-          return ColorSelector(
-            lightColorScheme: lightColorScheme,
-            darkColorScheme: darkColorScheme,
-            selected: selected,
-            name: name,
-            onTap: onTap,
-          );
-        },
-      );
-    } else {
-      lightColorScheme = ColorScheme.fromSeed(
-        seedColor: seedColor!,
-      );
-
-      darkColorScheme = ColorScheme.fromSeed(
-        seedColor: seedColor!,
-        brightness: Brightness.dark,
-      );
-
-      return ColorSelector(
-        lightColorScheme: lightColorScheme,
-        darkColorScheme: darkColorScheme,
-        selected: selected,
-        name: name,
-        onTap: onTap,
-      );
+    if (!supportDynamicColors &&
+        themeColorLabel == ThemeConfig.dynamicThemeColorLabel) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(settingsProvider.notifier)
+            .setThemeColorLabel(ThemeConfig.defaultThemeColorLabel);
+      });
     }
+
+    // A label that is no longer offered falls back to the default accent.
+    final selectedLabel = labels.contains(themeColorLabel)
+        ? themeColorLabel
+        : ThemeConfig.defaultThemeColorLabel;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 0, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            L10n.of(context).accent_color,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 34,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.only(right: 16),
+              itemCount: labels.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final label = labels[index];
+                final isDynamic = label == ThemeConfig.dynamicThemeColorLabel;
+                final selected = label == selectedLabel;
+                return Semantics(
+                  label: label,
+                  selected: selected,
+                  button: true,
+                  child: PressableScale(
+                    scale: 0.88,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setThemeColorLabel(label);
+                    },
+                    child: _Swatch(
+                      color: isDynamic
+                          ? null
+                          : ThemeConfig.accentOf(label, brightness),
+                      selected: selected,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class ColorSelector extends StatelessWidget {
-  const ColorSelector({
-    super.key,
-    required this.lightColorScheme,
-    required this.darkColorScheme,
-    required this.selected,
-    required this.onTap,
-    required this.name,
-  });
+class _Swatch extends StatelessWidget {
+  const _Swatch({required this.color, required this.selected});
 
-  final ColorScheme lightColorScheme;
-  final ColorScheme darkColorScheme;
+  /// null = dynamic (wallpaper) color.
+  final Color? color;
   final bool selected;
-  final VoidCallback? onTap;
-  final String name;
 
   @override
   Widget build(BuildContext context) {
-    final lightTheme =
-        ThemeData.from(colorScheme: lightColorScheme, useMaterial3: true);
+    final decoration = color == null
+        ? const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: SweepGradient(colors: [
+              Color(0xFFFF3B30),
+              Color(0xFFFF9500),
+              Color(0xFFFFCC00),
+              Color(0xFF34C759),
+              Color(0xFF007AFF),
+              Color(0xFFAF52DE),
+              Color(0xFFFF3B30),
+            ]),
+          )
+        : BoxDecoration(shape: BoxShape.circle, color: color);
 
-    final darkTheme =
-        ThemeData.from(colorScheme: darkColorScheme, useMaterial3: true);
-
-    final theme = Theme.of(context).brightness == Brightness.light
-        ? lightTheme
-        : darkTheme;
-
-    return Theme(
-      data: theme,
-      child: Builder(builder: (context) {
-        return SizedBox(
-          width: 100,
-          child: Column(
-            children: [
-              Expanded(
-                child: Container(
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.background,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: selected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withOpacity(0.12),
-                      width: 4,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      onTap: onTap,
-                      child: Column(
-                        children: [
-                          SizedBox(
-                              height: 36,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Container(
-                                    width: 22,
-                                    height: 22,
-                                    padding: const EdgeInsets.all(2),
-                                    margin: const EdgeInsets.all(4),
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(selected ? 1 : 0),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Icon(
-                                      Icons.check,
-                                      size: 18,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onPrimary
-                                          .withOpacity(selected ? 1 : 0),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                        horizontal: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onBackground,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              )),
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.topLeft,
-                              child: Container(
-                                height: 50,
-                                width: 46,
-                                margin: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .secondary
-                                      .withOpacity(0.3),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Align(
-                                  alignment: Alignment.topRight,
-                                  child: Container(
-                                    height: 20,
-                                    width: 24,
-                                    margin: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(6),
-                                      color:
-                                          Theme.of(context).colorScheme.primary,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Spacer(),
-                                        Expanded(
-                                          child: Container(
-                                              decoration: BoxDecoration(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .tertiary,
-                                            borderRadius:
-                                                const BorderRadius.horizontal(
-                                                    right: Radius.circular(6)),
-                                          )),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Container(
-                            color: Theme.of(context).colorScheme.surfaceVariant,
-                            height: 36,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 8,
-                                      horizontal: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .secondary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                  ),
-                                ),
-                                Container(
-                                  width: 21,
-                                  height: 21,
-                                  margin: const EdgeInsets.all(4),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(name),
-            ],
-          ),
-        );
-      }),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 34,
+      height: 34,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected
+              ? (color ?? context.palette.label).withValues(alpha: 0.55)
+              : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: decoration,
+        child: selected
+            ? const Icon(CupertinoIcons.checkmark_alt,
+                size: 16, color: Colors.white)
+            : null,
+      ),
     );
   }
 }

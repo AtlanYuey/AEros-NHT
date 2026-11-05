@@ -56,13 +56,13 @@ class _MobileWebViewState extends State<MobileWebView> {
   void initState() {
     initWebView();
     super.initState();
-    if(widget.callback != null) {
+    if (widget.callback != null) {
       anomalyTimer = Timer.periodic(const Duration(seconds: 1), anomalyMonitor);
     }
   }
 
   Future<void> anomalyMonitor(Timer timer) async {
-    if(mounted && initOk && _controller != null) {
+    if (mounted && initOk && _controller != null) {
       callbackChallengeInfo();
     }
   }
@@ -81,37 +81,40 @@ class _MobileWebViewState extends State<MobileWebView> {
   }
 
   Future callbackChallengeInfo() async {
-    if(_controller == null) {
+    if (_controller == null) {
       return;
     }
     final cookies =
-    await cookieManager.getCookies(url: Uri.parse(NHConst.baseUrl));
-    final ioCookies =
-    cookies.map((e) => Cookie(e.name, '${e.value}')).toList();
-    final ua = await _controller!.evaluateJavascript(
-        source: 'navigator.userAgent');
+        await cookieManager.getCookies(url: WebUri(NHConst.baseUrl));
+    final ioCookies = cookies.map((e) => Cookie(e.name, '${e.value}')).toList();
+    final ua =
+        await _controller!.evaluateJavascript(source: 'navigator.userAgent');
     final userAgent = ua is String ? ua : '';
     widget.callback?.call(WebViewCookieInfo(
         url: NHConst.baseUrl,
         cookies: ioCookies,
         userAgent: userAgent,
-        manualRequired: (anomalyTimer?.tick ?? 0) >= 10 || await getManualRequired(),
-        message: await getChallengeMessage()
-    ));
+        manualRequired:
+            (anomalyTimer?.tick ?? 0) >= 10 || await getManualRequired(),
+        message: await getChallengeMessage()));
   }
 
   Future<bool> getManualRequired() async {
-    if(_controller != null) {
+    if (_controller != null) {
       final manualRequiredText = await _controller!.evaluateJavascript(
-          source:'(document.querySelector(".pow-button") != null  || document.querySelector(".captcha-prompt")) ? "true" : null');
+          source:
+              '(document.querySelector(".pow-button") != null  || document.querySelector(".captcha-prompt")) ? "true" : null');
       return manualRequiredText == 'true';
     }
     return false;
   }
 
   Future<String?> getChallengeMessage() async {
-    if(_controller != null) {
-      final String msg = await _controller!.evaluateJavascript(source: '(document.querySelector("#challenge-body-text") != null) ? document.querySelector("#challenge-body-text").textContent : ""') as String;
+    if (_controller != null) {
+      final String msg = await _controller!.evaluateJavascript(
+              source:
+                  '(document.querySelector("#challenge-body-text") != null) ? document.querySelector("#challenge-body-text").textContent : ""')
+          as String;
       return msg.trim();
     }
     return null;
@@ -128,7 +131,7 @@ class _MobileWebViewState extends State<MobileWebView> {
     if (initOk) {
       return InAppWebView(
         initialUrlRequest: URLRequest(
-          url: Uri.parse(widget.url),
+          url: WebUri(widget.url),
         ),
         initialOptions: inAppWebViewOptions,
         shouldOverrideUrlLoading: (controller, navigationAction) async {
@@ -186,21 +189,20 @@ class _WindowsWebViewState extends State<WindowsWebView> {
   void initState() {
     super.initState();
     initPlatformState();
-    if(widget.callback != null) {
+    if (widget.callback != null) {
       anomalyTimer = Timer.periodic(const Duration(seconds: 1), anomalyMonitor);
     }
   }
 
   Future<void> anomalyMonitor(Timer timer) async {
-
-    if ( !mounted || !_controller.value.isInitialized ) {
+    if (!mounted || !_controller.value.isInitialized) {
       return;
     }
     callbackChallengeInfo();
   }
 
   Future<bool> getManualRequired() async {
-    if(_controller.value.isInitialized) {
+    if (_controller.value.isInitialized) {
       final manualRequiredText = await _controller.executeScript(
           '(document.querySelector(".pow-button") != null  || document.querySelector(".captcha-prompt")) ? "true" : null');
       return manualRequiredText == 'true';
@@ -209,16 +211,18 @@ class _WindowsWebViewState extends State<WindowsWebView> {
   }
 
   Future<String?> getChallengeMessage() async {
-    if(_controller.value.isInitialized) {
+    if (_controller.value.isInitialized) {
       final String msg = await _controller.executeScript(
-          '(document.querySelector("#challenge-body-text") != null) ? document.querySelector("#challenge-body-text").textContent : ""') as String;;
+              '(document.querySelector("#challenge-body-text") != null) ? document.querySelector("#challenge-body-text").textContent : ""')
+          as String;
+      ;
       return msg.trim();
     }
     return null;
   }
 
   Future<String> getUserAgent() async {
-    if(_controller.value.isInitialized) {
+    if (_controller.value.isInitialized) {
       final value = await _controller.executeScript('navigator.userAgent');
       return value is String ? value : '';
     }
@@ -226,7 +230,7 @@ class _WindowsWebViewState extends State<WindowsWebView> {
   }
 
   Future<List<Cookie>> getCookies() async {
-    if(_controller.value.isInitialized) {
+    if (_controller.value.isInitialized) {
       return await _controller.getCookies([Uri.parse(widget.url)]) ?? [];
     }
     return [];
@@ -245,15 +249,14 @@ class _WindowsWebViewState extends State<WindowsWebView> {
   String url = '';
 
   Future callbackChallengeInfo() async {
-
-    if(_controller.value.isInitialized) {
+    if (_controller.value.isInitialized) {
       widget.callback?.call(WebViewCookieInfo(
           url: NHConst.baseUrl,
           cookies: await getCookies(),
           userAgent: await getUserAgent(),
-          manualRequired: (anomalyTimer?.tick ?? 0) >= 10 || await getManualRequired(),
-          message: await getChallengeMessage()
-      ));
+          manualRequired:
+              (anomalyTimer?.tick ?? 0) >= 10 || await getManualRequired(),
+          message: await getChallengeMessage()));
     }
   }
 
@@ -342,8 +345,6 @@ class GetCookieWebView extends StatefulWidget {
 }
 
 class GetCookieWebViewState extends State<GetCookieWebView> {
-
-
   GlobalKey<_MobileWebViewState> mobileState = GlobalKey();
   GlobalKey<_WindowsWebViewState> windowsState = GlobalKey();
 
@@ -364,7 +365,8 @@ class GetCookieWebViewState extends State<GetCookieWebView> {
           deletedCookie: widget.deletedCookie,
         );
       case 'windows':
-        return WindowsWebView(key: windowsState, url: widget.url, callback: widget.callback);
+        return WindowsWebView(
+            key: windowsState, url: widget.url, callback: widget.callback);
       default:
         throw UnimplementedError();
     }

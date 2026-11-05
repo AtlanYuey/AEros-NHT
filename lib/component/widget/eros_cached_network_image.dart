@@ -133,7 +133,15 @@ class ErosCachedNetworkImage extends StatelessWidget {
   }
 }
 
+/// Test hook: lets widget tests supply images without network access.
+@visibleForTesting
+ImageProvider Function(String url)? debugErosImageProviderBuilder;
+
 ImageProvider getErosImageProvider(String url, {Map<String, String>? headers}) {
+  final debugBuilder = debugErosImageProviderBuilder;
+  if (debugBuilder != null) {
+    return debugBuilder(url);
+  }
   return CachedNetworkImageProvider(
     url,
     cacheManager: imageCacheManager,

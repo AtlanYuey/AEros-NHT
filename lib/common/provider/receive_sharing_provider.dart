@@ -28,27 +28,45 @@ class ReceiveSharingNotifier extends StateNotifier<void> {
     }
   }
 
+  String _textOf(List<SharedMediaFile> files) {
+    for (final file in files) {
+      if (file.type == SharedMediaType.text ||
+          file.type == SharedMediaType.url) {
+        return file.path;
+      }
+    }
+    return '';
+  }
+
   void listenReceiveSharing(WidgetRef widgetRef) {
     // For sharing or opening urls/text coming from outside the app while the app is in the memory
-    ReceiveSharingIntent.getTextStream().listen((String value) {
-      sharedText = value;
-      logger.e('getTextStream Shared: $sharedText');
+    ReceiveSharingIntent.instance.getMediaStream().listen(
+        (List<SharedMediaFile> value) {
+      final text = _textOf(value);
+      if (text.isEmpty) {
+        return;
+      }
+      sharedText = text;
+      logger.d('getMediaStream Shared: $sharedText');
       _goPage(sharedText ?? '', widgetRef, replace: false);
-    }, onError: (err) {
-      logger.e('getTextStream error: $err');
+    }, onError: (Object err) {
+      logger.e('getMediaStream error: $err');
     });
 
     // For sharing or opening urls/text coming from outside the app while the app is closed
-    ReceiveSharingIntent.getInitialText().then((String? value) {
-      logger.e('getInitialText Shared: $value');
+    ReceiveSharingIntent.instance
+        .getInitialMedia()
+        .then((List<SharedMediaFile> value) {
+      final text = _textOf(value);
+      logger.d('getInitialMedia Shared: $text');
 
-      if (value == sharedText) {
+      if (text.isEmpty || text == sharedText) {
         return;
       }
 
-      sharedText = value ?? '';
-      logger.v('Shared: $sharedText');
+      sharedText = text;
       _goPage(sharedText ?? '', widgetRef, replace: false);
+      ReceiveSharingIntent.instance.reset();
     });
   }
 }

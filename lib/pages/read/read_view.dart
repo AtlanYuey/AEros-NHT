@@ -9,6 +9,7 @@ import 'package:eros_n/pages/gallery/gallery_provider.dart';
 import 'package:eros_n/pages/read/read_provider.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -183,10 +184,18 @@ class ReadPage extends HookConsumerWidget {
     //   child: readView,
     // );
 
+    // The reader is always presented on black with dark chrome.
     readView = Theme(
-      data: Theme.of(context).copyWith(colorScheme: colorScheme),
-      child: Scaffold(
-        body: readView,
+      data: ThemeConfig.build(
+        accent: (colorScheme ?? Theme.of(context).colorScheme).primary,
+        brightness: Brightness.dark,
+      ),
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: readView,
+        ),
       ),
     );
 
@@ -255,7 +264,10 @@ class _ReadListViewState extends ConsumerState<ReadListView> {
             height: _kMinCircularProgressIndicatorSize * _kMaxScale,
             child: CircularProgressIndicator(
               value: downloadProgress.progress,
-              strokeWidth: 4 * _kMaxScale,
+              color: Colors.white,
+              backgroundColor: Colors.white24,
+              strokeCap: StrokeCap.round,
+              strokeWidth: 3 * _kMaxScale,
             ),
           ),
         );
@@ -428,6 +440,10 @@ class ReadPageView extends HookConsumerWidget {
           itemCount: pages.length,
           loadingBuilder: (context, event) => Center(
             child: CircularProgressIndicator(
+              color: Colors.white,
+              backgroundColor: Colors.white24,
+              strokeCap: StrokeCap.round,
+              strokeWidth: 3,
               value: event == null
                   ? null
                   : event.cumulativeBytesLoaded /

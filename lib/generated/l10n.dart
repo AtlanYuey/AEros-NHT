@@ -1059,6 +1059,156 @@ class L10n {
       args: [],
     );
   }
+
+  /// `See All`
+  String get see_all {
+    return Intl.message(
+      'See All',
+      name: 'see_all',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Pages`
+  String get pages {
+    return Intl.message(
+      'Pages',
+      name: 'pages',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Uploaded`
+  String get uploaded {
+    return Intl.message(
+      'Uploaded',
+      name: 'uploaded',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Favorite`
+  String get favorite {
+    return Intl.message(
+      'Favorite',
+      name: 'favorite',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Favorited`
+  String get favorited {
+    return Intl.message(
+      'Favorited',
+      name: 'favorited',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Torrent`
+  String get torrent {
+    return Intl.message(
+      'Torrent',
+      name: 'torrent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Accent Color`
+  String get accent_color {
+    return Intl.message(
+      'Accent Color',
+      name: 'accent_color',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Sign in to sync your favorites`
+  String get sign_in_tip {
+    return Intl.message(
+      'Sign in to sync your favorites',
+      name: 'sign_in_tip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Account`
+  String get account {
+    return Intl.message(
+      'Account',
+      name: 'account',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Version`
+  String get version {
+    return Intl.message(
+      'Version',
+      name: 'version',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Write a comment…`
+  String get write_comment {
+    return Intl.message(
+      'Write a comment…',
+      name: 'write_comment',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No Comments`
+  String get no_comments {
+    return Intl.message(
+      'No Comments',
+      name: 'no_comments',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Are you sure you want to log out?`
+  String get logout_tip {
+    return Intl.message(
+      'Are you sure you want to log out?',
+      name: 'logout_tip',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Feature in development, currently unavailable`
+  String get feature_unavailable {
+    return Intl.message(
+      'Feature in development, currently unavailable',
+      name: 'feature_unavailable',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Reading`
+  String get reading {
+    return Intl.message(
+      'Reading',
+      name: 'reading',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<L10n> {

@@ -3,13 +3,16 @@ import 'package:collection/collection.dart';
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/component/models/image.dart';
 import 'package:eros_n/component/widget/eros_cached_network_image.dart';
-import 'package:eros_n/component/widget/scrolling_fab.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:eros_n/pages/enum.dart';
 import 'package:eros_n/pages/gallery/gallery_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/utils/get_utils/extensions/context_extensions.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:eros_n/pages/list_view/item/item_base.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -29,33 +32,47 @@ class ThumbPage extends HookConsumerWidget {
     final ScrollController scrollController = useScrollController();
 
     return Theme(
-      data: Theme.of(context).copyWith(colorScheme: colorScheme),
+      data: colorScheme == null
+          ? Theme.of(context)
+          : ThemeConfig.buildTheme(colorScheme!),
       child: Builder(builder: (context) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(L10n.of(context).thumbs),
-          ),
-          floatingActionButton: ScrollingFab(
-            onPressed: () {
-              RouteUtil.goRead(
-                context,
-                ref,
-              );
-            },
-            scrollController: scrollController,
-            label: Consumer(builder: (context, ref, child) {
-              final currentPageIndex = ref.watch(
-                  galleryProvider(gid).select((g) => g.currentPageIndex));
-              final label = currentPageIndex == 0
-                  ? L10n.of(context).read
-                  : '${L10n.of(context).resume} ${currentPageIndex + 1}';
-              return Text(label);
-            }),
-            icon: const Icon(Icons.play_arrow),
-          ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerFloat,
+          floatingActionButton: Consumer(builder: (context, ref, child) {
+            final currentPageIndex = ref
+                .watch(galleryProvider(gid).select((g) => g.currentPageIndex));
+            final label = currentPageIndex == 0
+                ? L10n.of(context).read
+                : '${L10n.of(context).resume} · ${currentPageIndex + 1}';
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: CapsuleButton(
+                label: label,
+                icon: CupertinoIcons.book_fill,
+                height: 50,
+                onPressed: () {
+                  RouteUtil.goRead(context, ref);
+                },
+              ),
+            );
+          }),
           body: ThumbBody(
             scrollController: scrollController,
             gid: gid,
+            title: L10n.of(context).thumbs,
           ),
         );
       }),
@@ -69,22 +86,29 @@ class ThumbBody extends StatelessWidget {
     required this.scrollController,
     required this.gid,
     this.backGround,
+    this.title,
   });
 
   final ScrollController scrollController;
   final int gid;
   final Widget? backGround;
 
+  /// When set, a large-title navigation bar is shown above the grid.
+  final String? title;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         if (backGround != null) backGround!,
-        Scrollbar(
+        CupertinoScrollbar(
           controller: scrollController,
           child: CustomScrollView(
             controller: scrollController,
+            physics: kAppleScrollPhysics,
             slivers: [
+              if (title != null)
+                AppleSliverNavBar(title: title!, heroTag: 'nav_thumbs_$gid'),
               ThumbsView(
                 gid: gid,
               ),
@@ -108,7 +132,7 @@ class ThumbsView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    logger.v('build thumbs $gid');
+    logger.t('build thumbs $gid');
     // final pages = ref.watch(galleryProvider(gid).select((g) => g.pages));
 
     const kHeroTagPrefix = 'thumb_';
@@ -121,9 +145,8 @@ class ThumbsView extends HookConsumerWidget {
 
     if (pageStatus == PageStatus.loading || pages.isEmpty) {
       return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        hasScrollBody: false,
+        child: AppleLoading(),
       );
     }
 
@@ -133,9 +156,10 @@ class ThumbsView extends HookConsumerWidget {
     // logger.d('minRatio: $minRatio');
     return SliverPadding(
       padding: EdgeInsets.only(
-        bottom: 16 + context.mediaQueryPadding.bottom,
-        left: 8,
-        right: 8,
+        top: 12,
+        bottom: 96 + context.mediaQueryPadding.bottom,
+        left: 16,
+        right: 16,
       ),
       sliver: SliverGrid(
           delegate: SliverChildBuilderDelegate(
@@ -143,7 +167,7 @@ class ThumbsView extends HookConsumerWidget {
               final thumb = pages[index];
               final imageUrl =
                   'https://t.nhentai.net/galleries/$mediaId/${index + 1}t.${NHConst.extMap[thumb.type]}';
-              return GestureDetector(
+              return PressableScale(
                 onTap: () {
                   RouteUtil.goRead(context, ref,
                       index: index, heroTagPrefix: kHeroTagPrefix);
@@ -153,9 +177,11 @@ class ThumbsView extends HookConsumerWidget {
                     Expanded(
                       child: Center(
                         child: AspectRatio(
-                          aspectRatio: thumb.imgWidth! / thumb.imgHeight!,
-                          child: Card(
-                            clipBehavior: Clip.antiAlias,
+                          aspectRatio: (thumb.imgWidth ?? 300) /
+                              (thumb.imgHeight ?? 400),
+                          child: CoverArtwork(
+                            radius: 8,
+                            shadow: false,
                             child: Hero(
                               tag: '$kHeroTagPrefix${gid}_$index',
                               child: ErosCachedNetworkImage(
@@ -167,7 +193,11 @@ class ThumbsView extends HookConsumerWidget {
                         ),
                       ),
                     ),
-                    Text('${index + 1}'),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${index + 1}',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
                   ],
                 ),
               );
@@ -175,9 +205,9 @@ class ThumbsView extends HookConsumerWidget {
             childCount: pages.length,
           ),
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 150.0,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 4,
+            maxCrossAxisExtent: 130.0,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 10,
             childAspectRatio: minRatio - 0.2,
           )),
     );

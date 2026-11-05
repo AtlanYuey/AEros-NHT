@@ -1,5 +1,6 @@
-import 'package:auto_route/auto_route.dart';
 import 'dart:async';
+
+import 'package:auto_route/auto_route.dart';
 
 import 'package:eros_n/common/enum.dart';
 import 'package:eros_n/common/global.dart';
@@ -11,6 +12,9 @@ import 'package:eros_n/pages/list_view/list_view.dart';
 import 'package:eros_n/pages/nav/index/index_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/store/db/entity/nh_tag.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
@@ -63,13 +67,13 @@ class _SearchPageState extends ConsumerState<SearchPage>
 
     final keyboardVisibilityController = KeyboardVisibilityController();
     // Query
-    logger.v(
+    logger.t(
         'Keyboard visibility direct query: ${keyboardVisibilityController.isVisible}');
 
     // Subscribe
     keyboardSubscription =
         keyboardVisibilityController.onChange.listen((bool visible) {
-      logger.v('Keyboard visibility update. Is visible: $visible');
+      logger.t('Keyboard visibility update. Is visible: $visible');
       if (!visible) {
         searchProviderNoti.searchFocusNode.unfocus();
       }
@@ -87,208 +91,172 @@ class _SearchPageState extends ConsumerState<SearchPage>
   Widget build(BuildContext context) {
     super.build(context);
 
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          searchProviderNoti.searchFocusNode.unfocus();
-          searchProviderNoti.search();
-        },
-        child: const Icon(Icons.search),
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => searchProviderNoti.reloadData(),
-        edgeOffset: MediaQuery.of(context).padding.top + kToolbarHeight,
-        child: SizeCacheWidget(
-          child: CustomScrollView(
-            // cacheExtent: 500,
-            controller: scrollController,
-            physics: const ClampingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                // leadingWidth: 36,
-                // leading: getLeading(context),
-                leading: const SizedBox(),
-                leadingWidth: 0,
-                // titleSpacing: 0,
-                title: buildSearchBar(),
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                bottom: const PreferredSize(
-                  preferredSize: Size.fromHeight(0),
-                  child: SizedBox(height: 0),
-                ),
-                floating: true,
-                pinned: true,
+      body: SizeCacheWidget(
+        child: CustomScrollView(
+          controller: scrollController,
+          physics: kAppleScrollPhysics,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          slivers: [
+            AppleSliverNavBar(
+              title: L10n.of(context).search,
+              heroTag: 'nav_search_$currentSearchDepth',
+              automaticallyImplyLeading: canPop,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LanguagesFilterPopupButton(
+                    onSelected: (LanguagesFilter value) async {
+                      if (value ==
+                          ref.read(settingsProvider).searchLanguagesFilter) {
+                        return;
+                      }
+                      ref
+                          .read(settingsProvider.notifier)
+                          .setSearchLanguagesFilter(value);
+                      await searchProviderNoti.reloadData();
+                    },
+                    initValue: ref.watch(settingsProvider
+                        .select((s) => s.searchLanguagesFilter)),
+                  ),
+                  SortPopupButton(
+                    onSelected: (value) async {
+                      if (value == ref.read(settingsProvider).searchSort) {
+                        return;
+                      }
+                      ref.read(settingsProvider.notifier).setSearchSort(value);
+                      await searchProviderNoti.reloadData();
+                    },
+                    initValue:
+                        ref.watch(settingsProvider.select((s) => s.searchSort)),
+                  ),
+                ],
               ),
-              const SearchListView(),
-            ],
-          ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: buildSearchBar(),
+                ),
+              ),
+            ),
+            CupertinoSliverRefreshControl(
+              onRefresh: () => searchProviderNoti.reloadData(),
+            ),
+            const SearchListView(),
+          ],
         ),
       ),
     );
   }
 
   Widget buildSearchBar() {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        return TypeAheadField<NhTag>(
-          textFieldConfiguration: TextFieldConfiguration(
-            controller: searchProviderNoti.searchController,
-            focusNode: searchProviderNoti.searchFocusNode,
-            decoration: InputDecoration(
-              fillColor: Theme.of(context).colorScheme.surfaceVariant,
-              filled: true,
-              contentPadding: const EdgeInsets.only(),
-              // isCollapsed: true,
-              isDense: false,
-              hintText: L10n.of(context).search,
-              // border: InputBorder.none,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(100),
-                borderSide: BorderSide.none,
-              ),
-              // prefixIcon: const Icon(Icons.search),
-              prefixIcon: getPrefixIcon(context),
-              suffixIcon: KeyboardVisibilityBuilder(
-                  builder: (context, isKeyboardVisible) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (searchProviderNoti.searchController.text
-                            .trim()
-                            .isNotEmpty &&
-                        isKeyboardVisible)
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          searchProviderNoti.searchController.clear();
-                          setState(() {});
-                        },
-                      ),
-                    if (!isKeyboardVisible)
-                      LanguagesFilterPopupButton(
-                        onSelected: (LanguagesFilter value) async {
-                          if (value ==
-                              ref
-                                  .read(settingsProvider)
-                                  .searchLanguagesFilter) {
-                            return;
-                          }
-                          ref
-                              .read(settingsProvider.notifier)
-                              .setSearchLanguagesFilter(value);
-                          await searchProviderNoti.reloadData();
-                        },
-                        initValue: ref.watch(settingsProvider
-                            .select((s) => s.searchLanguagesFilter)),
-                      ),
-                    if (!isKeyboardVisible)
-                      SortPopupButton(
-                        onSelected: (value) async {
-                          if (value == ref.read(settingsProvider).searchSort) {
-                            return;
-                          }
-
-                          ref
-                              .read(settingsProvider.notifier)
-                              .setSearchSort(value);
-
-                          // reload
-                          await searchProviderNoti.reloadData();
-                        },
-                        initValue: ref.watch(
-                            settingsProvider.select((s) => s.searchSort)),
-                      ),
-                  ],
-                );
-              }),
-            ),
-            textInputAction: TextInputAction.search,
-            onChanged: (value) {
-              setState(() {});
-            },
-            onEditingComplete: () {
-              //focusNode
-              searchProviderNoti.searchFocusNode.unfocus();
-              searchProviderNoti.search();
-            },
-            onSubmitted: (value) {
-              searchProviderNoti.searchFocusNode.unfocus();
-              searchProviderNoti.search();
-            },
-          ),
-          suggestionsBoxDecoration: SuggestionsBoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            shadowColor: Theme.of(context).colorScheme.surfaceVariant,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(28),
-            ),
-            clipBehavior: Clip.antiAlias,
-          ),
-          suggestionsCallback: (pattern) async {
-            final currQryText = pattern.split(RegExp(r'[ ;"]')).last;
-
-            if (currQryText.isEmpty) {
-              return Future.value([]);
-            }
-            logger.d('suggestionsCallback: $currQryText');
-            return isarHelper.findNhTagContains(currQryText, 200);
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    return TypeAheadField<NhTag>(
+      controller: searchProviderNoti.searchController,
+      focusNode: searchProviderNoti.searchFocusNode,
+      hideOnEmpty: true,
+      hideOnError: true,
+      hideOnLoading: true,
+      debounceDuration: const Duration(milliseconds: 250),
+      offset: const Offset(0, 8),
+      constraints: const BoxConstraints(maxHeight: 360),
+      builder: (context, controller, focusNode) {
+        return CupertinoSearchTextField(
+          controller: controller,
+          focusNode: focusNode,
+          placeholder: L10n.of(context).search,
+          style: theme.textTheme.bodyLarge,
+          onSubmitted: (value) {
+            focusNode.unfocus();
+            searchProviderNoti.search();
           },
-          itemBuilder: (BuildContext context, itemData) {
-            return ListTile(
-              title: Text('${itemData.type}:${itemData.name}'),
-              subtitle: itemData.translateName != null
-                  ? Text(itemData.translateName ?? '')
-                  : null,
-              trailing: IconButton(
-                icon: const Icon(Icons.north_west),
+        );
+      },
+      decorationBuilder: (context, child) {
+        return Material(
+          color: palette.menu,
+          elevation: 12,
+          shadowColor: Colors.black.withValues(alpha: 0.3),
+          clipBehavior: Clip.antiAlias,
+          shape: const RoundedSuperellipseBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+          ),
+          child: child,
+        );
+      },
+      itemSeparatorBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.only(left: 48),
+        child: Divider(color: palette.separator),
+      ),
+      suggestionsCallback: (pattern) async {
+        final currQryText = pattern.split(RegExp(r'[ ;"]')).last;
+
+        if (currQryText.isEmpty) {
+          return <NhTag>[];
+        }
+        logger.d('suggestionsCallback: $currQryText');
+        return isarHelper.findNhTagContains(currQryText, 200);
+      },
+      itemBuilder: (BuildContext context, itemData) {
+        return Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Row(
+            children: [
+              Icon(
+                CupertinoIcons.tag,
+                size: 18,
+                color: palette.secondaryLabel,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${itemData.type}:${itemData.name}',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                      if (itemData.translateName != null)
+                        Text(
+                          itemData.translateName ?? '',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              CupertinoButton(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 onPressed: () {
                   searchProviderNoti.appendNhTagQuery(itemData);
                 },
+                child: Icon(
+                  CupertinoIcons.arrow_up_left,
+                  size: 18,
+                  color: palette.secondaryLabel,
+                ),
               ),
-            );
-          },
-          noItemsFoundBuilder: (context) {
-            return const SizedBox();
-          },
-          onSuggestionSelected: (suggestion) {
-            searchProviderNoti.appendNhTagQuery(suggestion, search: true);
-          },
-          // keepSuggestionsOnSuggestionSelected: true,
-          // keepSuggestionsOnLoading: false,
-          // hideOnEmpty: true,
+            ],
+          ),
         );
+      },
+      emptyBuilder: (context) {
+        return const SizedBox();
+      },
+      onSelected: (suggestion) {
+        searchProviderNoti.appendNhTagQuery(suggestion, search: true);
       },
     );
   }
 
   @override
   bool get wantKeepAlive => currentSearchDepth == 0;
-
-  Widget? getLeading(BuildContext context) {
-    if (Navigator.of(context).canPop()) {
-      return IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-      );
-    }
-    return null;
-  }
-
-  Widget? getPrefixIcon(BuildContext context) {
-    if (Navigator.of(context).canPop()) {
-      return IconButton(
-        icon: const Icon(Icons.arrow_back),
-        onPressed: () {
-          Navigator.of(context).pop();
-        },
-      );
-    } else {
-      return const Icon(Icons.search);
-    }
-  }
 
   void _scrollListener() {
     const double threshold = 100;
@@ -326,29 +294,37 @@ class SearchListView extends HookConsumerWidget {
 
     if (state.isLoading) {
       return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        hasScrollBody: false,
+        child: AppleLoading(),
       );
     }
 
     if (state.isLoadError) {
       return SliverFillRemaining(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.refresh, size: 48),
-                onPressed: () {
-                  ref
-                      .read(searchProvider(currentSearchDepth).notifier)
-                      .reloadData();
-                },
-              ),
-              Text(state.errorMessage ?? ''),
-            ],
+        hasScrollBody: false,
+        child: AppleEmptyState(
+          icon: CupertinoIcons.wifi_exclamationmark,
+          title: state.errorMessage ?? 'Error',
+          action: CapsuleButton(
+            label: '',
+            icon: CupertinoIcons.arrow_clockwise,
+            filled: false,
+            onPressed: () {
+              ref
+                  .read(searchProvider(currentSearchDepth).notifier)
+                  .reloadData();
+            },
           ),
+        ),
+      );
+    }
+
+    if (galleryList.isEmpty) {
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: AppleEmptyState(
+          icon: CupertinoIcons.search,
+          title: L10n.of(context).search,
         ),
       );
     }

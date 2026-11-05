@@ -5,8 +5,9 @@ import 'package:eros_n/component/models/gallery.dart';
 import 'package:eros_n/pages/enum.dart';
 import 'package:eros_n/pages/list_view/item/item_list_card.dart';
 import 'package:eros_n/pages/list_view/item/item_waterfall_flow_card.dart';
-import 'package:eros_n/pages/nav/index/index_provider.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
@@ -121,7 +122,7 @@ class GalleryCardSliverGridView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: gridCrossAxisSpacing),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: gridMaxCrossAxisExtent,
@@ -185,7 +186,7 @@ class GalleryCardSliverListView extends StatelessWidget {
         childCount: gallerys.length,
         keepPosition: keepPosition,
         // onItemHeight: (index) => 180,
-        preferItemHeight: 180,
+        preferItemHeight: kItemHeight,
       ),
     );
   }
@@ -244,9 +245,11 @@ class GalleryWaterfallFlowView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(
-        vertical: NHConst.waterfallFlowLargeMainAxisSpacing,
-        horizontal: NHConst.waterfallFlowLargeCrossAxisSpacing,
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        NHConst.waterfallFlowLargeMainAxisSpacing,
       ),
       sliver: SliverWaterfallFlow(
         delegate: SliverChildBuilderDelegate(
@@ -279,34 +282,35 @@ class EndIndicator extends StatelessWidget {
       child: Container(
           alignment: Alignment.center,
           padding: EdgeInsets.only(
-              top: 50, bottom: 100.0 + context.mediaQueryPadding.bottom),
+              top: 32, bottom: 40.0 + context.mediaQueryPadding.bottom),
           child: () {
             switch (loadStatus) {
               case LoadStatus.none:
               case LoadStatus.success:
-                return Container();
+                return const SizedBox.shrink();
               case LoadStatus.loadingMore:
-                return const CircularProgressIndicator();
+                return const CupertinoActivityIndicator();
               case LoadStatus.error:
-                return GestureDetector(
-                  onTap: loadDataMore,
+                return CupertinoButton(
+                  onPressed: loadDataMore,
                   child: Column(
-                    children: const <Widget>[
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Icon(
-                        Icons.error,
-                        size: 60,
+                        CupertinoIcons.exclamationmark_circle,
+                        size: 32,
+                        color: context.palette.secondaryLabel,
                       ),
+                      const SizedBox(height: 6),
                       Text(
                         'Load more fail',
-                        style: TextStyle(
-                          fontSize: 12,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
                 );
               default:
-                return Container();
+                return const SizedBox.shrink();
             }
           }()),
     );

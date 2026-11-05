@@ -1,5 +1,6 @@
-import 'package:auto_route/auto_route.dart';
 import 'dart:io';
+
+import 'package:auto_route/auto_route.dart';
 
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/common/global.dart';
@@ -11,6 +12,9 @@ import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
 import 'package:flutter/foundation.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -53,9 +57,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _login() async {
-    logger.d(
-      'Username: ${_usernameController.text}, Password: ${_passwordController.text}',
-    );
+    logger.d('Username: ${_usernameController.text}');
 
     if (_logining) {
       return;
@@ -78,21 +80,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (e.type == NhErrorType.loginCaptcha) {
         // log in with captcha
         logger.e('login need captcha');
-        showDialog(
-            context: context,
-            builder: (_) => AlertDialog(
-                  title: Text(L10n.of(context).login_need_captcha),
-                  content: Text(L10n.of(context).please_login_web),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        erosRouter.pop();
-                        _loginWithWebView();
-                      },
-                      child: Text(L10n.of(context).ok),
-                    ),
-                  ],
-                ));
+        showAppleAlert<void>(
+          context: context,
+          title: L10n.of(context).login_need_captcha,
+          message: L10n.of(context).please_login_web,
+          actions: [
+            AppleAlertAction(
+              label: L10n.of(context).ok,
+              isDefault: true,
+              onPressed: _loginWithWebView,
+            ),
+          ],
+        );
       } else if (e.type == NhErrorType.loginInvalid) {
         // log invalid
         logger.e('login invalid');
@@ -125,98 +124,147 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final fieldStyle = theme.textTheme.bodyLarge;
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(L10n.of(context).login),
-      ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.account_circle_rounded,
-                size: 100.0,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              TextField(
-                controller: _usernameController,
-                focusNode: _usernameFocusNode,
-                decoration: InputDecoration(
-                  labelText: L10n.of(context).username,
-                  border: const OutlineInputBorder(),
-                  // hintText: 'Enter your username',
+      backgroundColor: palette.groupedBackground,
+      body: CustomScrollView(
+        physics: kAppleScrollPhysics,
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        slivers: [
+          AppleSliverNavBar(
+            title: L10n.of(context).login,
+            pageBackgroundColor: palette.groupedBackground,
+            backgroundColor: palette.brightness == Brightness.dark
+                ? palette.bar
+                : const Color(0xEBF2F2F7),
+          ),
+          SliverSafeArea(
+            top: false,
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primary.withValues(alpha: 0.75),
+                          theme.colorScheme.primary,
+                        ],
+                      ),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.person_fill,
+                      size: 46,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-                onEditingComplete: () {
-                  _usernameFocusNode.unfocus();
-                  FocusScope.of(context).requestFocus(_passwordFocusNode);
-                },
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                focusNode: _passwordFocusNode,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: L10n.of(context).password,
-                  // hintText: 'Enter your password',
-                  suffixIcon: Container(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: IconButton(
+                const SizedBox(height: 14),
+                Text(
+                  'nhentai.net',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: palette.secondaryLabel),
+                ),
+                AppleSection(
+                  children: [
+                    CupertinoTextField(
+                      controller: _usernameController,
+                      focusNode: _usernameFocusNode,
+                      placeholder: L10n.of(context).username,
+                      style: fieldStyle,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 13),
+                      decoration: null,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.next,
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: Icon(CupertinoIcons.person,
+                            size: 20, color: palette.secondaryLabel),
+                      ),
+                      onEditingComplete: () {
+                        _usernameFocusNode.unfocus();
+                        FocusScope.of(context).requestFocus(_passwordFocusNode);
+                      },
+                    ),
+                    CupertinoTextField(
+                      controller: _passwordController,
+                      focusNode: _passwordFocusNode,
+                      placeholder: L10n.of(context).password,
+                      style: fieldStyle,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 13),
+                      decoration: null,
+                      obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      prefix: Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: Icon(CupertinoIcons.lock,
+                            size: 20, color: palette.secondaryLabel),
+                      ),
+                      suffix: CupertinoButton(
+                        padding: const EdgeInsets.only(right: 12),
+                        minimumSize: const Size(32, 32),
                         onPressed: () {
                           setState(() {
                             _obscurePassword = !_obscurePassword;
                           });
                         },
-                        icon: _obscurePassword
-                            ? const Icon(Icons.visibility)
-                            : const Icon(Icons.visibility_off)),
+                        child: Icon(
+                          _obscurePassword
+                              ? CupertinoIcons.eye
+                              : CupertinoIcons.eye_slash,
+                          size: 20,
+                          color: palette.secondaryLabel,
+                        ),
+                      ),
+                      onEditingComplete: () {
+                        _passwordFocusNode.unfocus();
+                        _login();
+                      },
+                    ),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
+                  child: CapsuleButton(
+                    label: L10n.of(context).login,
+                    height: 50,
+                    expand: true,
+                    loading: _logining,
+                    onPressed: () async {
+                      await _login();
+                    },
                   ),
                 ),
-                obscureText: _obscurePassword,
-                onEditingComplete: () {
-                  _passwordFocusNode.unfocus();
-                  _login();
-                },
-              ),
-              Container(
-                padding: const EdgeInsets.only(top: 48.0),
-                width: double.infinity,
-                child: OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    disabledBackgroundColor:
-                        Theme.of(context).colorScheme.primary.withOpacity(0.8),
-                  ),
-                  onPressed: _logining
-                      ? null
-                      : () async {
-                          await _login();
-                        },
-                  child: _logining
-                      ? SizedBox(
-                          height: 20.0,
-                          width: 20.0,
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        )
-                      : Text(L10n.of(context).login),
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CupertinoButton(
                       onPressed: _loginWithWebView,
                       child: Text(
                         L10n.of(context).login_by_web,
-                        style: const TextStyle(
-                            decoration: TextDecoration.underline),
-                      )),
-                  TextButton(
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                    ),
+                    Container(
+                      width: 0.5,
+                      height: 14,
+                      color: palette.separator,
+                    ),
+                    CupertinoButton(
                       onPressed: () {
                         erosRouter.push(NhWebViewRoute(
                           initialUrl: NHConst.registerUrl,
@@ -225,39 +273,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       },
                       child: Text(
                         L10n.of(context).register,
-                        style: const TextStyle(
-                            decoration: TextDecoration.underline),
-                      )),
-                ],
-              ),
-              if (kDebugMode)
-                TextButton(
-                    onPressed: () async {
-                      final u = await getInfoFromIndex(refresh: true);
-                      logger.d('==>> u: $u');
-                    },
-                    child: const Text(
-                      'Get info from Index',
-                      style: TextStyle(decoration: TextDecoration.underline),
-                    )),
-              if (kDebugMode)
-                TextButton(
-                    onPressed: () async {
-                      final userUrl = ref.read(userProvider).userUrl ?? '';
-                      logger.d('==>> userUrl: $userUrl');
-                      if (userUrl.isNotEmpty) {
-                        final u = await getInfoFromUserPage(
-                            url: userUrl, refresh: true);
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: theme.colorScheme.primary),
+                      ),
+                    ),
+                  ],
+                ),
+                if (kDebugMode)
+                  CupertinoButton(
+                      onPressed: () async {
+                        final u = await getInfoFromIndex(refresh: true);
                         logger.d('==>> u: $u');
-                      }
-                    },
-                    child: const Text(
-                      'Get info from user page',
-                      style: TextStyle(decoration: TextDecoration.underline),
-                    )),
-            ],
+                      },
+                      child: const Text('Get info from Index')),
+                if (kDebugMode)
+                  CupertinoButton(
+                      onPressed: () async {
+                        final userUrl = ref.read(userProvider).userUrl ?? '';
+                        logger.d('==>> userUrl: $userUrl');
+                        if (userUrl.isNotEmpty) {
+                          final u = await getInfoFromUserPage(
+                              url: userUrl, refresh: true);
+                          logger.d('==>> u: $u');
+                        }
+                      },
+                      child: const Text('Get info from user page')),
+              ]),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

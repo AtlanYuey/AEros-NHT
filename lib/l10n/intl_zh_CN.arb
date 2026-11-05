@@ -99,5 +99,20 @@
   "translated": "翻译",
   "none": "无",
   "all": "全部",
-  "clipboard_detection": "剪贴板链接检测"
+  "clipboard_detection": "剪贴板链接检测",
+  "see_all": "查看全部",
+  "pages": "页数",
+  "uploaded": "上传",
+  "favorite": "收藏",
+  "favorited": "已收藏",
+  "torrent": "种子",
+  "accent_color": "强调色",
+  "sign_in_tip": "登录以同步你的收藏",
+  "account": "账户",
+  "version": "版本",
+  "write_comment": "写下你的评论…",
+  "no_comments": "暂无评论",
+  "logout_tip": "确定要退出登录吗？",
+  "feature_unavailable": "功能开发中，暂不可用",
+  "reading": "阅读"
 }

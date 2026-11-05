@@ -14,7 +14,7 @@ import 'package:flutter_android_volume_keydown/flutter_android_volume_keydown.da
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-import 'package:wakelock/wakelock.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../utils/logger.dart';
 
@@ -267,7 +267,7 @@ class ReadNotifier extends StateNotifier<ReadState> {
     _autoReadTimer?.cancel();
     _autoReadTimer = null;
 
-    Wakelock.disable();
+    WakelockPlus.disable();
   }
 
   void startAutoRead() {
@@ -280,7 +280,7 @@ class ReadNotifier extends StateNotifier<ReadState> {
     final autoReadDuration =
         Duration(milliseconds: (autoReadInterval * 1000).round());
 
-    Wakelock.enable();
+    WakelockPlus.enable();
 
     _autoReadTimer = Timer.periodic(
       autoReadDuration,

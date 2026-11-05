@@ -1,5 +1,7 @@
-import 'package:auto_route/auto_route.dart';
 import 'dart:async';
+import 'dart:ui';
+
+import 'package:auto_route/auto_route.dart';
 
 import 'package:eros_n/common/extension.dart';
 import 'package:eros_n/component/models/index.dart';
@@ -10,11 +12,15 @@ import 'package:eros_n/pages/nav/index/index_provider.dart';
 import 'package:eros_n/routes/routes.dart';
 import 'package:eros_n/store/db/entity/gallery_history.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:eros_n/pages/list_view/item/item_base.dart';
+import 'package:eros_n/utils/get_utils/extensions/context_extensions.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:nil/nil.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 @RoutePage()
@@ -82,116 +88,72 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
 
   @override
   Widget build(BuildContext context) {
-    logger.d('build HistoryPage');
+    logger.t('build HistoryPage');
     super.build(context);
+    final palette = context.palette;
     return Scaffold(
-      body: Scrollbar(
+      body: CupertinoScrollbar(
         controller: scrollController,
         child: CustomScrollView(
           controller: scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: kAppleScrollPhysics,
           slivers: [
-            Consumer(builder: (context, ref, child) {
-              final appBarSearch =
-                  ref.watch(historyProvider.select((s) => s.appBarSearch));
-              return SliverAppBar(
-                title: appBarSearch
-                    ? TextField(
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: L10n.of(context).search,
-                          border: InputBorder.none,
-                        ),
-                        textInputAction: TextInputAction.search,
-                        // onSubmitted: (value) {
-                        //   logger.d('onSubmitted $value');
-                        // },
-                        onChanged: (value) {
-                          ref
-                              .read(searchKeyProvider.notifier)
-                              .update((state) => state = value);
-                        },
-                      )
-                    : Row(
-                        children: [
-                          Text(L10n.of(context).history),
-                        ],
+            AppleSliverNavBar(
+              title: L10n.of(context).history,
+              heroTag: 'nav_history',
+              trailing: NavBarIconButton(
+                icon: CupertinoIcons.trash,
+                onPressed: () {
+                  showAppleAlert<void>(
+                    context: context,
+                    title: L10n.of(context).clear_history,
+                    message: L10n.of(context).clear_history_tip,
+                    actions: [
+                      AppleAlertAction(
+                        label: L10n.of(context).cancel,
+                        isDefault: true,
                       ),
-                leadingWidth: appBarSearch ? 60 : 0,
-                leading: appBarSearch
-                    ? IconButton(
+                      AppleAlertAction(
+                        label: L10n.of(context).ok,
+                        isDestructive: true,
                         onPressed: () {
-                          ref
-                              .read(historyProvider.notifier)
-                              .setAppBarSearch(false);
+                          ref.read(historyProvider.notifier).clearHistory();
                         },
-                        icon: const Icon(Icons.arrow_back))
-                    : nil,
-                floating: true,
-                pinned: true,
-                bottom: const PreferredSize(
-                  preferredSize: Size.fromHeight(0),
-                  child: SizedBox(height: 0),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(52),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: CupertinoSearchTextField(
+                    placeholder: L10n.of(context).search,
+                    onChanged: (value) {
+                      ref
+                          .read(searchKeyProvider.notifier)
+                          .update((state) => state = value);
+                    },
+                  ),
                 ),
-                actions: appBarSearch
-                    ? null
-                    : [
-                        IconButton(
-                          icon: const Icon(Icons.search),
-                          onPressed: () {
-                            ref
-                                .read(historyProvider.notifier)
-                                .setAppBarSearch(true);
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: IconButton(
-                            icon: const Icon(Icons.delete_sweep_outlined),
-                            onPressed: () {
-                              // dialog show
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return AlertDialog(
-                                    title: Text(L10n.of(context).clear_history),
-                                    content: Text(
-                                        L10n.of(context).clear_history_tip),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text(L10n.of(context).cancel),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          ref
-                                              .read(historyProvider.notifier)
-                                              .clearHistory();
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text(L10n.of(context).ok),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        //search
-                      ],
-              );
-            }),
+              ),
+            ),
             Consumer(
               builder: (context, ref, child) {
-                // final historys = ref.watch(historyGallerysProvider);
                 final historys = ref.watch(filteredHistoryGallerysProvider);
+                if (historys.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: AppleEmptyState(
+                      icon: CupertinoIcons.clock,
+                      title: L10n.of(context).history,
+                    ),
+                  );
+                }
                 final historysGroupByDate = groupByDate(historys);
                 return SliverSafeArea(
                   top: false,
-                  bottom: false,
                   sliver: MultiSliver(
                       children: historysGroupByDate.entries.map(
                     (e) {
@@ -207,13 +169,20 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                         pushPinnedChildren: true,
                         children: [
                           SliverPinnedHeader(
-                            child: Container(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              child: Text(
-                                dateStr,
-                                style: Theme.of(context).textTheme.subtitle1,
+                            child: ClipRect(
+                              child: BackdropFilter(
+                                filter:
+                                    ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                                child: Container(
+                                  color: palette.bar,
+                                  padding:
+                                      const EdgeInsets.fromLTRB(20, 10, 20, 6),
+                                  child: Text(
+                                    dateStr,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -221,7 +190,11 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {
                                 final history = historysInDate[index];
-                                return HistoryItem(history: history);
+                                return HistoryItem(
+                                  history: history,
+                                  showDivider:
+                                      index != historysInDate.length - 1,
+                                );
                               },
                               childCount: historysInDate.length,
                             ),
@@ -232,6 +205,9 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                   ).toList()),
                 );
               },
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(height: context.mediaQueryPadding.bottom + 24),
             ),
           ],
         ),
@@ -247,87 +223,114 @@ class HistoryItem extends HookConsumerWidget {
   const HistoryItem({
     Key? key,
     required this.history,
+    this.showDivider = true,
   }) : super(key: key);
 
   final GalleryHistory history;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
     // last view hour and minute
     final lastReadTime =
         DateTime.fromMillisecondsSinceEpoch(history.lastReadTime ?? 0);
     final String lastReadTimeStr =
         lastReadTime.toLocal().toString().split(' ')[1].substring(0, 5);
 
-    return InkWell(
-      onTap: () {
-        final gallery = Gallery(
-          gid: history.gid,
-          mediaId: history.mediaId,
-          title: GalleryTitle(
-            englishTitle: history.title,
-            japaneseTitle: history.japaneseTitle,
-          ),
-          images: GalleryImages(
-            cover: GalleryImage(
-              imgHeight: history.coverImgHeight,
-              imgWidth: history.coverImgWidth,
-            ),
-          ),
-        );
-
-        RouteUtil.goGallery(ref, gallery);
+    return Dismissible(
+      key: ValueKey('history_${history.gid}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        color: CupertinoColors.systemRed.resolveFrom(context),
+        alignment: AlignmentDirectional.centerEnd,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: const Icon(CupertinoIcons.trash, color: Colors.white),
+      ),
+      onDismissed: (_) {
+        ref.read(historyProvider.notifier).removeHistory(history.gid);
       },
-      child: Container(
-        height: 84,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 60,
-              child: Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: () {
+          final gallery = Gallery(
+            gid: history.gid,
+            mediaId: history.mediaId,
+            title: GalleryTitle(
+              englishTitle: history.title,
+              japaneseTitle: history.japaneseTitle,
+            ),
+            images: GalleryImages(
+              cover: GalleryImage(
+                imgHeight: history.coverImgHeight,
+                imgWidth: history.coverImgWidth,
+              ),
+            ),
+          );
+
+          RouteUtil.goGallery(ref, gallery);
+        },
+        child: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 58,
+                height: 78,
+                child: CoverArtwork(
+                  radius: 8,
+                  shadow: false,
                   child: ErosCachedNetworkImage(
                     imageUrl: history.thumbUrl ?? '',
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[200],
-                    ),
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const SizedBox.expand(),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    history.title ?? '',
-                    style: Theme.of(context).textTheme.titleSmall,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 14),
+              Expanded(
+                child: Container(
+                  height: 98,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    border: showDivider
+                        ? Border(
+                            bottom: BorderSide(
+                                color: palette.separator, width: 0.5),
+                          )
+                        : null,
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    alignment: Alignment.bottomLeft,
-                    // time
-                    child: Text(
-                      lastReadTimeStr,
-                      style: Theme.of(context).textTheme.caption,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        history.title ?? '',
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.clock,
+                            size: 13,
+                            color: palette.secondaryLabel,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            lastReadTimeStr,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-            IconButton(
-                onPressed: () {
-                  ref.read(historyProvider.notifier).removeHistory(history.gid);
-                },
-                icon: const Icon(
-                  Icons.delete_outline_rounded,
-                )),
-          ],
+            ],
+          ),
         ),
       ),
     );

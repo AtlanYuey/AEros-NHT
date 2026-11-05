@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:eros_n/common/enum.dart';
@@ -8,66 +10,130 @@ import 'package:eros_n/pages/gallery/gallery_provider.dart';
 import 'package:eros_n/pages/read/read_provider.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../setting/read_setting_page.dart';
 import 'read_view.dart';
+
+/// Dark frosted chrome used by the reader bars (like Photos).
+class _ReaderChrome extends StatelessWidget {
+  const _ReaderChrome({required this.child, this.top = true});
+
+  final Widget child;
+  final bool top;
+
+  @override
+  Widget build(BuildContext context) {
+    final side =
+        BorderSide(color: Colors.white.withValues(alpha: 0.12), width: 0.5);
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xFF1C1C1E).withValues(alpha: 0.72),
+            border: top ? Border(bottom: side) : Border(top: side),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ReaderIconButton extends StatelessWidget {
+  const _ReaderIconButton({
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget button = CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: const Size(44, 44),
+      onPressed: onPressed,
+      child: IconTheme.merge(
+        data: const IconThemeData(color: Colors.white, size: 24),
+        child: icon,
+      ),
+    );
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip, child: button);
+    }
+    return button;
+  }
+}
 
 class ViewTopBar extends HookConsumerWidget {
   const ViewTopBar({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
+    return SizedBox(
       height: context.mediaQueryPadding.top + kTopBarHeight,
       width: context.mediaQuery.size.width,
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.9),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: context.mediaQueryPadding.horizontal / 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        context.router.pop();
-                      },
-                      icon: const Icon(
-                        Icons.arrow_back,
-                      ),
+      child: _ReaderChrome(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: context.mediaQueryPadding.left + 4,
+            right: context.mediaQueryPadding.right + 4,
+            top: context.mediaQueryPadding.top,
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _ReaderIconButton(
+                    onPressed: () {
+                      context.router.maybePop();
+                    },
+                    tooltip:
+                        MaterialLocalizations.of(context).backButtonTooltip,
+                    icon: const Icon(CupertinoIcons.chevron_back),
+                  ),
+                  if (context.isTablet)
+                    const ControllerButtonBar(
+                      mainAxisSize: MainAxisSize.min,
                     ),
-                    if (context.isTablet)
-                      const ControllerButtonBar(
-                        mainAxisSize: MainAxisSize.min,
-                      ),
-                  ],
-                ),
-                Consumer(builder: (context, ref, child) {
-                  final gid = currentGalleryGid;
-                  final currentItemIndex = ref.watch(galleryProvider(gid)
-                      .select((val) => val.currentPageIndex));
-                  final totalItem = ref.watch(galleryProvider(gid)
-                      .select((val) => val.images.pages.length));
-                  return Container(
-                    alignment: Alignment.center,
-                    height: kTopBarButtonHeight,
-                    child: Text(
-                      '${currentItemIndex + 1} / $totalItem',
-                      style: Theme.of(context).textTheme.titleMedium,
+                ],
+              ),
+              Consumer(builder: (context, ref, child) {
+                final gid = currentGalleryGid;
+                final currentItemIndex = ref.watch(
+                    galleryProvider(gid).select((val) => val.currentPageIndex));
+                final totalItem = ref.watch(galleryProvider(gid)
+                    .select((val) => val.images.pages.length));
+                return Container(
+                  alignment: Alignment.center,
+                  height: kTopBarButtonHeight,
+                  child: Text(
+                    '${currentItemIndex + 1} / $totalItem',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.41,
+                      fontFeatures: [FontFeature.tabularFigures()],
                     ),
-                  );
-                }),
-              ],
-            ),
-          ],
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -85,23 +151,25 @@ class ViewBottomBar extends HookConsumerWidget {
         ref.watch(readProvider.select((val) => val.showThumbList));
 
     return AnimatedContainer(
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.9),
       height: bottomBarHeight,
       width: context.mediaQuery.size.width,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
-      child: Column(
-        children: [
-          // 缩略图栏
-          AnimatedContainer(
-            height: showThumbList ? kThumbListViewHeight : 0,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            child: const ThumbnailListView(),
-          ),
-          // 控制栏
-          const BottomBarControlWidget(),
-        ],
+      child: _ReaderChrome(
+        top: false,
+        child: Column(
+          children: [
+            // 缩略图栏
+            AnimatedContainer(
+              height: showThumbList ? kThumbListViewHeight : 0,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+              child: const ThumbnailListView(),
+            ),
+            // 控制栏
+            const BottomBarControlWidget(),
+          ],
+        ),
       ),
     );
   }
@@ -119,11 +187,12 @@ class BottomBarControlWidget extends HookConsumerWidget {
         ref.watch(galleryProvider(gid).select((val) => val.currentPageIndex));
     final totNum = ref
         .watch(galleryProvider(gid).select((val) => val.images.pages.length));
+    final readModel = ref.watch(settingsProvider.select((s) => s.readModel));
     final readNotifier = ref.read(readProvider.notifier);
 
     return Padding(
       padding: EdgeInsets.symmetric(
-          horizontal: context.mediaQueryPadding.horizontal / 2 + 10),
+          horizontal: context.mediaQueryPadding.horizontal / 2 + 12),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -136,6 +205,7 @@ class BottomBarControlWidget extends HookConsumerWidget {
               max: math.max(0, totNum - 1.0),
               initValue: math.max(
                   0, math.min(currentItemIndex.roundToDouble(), totNum - 1.0)),
+              reverse: readModel == ReadModel.rightToLeft,
               onChangedEnd: (val) {
                 logger.d('onChangedEnd ${val + 1}');
                 readNotifier.jumpToPage(val.round());
@@ -146,7 +216,7 @@ class BottomBarControlWidget extends HookConsumerWidget {
           // 按钮栏
           if (!context.isTablet)
             const ControllerButtonBar(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               mainAxisSize: MainAxisSize.max,
             ),
         ],
@@ -187,38 +257,47 @@ class _ViewPageSliderState extends State<ViewPageSlider> {
 
   @override
   Widget build(BuildContext context) {
-    final minText = Text(
-      '${widget.initValue.round() + 1}',
-      style: Theme.of(context).textTheme.titleMedium,
+    const labelStyle = TextStyle(
+      color: Colors.white,
+      fontSize: 15,
+      fontWeight: FontWeight.w500,
+      fontFeatures: [FontFeature.tabularFigures()],
     );
+    final minText = Text('${_value.round() + 1}', style: labelStyle);
 
     final maxText = Text(
       '${widget.max.round() + 1}',
-      style: Theme.of(context).textTheme.titleMedium,
+      style: labelStyle.copyWith(color: Colors.white.withValues(alpha: 0.6)),
     );
 
     return Row(
       children: <Widget>[
         Container(
-          constraints: const BoxConstraints(minWidth: 30),
+          constraints: const BoxConstraints(minWidth: 36),
           alignment: Alignment.center,
           child: widget.reverse ? maxText : minText,
         ),
         Expanded(
-          child: Transform.rotate(
-            angle: widget.reverse ? math.pi : 0.0,
-            child: Slider(
+          child: Transform.flip(
+            flipX: widget.reverse,
+            child: CupertinoSlider(
               min: 0,
-              max: widget.max,
-              value: _value,
-              label: '${_value.round() + 1}',
+              max: widget.max > 0 ? widget.max : 1,
+              value: _value.clamp(0, widget.max > 0 ? widget.max : 1),
               divisions: widget.max > 0 ? widget.max.round() : null,
-              onChanged: (double newValue) {
-                setState(() {
-                  _value = newValue;
-                });
-                widget.onChanged(newValue);
-              },
+              activeColor: Colors.white,
+              thumbColor: Colors.white,
+              onChanged: widget.max > 0
+                  ? (double newValue) {
+                      if (newValue.round() != _value.round()) {
+                        HapticFeedback.selectionClick();
+                      }
+                      setState(() {
+                        _value = newValue;
+                      });
+                      widget.onChanged(newValue);
+                    }
+                  : null,
               onChangeEnd: (double newValue) {
                 widget.onChangedEnd(newValue);
               },
@@ -226,7 +305,7 @@ class _ViewPageSliderState extends State<ViewPageSlider> {
           ),
         ),
         Container(
-          constraints: const BoxConstraints(minWidth: 30),
+          constraints: const BoxConstraints(minWidth: 36),
           alignment: Alignment.center,
           child: widget.reverse ? minText : maxText,
         ),
@@ -257,20 +336,10 @@ class ControllerButtonBar extends HookConsumerWidget {
       mainAxisSize: mainAxisSize,
       children: [
         const ReadModelButton(),
-        // IconButton(
-        //   onPressed: () {},
-        //   icon: const Icon(Icons.share_outlined),
-        // ),
         const AutoReadButton(),
-        IconButton(
+        _ReaderIconButton(
+          tooltip: L10n.of(context).settings,
           onPressed: () async {
-            // showModalBottomSheet
-            // showMaterialModalBottomSheet(
-            //   context: context,
-            //   enableDrag: true,
-            //   builder: (context) => ReadSettings(),
-            // );
-
             // now auto read
             final nowAutoRead =
                 ref.read(readProvider.select((s) => s.autoRead));
@@ -280,31 +349,17 @@ class ControllerButtonBar extends HookConsumerWidget {
               ref.read(readProvider.notifier).stopAutoRead();
             }
 
-            await showDialog(
+            await showCupertinoModalPopup<void>(
               context: context,
-              builder: (context) => const AlertDialog(
-                // title: const Text('Read Setting'),
-                contentPadding: EdgeInsets.symmetric(vertical: 16),
-                content: ReadSettings(),
-              ),
+              builder: (context) => const ReadSettings(),
             );
-            // showBottomSheet(
-            //   context: context,
-            //   builder: (context) => BottomSheet(
-            //     onClosing: () {},
-            //     enableDrag: false,
-            //     builder: (BuildContext context) {
-            //       return const ReadSettings();
-            //     },
-            //   ),
-            // );
 
             // restart auto read
             if (nowAutoRead) {
               ref.read(readProvider.notifier).startAutoRead();
             }
           },
-          icon: const Icon(Icons.settings_outlined),
+          icon: const Icon(CupertinoIcons.slider_horizontal_3),
         ),
       ],
     );
@@ -319,13 +374,15 @@ class AutoReadButton extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final autoRead = ref.watch(readProvider.select((r) => r.autoRead));
-    return IconButton(
+    return _ReaderIconButton(
+      tooltip: L10n.of(context).auto_read_interval,
       onPressed: () {
+        HapticFeedback.lightImpact();
         ref.read(readProvider.notifier).toggleAutoRead();
       },
       icon: autoRead
-          ? const Icon(Icons.timer_off_outlined)
-          : const Icon(Icons.timer_outlined),
+          ? const Icon(CupertinoIcons.pause_circle_fill)
+          : const Icon(CupertinoIcons.play_circle),
     );
   }
 }
@@ -338,98 +395,101 @@ class ReadModelButton extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final itemMap = {
-      ReadModel.leftToRight: Text(L10n.of(context).left_to_right),
-      ReadModel.rightToLeft: Text(L10n.of(context).right_to_left),
-      ReadModel.webtoon: Text(L10n.of(context).webtoon),
-      ReadModel.curlVertical: Text(L10n.of(context).curl_vertical),
-      ReadModel.vertical: Text(L10n.of(context).vertical),
-    };
+    final readModel =
+        ref.watch(settingsProvider.select((setting) => setting.readModel));
 
     final readModelIconMap = <ReadModel, Widget>{
-      ReadModel.leftToRight: const Icon(Icons.send_to_mobile_outlined),
-      ReadModel.rightToLeft: Transform.rotate(
-          angle: math.pi, child: const Icon(Icons.send_to_mobile_outlined)),
-      ReadModel.webtoon: const Icon(Icons.system_update_outlined),
-      ReadModel.vertical: Transform.rotate(
-          angle: math.pi / 2, child: const Icon(Icons.send_to_mobile_outlined)),
-      ReadModel.curlVertical: const Icon(Icons.system_security_update_outlined),
+      ReadModel.leftToRight: const Icon(CupertinoIcons.arrow_right_square),
+      ReadModel.rightToLeft: const Icon(CupertinoIcons.arrow_left_square),
+      ReadModel.webtoon: const Icon(CupertinoIcons.rectangle_stack),
+      ReadModel.vertical: const Icon(CupertinoIcons.arrow_down_square),
+      ReadModel.curlVertical:
+          const Icon(CupertinoIcons.square_stack_3d_down_right),
     };
 
-    final items = itemMap.entries.map((e) {
-      return PopupMenuItem<ReadModel>(
-        value: e.key,
-        child: e.value,
-      );
-    }).toList();
-
-    return PopupMenuButton<ReadModel>(
-      icon: Consumer(builder: (context, ref, child) {
-        final readModel =
-            ref.watch(settingsProvider.select((setting) => setting.readModel));
-        return readModelIconMap[readModel]!;
-      }),
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-      elevation: 2,
-      onSelected: (val) {
-        ref.read(settingsProvider.notifier).setReadModel(val);
+    return _ReaderIconButton(
+      tooltip: L10n.of(context).read_model,
+      icon: readModelIconMap[readModel]!,
+      onPressed: () async {
+        final result = await showAppleOptionsSheet<ReadModel>(
+          context: context,
+          title: L10n.of(context).read_model,
+          options: readModelOptions(context),
+          selected: readModel,
+        );
+        if (result != null) {
+          ref.read(settingsProvider.notifier).setReadModel(result);
+        }
       },
-      // 28 or 80
-      offset: context.isTablet
-          ? const Offset(0, kToolbarHeight - 6)
-          : Offset(0, -(48.0 * itemMap.length) - 28),
-      itemBuilder: (context) => items,
     );
   }
 }
 
 // 阅读设置
-class ReadSettings extends StatefulHookConsumerWidget {
+class ReadSettings extends HookConsumerWidget {
   const ReadSettings({
     Key? key,
   }) : super(key: key);
 
   @override
-  ConsumerState<ReadSettings> createState() => _BottomSheetWidgetState();
-}
-
-class _BottomSheetWidgetState extends ConsumerState<ReadSettings>
-    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
-  late final TabController tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return SizedBox(
-      height: 400,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: const [
-          FullScreenListTile(onReadView: true),
-          // switch volumeKeyTurnPage
-          VolumeKeyTurnPageListTile(onReadView: true),
-          // autoReadInterval slider
-          AutoReadIntervalListTile(),
-          PreloadPagesCountListTile(),
-        ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final palette = context.palette;
+    return Material(
+      color: palette.groupedBackground,
+      shape: const RoundedSuperellipseBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 6),
+            Container(
+              width: 36,
+              height: 5,
+              decoration: BoxDecoration(
+                color: palette.opaqueSeparator,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 8, 0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      L10n.of(context).read,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  CupertinoButton(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      L10n.of(context).ok,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AppleSection(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              children: [
+                const FullScreenListTile(onReadView: true),
+                if (Platform.isAndroid)
+                  const VolumeKeyTurnPageListTile(onReadView: true),
+                const AutoReadIntervalListTile(),
+                const PreloadPagesCountListTile(),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
-  bool get wantKeepAlive => true;
 }
 
 class ThumbnailListView extends HookConsumerWidget {
@@ -440,10 +500,7 @@ class ThumbnailListView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: kThumbListViewHeight,
-      child: SizedBox(),
-    );
+    return const SizedBox(height: kThumbListViewHeight);
   }
 }
 

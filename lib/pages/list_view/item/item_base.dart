@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:eros_n/common/enum.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/component/models/index.dart';
+import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/component/widget/blur_image.dart';
 import 'package:eros_n/component/widget/eros_cached_network_image.dart';
-import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -99,7 +102,7 @@ class SimpleTagsView extends HookConsumerWidget {
 
       case TagLayoutOnItem.singleLine:
         return SizedBox(
-          height: 26,
+          height: 22,
           child: ListView.builder(
             padding: padding,
             scrollDirection: Axis.horizontal,
@@ -111,7 +114,6 @@ class SimpleTagsView extends HookConsumerWidget {
                 return const SizedBox();
               }
 
-              // 圆角边框
               return Container(
                 alignment: Alignment.center,
                 margin: const EdgeInsets.only(right: 4),
@@ -147,7 +149,11 @@ class SimpleTag extends HookConsumerWidget {
     this.borderColor,
   }) : super(key: key);
   final Tag tag;
+
+  /// Text color.
   final Color? color;
+
+  /// Background color of the capsule.
   final Color? borderColor;
 
   @override
@@ -155,18 +161,117 @@ class SimpleTag extends HookConsumerWidget {
     final isTagTranslate =
         ref.watch(settingsProvider.select((value) => value.isTagTranslate));
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1.5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor ?? Colors.grey[600]!),
+    return AppleTagChip(
+      dense: true,
+      label: isTagTranslate ? tag.translatedName ?? '' : tag.name ?? '',
+      textColor: color,
+      color: borderColor,
+    );
+  }
+}
+
+/// Small frosted capsule with the gallery language, shown on covers.
+class LanguageBadge extends StatelessWidget {
+  const LanguageBadge({super.key, required this.languageCode});
+
+  final String? languageCode;
+
+  static bool shouldShow(String? languageCode) =>
+      languageCode != null && languageCode != 'ja';
+
+  @override
+  Widget build(BuildContext context) {
+    if (!shouldShow(languageCode)) {
+      return const SizedBox.shrink();
+    }
+    return ClipRSuperellipse(
+      borderRadius: BorderRadius.circular(6),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+          color: Colors.black.withValues(alpha: 0.45),
+          child: Text(
+            languageCode!.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              height: 1.2,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
-      child: Text(
-        isTagTranslate ? tag.translatedName ?? '' : tag.name ?? '',
-        style: TextStyle(
-          fontSize: 12,
-          color: color ?? Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w500,
+    );
+  }
+}
+
+/// Rounded cover artwork with a soft shadow and optional language badge.
+class CoverArtwork extends StatelessWidget {
+  const CoverArtwork({
+    super.key,
+    required this.child,
+    this.languageCode,
+    this.radius = 10,
+    this.shadow = true,
+  });
+
+  final Widget child;
+  final String? languageCode;
+  final double radius;
+  final bool shadow;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: shadow
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: dark ? 0.5 : 0.16),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: ClipRSuperellipse(
+        borderRadius: BorderRadius.circular(radius),
+        child: Stack(
+          fit: StackFit.passthrough,
+          children: [
+            ColoredBox(
+              color: context.palette.secondaryBackground,
+              child: child,
+            ),
+            if (LanguageBadge.shouldShow(languageCode))
+              Positioned(
+                left: 6,
+                top: 6,
+                child: LanguageBadge(languageCode: languageCode),
+              ),
+            // hairline inner border keeps light covers from bleeding into
+            // the background
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(radius),
+                      side: BorderSide(
+                        color: (dark ? Colors.white : Colors.black)
+                            .withValues(alpha: 0.08),
+                        width: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

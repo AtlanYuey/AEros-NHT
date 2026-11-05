@@ -17,7 +17,7 @@ class NhWebViewPage extends StatelessWidget {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: Uri.parse(initialUrl),
+          url: WebUri(initialUrl),
         ),
         initialOptions: inAppWebViewOptions,
       ),

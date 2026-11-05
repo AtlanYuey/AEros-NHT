@@ -99,5 +99,20 @@
   "translated": "Translated",
   "none": "None",
   "all": "All",
-  "clipboard_detection": "Clipboard link detection"
+  "clipboard_detection": "Clipboard link detection",
+  "see_all": "See All",
+  "pages": "Pages",
+  "uploaded": "Uploaded",
+  "favorite": "Favorite",
+  "favorited": "Favorited",
+  "torrent": "Torrent",
+  "accent_color": "Accent Color",
+  "sign_in_tip": "Sign in to sync your favorites",
+  "account": "Account",
+  "version": "Version",
+  "write_comment": "Write a comment…",
+  "no_comments": "No Comments",
+  "logout_tip": "Are you sure you want to log out?",
+  "feature_unavailable": "Feature in development, currently unavailable",
+  "reading": "Reading"
 }

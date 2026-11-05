@@ -9,14 +9,13 @@ import 'package:eros_n/pages/list_view/item/item_base.dart';
 import 'package:eros_n/pages/list_view/list_view.dart';
 import 'package:eros_n/pages/nav/index/index_provider.dart';
 import 'package:eros_n/routes/routes.dart';
-import 'package:eros_n/utils/get_utils/extensions/context_extensions.dart';
-import 'package:eros_n/utils/get_utils/extensions/export.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:keframe/keframe.dart';
-import 'package:rotated_corner_decoration/rotated_corner_decoration.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
 import 'front_provider.dart';
@@ -71,42 +70,32 @@ class _FrontPageState extends ConsumerState<FrontPage>
 
   @override
   Widget build(BuildContext context) {
-    logger.v('FrontPage build');
+    logger.t('FrontPage build');
 
     super.build(context);
-    logger.v('${MediaQuery.of(context).padding.top}');
-    logger.v('${context.width}');
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(frontProvider.notifier).reloadData(),
-        edgeOffset: MediaQuery.of(context).padding.top + kToolbarHeight,
-        child: SizeCacheWidget(
-          child: CustomScrollView(
-            controller: scrollController,
-            // cacheExtent: 500,
-            physics: const ClampingScrollPhysics(),
-            slivers: [
-              const SliverAppBar(
-                floating: true,
-                pinned: true,
-                // scrolledUnderElevation: 0,
-                bottom: PreferredSize(
-                  preferredSize: Size.fromHeight(0),
-                  child: SizedBox(height: 0),
-                ),
-                toolbarHeight: 0,
-                elevation: 0,
-              ),
-              const PopularListView(),
-              SliverGalleryListView(scrollController: scrollController),
-              Consumer(builder: (context, ref, _) {
-                final state = ref.watch(frontProvider);
-                return EndIndicator(
-                  loadStatus: state.status,
-                );
-              }),
-            ],
-          ),
+      body: SizeCacheWidget(
+        child: CustomScrollView(
+          controller: scrollController,
+          physics: kAppleScrollPhysics,
+          slivers: [
+            AppleSliverNavBar(
+              title: L10n.of(context).home,
+              heroTag: 'nav_front',
+              trailing: const _FrontFilterButtons(),
+            ),
+            CupertinoSliverRefreshControl(
+              onRefresh: () => ref.read(frontProvider.notifier).reloadData(),
+            ),
+            const PopularListView(),
+            SliverGalleryListView(scrollController: scrollController),
+            Consumer(builder: (context, ref, _) {
+              final state = ref.watch(frontProvider);
+              return EndIndicator(
+                loadStatus: state.status,
+              );
+            }),
+          ],
         ),
       ),
     );
@@ -120,6 +109,47 @@ class _FrontPageState extends ConsumerState<FrontPage>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+/// Language + sort pull-down menus shown in the navigation bar.
+class _FrontFilterButtons extends HookConsumerWidget {
+  const _FrontFilterButtons();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final searchSortOnFrontPage =
+        ref.watch(settingsProvider.select((s) => s.searchSortOnFrontPage));
+    final frontLanguagesFilter =
+        ref.watch(settingsProvider.select((s) => s.frontLanguagesFilter));
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        LanguagesFilterPopupButton(
+          onSelected: (LanguagesFilter value) async {
+            if (value == ref.read(settingsProvider).frontLanguagesFilter) {
+              return;
+            }
+            ref.read(settingsProvider.notifier).setFrontLanguagesFilter(value);
+            await ref.read(frontProvider.notifier).reloadData();
+          },
+          initValue: frontLanguagesFilter,
+        ),
+        SortPopupButton(
+          onSelected: (value) async {
+            // if not change, do nothing
+            if (value == searchSortOnFrontPage) {
+              return;
+            }
+            ref.read(settingsProvider.notifier).setSearchSortOnFrontPage(value);
+
+            // reload
+            await ref.read(frontProvider.notifier).reloadData();
+          },
+          initValue: searchSortOnFrontPage,
+        ),
+      ],
+    );
+  }
 }
 
 class SliverGalleryListView extends HookConsumerWidget {
@@ -139,76 +169,35 @@ class SliverGalleryListView extends HookConsumerWidget {
       SearchSort.popularMonth: L10n.of(context).popular_month,
       SearchSort.popular: L10n.of(context).popular,
     };
+    final languagesMap = {
+      LanguagesFilter.all: L10n.of(context).all,
+      LanguagesFilter.japanese: L10n.of(context).japanese,
+      LanguagesFilter.chinese: L10n.of(context).chinese,
+      LanguagesFilter.english: L10n.of(context).english,
+      LanguagesFilter.translated: L10n.of(context).translated,
+    };
+
+    final searchSortOnFrontPage =
+        ref.watch(settingsProvider.select((s) => s.searchSortOnFrontPage));
+    final frontLanguagesFilter =
+        ref.watch(settingsProvider.select((s) => s.frontLanguagesFilter));
 
     return SliverSafeArea(
       top: false,
       bottom: false,
       sliver: MultiSliver(
-        pushPinnedChildren: true,
         children: [
-          Consumer(builder: (context, ref, child) {
-            final searchSortOnFrontPage = ref
-                .watch(settingsProvider.select((s) => s.searchSortOnFrontPage));
-            final frontLanguagesFilter = ref
-                .watch(settingsProvider.select((s) => s.frontLanguagesFilter));
-            return SliverPinnedHeader(
-              child: GestureDetector(
-                onTap: () {
-                  scrollController.animateTo(0,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.ease);
-                },
-                child: Container(
-                  height: kToolbarHeight,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            sortMap[searchSortOnFrontPage] ??
-                                L10n.of(context).recent,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                      ),
-                      LanguagesFilterPopupButton(
-                        onSelected: (LanguagesFilter value) async {
-                          if (value ==
-                              ref.read(settingsProvider).frontLanguagesFilter) {
-                            return;
-                          }
-                          ref
-                              .read(settingsProvider.notifier)
-                              .setFrontLanguagesFilter(value);
-                          await ref.read(frontProvider.notifier).reloadData();
-                        },
-                        initValue: frontLanguagesFilter,
-                      ),
-                      SortPopupButton(
-                        onSelected: (value) async {
-                          // if not change, do nothing
-                          if (value == searchSortOnFrontPage) {
-                            return;
-                          }
-                          ref
-                              .read(settingsProvider.notifier)
-                              .setSearchSortOnFrontPage(value);
-
-                          // reload
-                          await ref.read(frontProvider.notifier).reloadData();
-                        },
-                        initValue: searchSortOnFrontPage,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }),
+          AppleSectionHeader(
+            title: sortMap[searchSortOnFrontPage] ?? L10n.of(context).recent,
+            padding: const EdgeInsets.fromLTRB(20, 24, 16, 2),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Text(
+              languagesMap[frontLanguagesFilter] ?? '',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
           const GalleryListView(),
         ],
       ),
@@ -221,125 +210,77 @@ class PopularListView extends ConsumerWidget {
     Key? key,
   }) : super(key: key);
 
+  static const double _coverWidth = 150;
+  static const double _coverHeight = _coverWidth * 4 / 3;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final popularList = ref.watch(popularProvider);
+    if (popularList.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+    final theme = Theme.of(context);
     return SliverSafeArea(
       top: false,
       bottom: false,
       sliver: MultiSliver(
-        pushPinnedChildren: true,
         children: [
-          SliverPinnedHeader(
-            child: Container(
-              height: kToolbarHeight,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              color: Theme.of(context).scaffoldBackgroundColor,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                L10n.of(context).popular,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
+          AppleSectionHeader(
+            title: L10n.of(context).popular,
+            padding: const EdgeInsets.fromLTRB(20, 8, 16, 10),
           ),
           SizedBox(
-            height: 240,
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8),
+            height: _coverHeight + 62,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
               itemBuilder: (context, index) {
                 final gallery = popularList[index];
-                final card = SizedBox(
-                  width: 160,
-                  child: Hero(
-                    tag: '${NHRoutes.front}_popular_${gallery.thumbUrl}',
-                    child: Card(
-                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                      child: Container(
-                        foregroundDecoration: (gallery.languageCode == 'ja' ||
-                                gallery.languageCode == null)
-                            ? null
-                            : RotatedCornerDecoration.withColor(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.8),
-                                badgeSize: const Size(38, 28),
-                                // geometry:
-                                //     const BadgeGeometry(width: 38, height: 28),
-                                textSpan: TextSpan(
-                                  text:
-                                      gallery.languageCode?.toUpperCase() ?? '',
-                                  style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                        child: Stack(
-                          alignment: Alignment.bottomCenter,
-                          fit: StackFit.expand,
-                          children: [
-                            ShaderMask(
-                              shaderCallback: (Rect bounds) {
-                                return const LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.transparent,
-                                      Colors.transparent,
-                                      Colors.black54,
-                                    ]).createShader(
-                                  Rect.fromLTRB(
-                                      0, 0, bounds.width, bounds.height),
-                                );
-                              },
-                              blendMode: BlendMode.darken,
-                              child: CoverImg(
-                                imgUrl: gallery.thumbUrl ?? '',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              alignment: Alignment.bottomCenter,
-                              child: Text(
-                                (gallery.title.englishTitle ?? '').prettyTitle,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.copyWith(
-                                  color: Colors.white,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.8),
-                                      offset: const Offset(0, 0),
-                                      blurRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-
-                return GestureDetector(
+                return PressableScale(
                   onTap: () {
-                    // popular
                     RouteUtil.goGallery(
                       ref,
                       gallery,
                       heroTag: '${NHRoutes.front}_popular',
                     );
-                    // RouteUtil.goGalleryByGid(ref, gallery.gid);
                   },
-                  child: card,
+                  child: SizedBox(
+                    width: _coverWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: _coverHeight,
+                          width: _coverWidth,
+                          child: Hero(
+                            tag:
+                                '${NHRoutes.front}_popular_${gallery.thumbUrl}',
+                            child: CoverArtwork(
+                              radius: 12,
+                              languageCode: gallery.languageCode,
+                              child: CoverImg(
+                                imgUrl: gallery.thumbUrl ?? '',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          (gallery.title.englishTitle ?? '').prettyTitle,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                            fontWeight: FontWeight.w500,
+                            height: 1.25,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
               itemCount: popularList.length,
@@ -356,15 +297,14 @@ class GalleryListView extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    logger.v('GalleryListView build');
+    logger.t('GalleryListView build');
     final List<Gallery> galleryList = ref.watch(gallerysProvider);
     final state = ref.watch(frontProvider);
 
     if (state.isLoading) {
       return const SliverFillRemaining(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        hasScrollBody: false,
+        child: AppleLoading(),
       );
     }
     return GallerySliverList(

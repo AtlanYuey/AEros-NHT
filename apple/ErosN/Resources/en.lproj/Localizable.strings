@@ -1,0 +1,2 @@
+/* English uses the keys in the source code. */
+"Page %lld of %lld · %@" = "Page %1$lld of %2$lld · %3$@";

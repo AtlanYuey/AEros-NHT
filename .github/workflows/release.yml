@@ -7,6 +7,10 @@ on:
       - 'claude/**'
     tags:
       - 'v*'
+    # The native iOS app has its own workflow.
+    paths-ignore:
+      - 'apple/**'
+      - '.github/workflows/ios-native.yml'
   workflow_dispatch:
 
 env:

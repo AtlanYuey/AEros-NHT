@@ -1,0 +1,152 @@
+/* Tabs and titles */
+"Home" = "主页";
+"Favorites" = "收藏";
+"History" = "历史";
+"More" = "更多";
+"Search" = "搜索";
+"Comments" = "评论";
+"Pages" = "页面";
+"Appearance" = "外观";
+"Reading" = "阅读";
+"General" = "通用";
+"About" = "关于";
+"Card Size" = "卡片大小";
+"Reader Settings" = "阅读设置";
+"Log In" = "登录";
+"Log Out" = "退出登录";
+
+/* Home / lists */
+"Popular Now" = "当前热门";
+"More Like This" = "相似作品";
+"Language" = "语言";
+"Sort" = "排序";
+"Recent" = "最新";
+"Popular Today" = "今日热门";
+"Popular This Week" = "本周热门";
+"Popular This Month" = "本月热门";
+"All-Time Popular" = "历史热门";
+"All Languages" = "全部语言";
+"Japanese" = "日语";
+"Chinese" = "中文";
+"English" = "英语";
+"Translated" = "翻译";
+"No Galleries" = "没有作品";
+"Couldn't Load" = "加载失败";
+"Try Again" = "重试";
+"Retry" = "重试";
+"Share" = "分享";
+"Copy Link" = "复制链接";
+"%lld pages" = "%lld 页";
+"%lld results" = "%lld 个结果";
+"No Results" = "没有结果";
+
+/* Gallery */
+"Read" = "阅读";
+"Resume · %lld" = "继续 · 第 %lld 页";
+"From Start" = "从头开始";
+"Favorite" = "收藏";
+"Unfavorite" = "取消收藏";
+"Uploaded" = "上传";
+"ID" = "编号";
+"See All" = "全部";
+"See All (%lld)" = "全部（%lld）";
+"Write" = "写评论";
+"No comments yet" = "还没有评论";
+"No Comments" = "没有评论";
+"Add a comment…" = "写评论…";
+"Couldn't Post" = "发表失败";
+"OK" = "好";
+"Anonymous" = "匿名";
+"Parodies" = "原作";
+"Characters" = "角色";
+"Tags" = "标签";
+"Artists" = "作者";
+"Groups" = "团体";
+"Languages" = "语言";
+"Categories" = "分类";
+
+/* Reader */
+"Close" = "关闭";
+"Options" = "选项";
+"Reading Direction" = "阅读方向";
+"Left to Right" = "从左到右";
+"Right to Left" = "从右到左";
+"Vertical Scroll" = "上下滚动";
+"Auto Read" = "自动翻页";
+"Stop Auto Read" = "停止自动翻页";
+"Auto Read Interval" = "自动翻页间隔";
+"Preload Pages" = "预加载页数";
+"Tap Edges to Turn Pages" = "点按两侧翻页";
+"Keep Screen On" = "保持屏幕常亮";
+"Pages ahead of the current one are downloaded in advance." = "提前下载当前页之后的页面。";
+"Done" = "完成";
+" s" = " 秒";
+
+/* Search */
+"Titles, tags, artists, IDs" = "标题、标签、作者或编号";
+"Search nhentai" = "搜索 nhentai";
+"Search by title or use tags like artist:name, or enter a gallery number." = "按标题搜索，也可以使用 artist:名字 这样的标签，或直接输入作品编号。";
+"Recent Searches" = "最近搜索";
+"Clear" = "清除";
+
+/* Favorites */
+"Log in to your nhentai account to see your favorites." = "登录 nhentai 账号后即可查看收藏。";
+"No Favorites" = "没有收藏";
+"Please log in first" = "请先登录";
+
+/* History */
+"Search History" = "搜索历史记录";
+"No History" = "没有历史记录";
+"Galleries you open appear here." = "打开过的作品会显示在这里。";
+"Clear all history?" = "清除全部历史记录？";
+"Clear History" = "清除历史记录";
+"Today" = "今天";
+"Yesterday" = "昨天";
+"Page %lld of %lld · %@" = "第 %1$lld / %2$lld 页 · %3$@";
+
+/* More / settings */
+"Logged In" = "已登录";
+"nhentai account" = "nhentai 账号";
+"Sync favorites and post comments" = "同步收藏、发表评论";
+"Log out of nhentai?" = "退出 nhentai 登录？";
+"Theme" = "主题";
+"System" = "跟随系统";
+"Light" = "浅色";
+"Dark" = "深色";
+"Gallery List" = "作品列表";
+"List Style" = "列表样式";
+"Waterfall" = "瀑布流";
+"Grid" = "网格";
+"Covers Only" = "仅封面";
+"List" = "列表";
+"Blur Covers" = "模糊封面";
+"Card size applies to the grid and waterfall styles." = "卡片大小用于网格和瀑布流样式。";
+"Portrait" = "竖屏";
+"Landscape · follows split view" = "横屏 · 分栏随分割条";
+"Small" = "小";
+"Smaller" = "较小";
+"Standard" = "标准";
+"Larger" = "较大";
+"Large" = "大";
+"columns" = "列";
+"Columns are calculated from the width of the pane: rotating, Split View and Stage Manager add or remove columns automatically. “Standard” matches the automatic column count." = "列数按这一栏的实际宽度计算：旋转屏幕、分屏浏览和台前调度都会自动增减。「标准」与原来的自动列数相同。";
+"Detect Gallery Links" = "识别剪贴板链接";
+"When you return to the app, offer to open an nhentai link found on the clipboard. iOS asks for permission to paste." = "回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。iOS 会询问是否允许粘贴。";
+"Storage" = "存储空间";
+"Image Cache" = "图片缓存";
+"Clear Image Cache" = "清除图片缓存";
+"Clear the image cache?" = "清除图片缓存？";
+"Source Code" = "源代码";
+"Website" = "网站";
+"Acknowledgements" = "致谢";
+"Version %@" = "版本 %@";
+"Cancel" = "取消";
+
+/* Clipboard */
+"Open Gallery?" = "打开作品？";
+"The clipboard contains a link to gallery #%lld." = "剪贴板里有作品 #%lld 的链接。";
+"Open" = "打开";
+
+/* Errors */
+"Request failed (%lld)" = "请求失败（%lld）";
+"Unexpected response from the server" = "服务器返回了无法识别的内容";

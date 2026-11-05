@@ -1,0 +1,85 @@
+name: iOS Native
+
+# Native SwiftUI app in apple/ (iOS 18+, iPhone and iPad).
+on:
+  push:
+    branches:
+      - 'master'
+      - 'claude/**'
+    paths:
+      - 'apple/**'
+      - '.github/workflows/ios-native.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC/Contents/Developer"; fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        working-directory: apple
+        run: xcodegen generate
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: apple/build/SourcePackages
+          key: spm-${{ hashFiles('apple/project.yml') }}
+
+      - name: Build
+        working-directory: apple
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ErosN.xcodeproj \
+            -scheme ErosN \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -clonedSourcePackagesDirPath build/SourcePackages \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build.log | grep -E "error:|warning: unre|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build.log
+
+      - name: Show errors
+        if: failure()
+        working-directory: apple
+        run: grep -E "error:" -A3 build.log | head -200 || true
+
+      - name: Package IPA
+        working-directory: apple
+        run: |
+          APP=$(find build/DerivedData/Build/Products/Release-iphoneos -maxdepth 1 -name "*.app" | head -1)
+          echo "App: $APP"
+          VERSION=$(/usr/libexec/PlistBuddy -c "Print CFBundleShortVersionString" "$APP/Info.plist")
+          BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$APP/Info.plist")
+          rm -rf build/ipa && mkdir -p build/ipa/Payload
+          cp -R "$APP" build/ipa/Payload/
+          (cd build/ipa && zip -qry "../Eros-N_native_${VERSION}_${BUILD}.ipa" Payload)
+          ls -lh build/*.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: eros-n-native-ios
+          path: apple/build/*.ipa
+          if-no-files-found: error

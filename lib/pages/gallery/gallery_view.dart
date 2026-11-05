@@ -224,7 +224,7 @@ class GalleryPageBody extends HookConsumerWidget {
                   ),
                 );
               },
-              child: _ReadButton(gid: gid, floating: true),
+              child: GalleryReadButton(gid: gid, floating: true),
             ),
       body: LayoutBuilder(builder: (context, constraints) {
         final maxWidth = constraints.maxWidth;
@@ -1065,8 +1065,8 @@ class TagsView extends HookConsumerWidget {
 }
 
 /// Primary "Read / Resume" capsule.
-class _ReadButton extends HookConsumerWidget {
-  const _ReadButton({required this.gid, this.floating = false});
+class GalleryReadButton extends HookConsumerWidget {
+  const GalleryReadButton({required this.gid, this.floating = false});
 
   final int gid;
   final bool floating;
@@ -1190,7 +1190,7 @@ class ToolBarView extends HookConsumerWidget {
 
     return Row(
       children: [
-        Expanded(child: _ReadButton(gid: gid)),
+        Expanded(child: GalleryReadButton(gid: gid)),
         const SizedBox(width: 12),
         _CircleAction(
           icon: isFavorited ? CupertinoIcons.heart_fill : CupertinoIcons.heart,

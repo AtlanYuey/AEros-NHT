@@ -1,4 +1,5 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:eros_n/component/widget/apple.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 
@@ -12,9 +13,7 @@ class NhWebViewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title ?? ''),
-      ),
+      appBar: AppleTopBar(title: title ?? ''),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
           url: WebUri(initialUrl),

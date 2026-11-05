@@ -262,6 +262,8 @@ class _NavFilterButtonsState extends State<NavFilterButtons> {
           children: [
             Positioned.fill(
               child: LiquidGlassButtonGroup(
+                // The native view takes light / dark only when created.
+                key: ValueKey(palette.brightness),
                 spacing: 0,
                 buttons: [
                   button('globe', _openLanguage, hidden: _loadingIndex == 0),

@@ -10,7 +10,6 @@ import 'package:eros_n/pages/gallery/gallery_provider.dart';
 import 'package:eros_n/pages/read/read_provider.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
-import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/apple.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -349,7 +348,7 @@ class ControllerButtonBar extends HookConsumerWidget {
               ref.read(readProvider.notifier).stopAutoRead();
             }
 
-            await showCupertinoModalPopup<void>(
+            await showAppleSheet<void>(
               context: context,
               builder: (context) => const ReadSettings(),
             );
@@ -433,60 +432,18 @@ class ReadSettings extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final palette = context.palette;
-    return Material(
-      color: palette.groupedBackground,
-      shape: const RoundedSuperellipseBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 6),
-            Container(
-              width: 36,
-              height: 5,
-              decoration: BoxDecoration(
-                color: palette.opaqueSeparator,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 8, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      L10n.of(context).read,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  CupertinoButton(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      L10n.of(context).ok,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            AppleSection(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              children: [
-                const FullScreenListTile(onReadView: true),
-                if (Platform.isAndroid)
-                  const VolumeKeyTurnPageListTile(onReadView: true),
-                const AutoReadIntervalListTile(),
-                const PreloadPagesCountListTile(),
-              ],
-            ),
-          ],
-        ),
+    return AppleSheet(
+      title: L10n.of(context).read,
+      child: AppleSection(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        header: null,
+        children: [
+          const FullScreenListTile(onReadView: true),
+          if (Platform.isAndroid)
+            const VolumeKeyTurnPageListTile(onReadView: true),
+          const AutoReadIntervalListTile(),
+          const PreloadPagesCountListTile(),
+        ],
       ),
     );
   }

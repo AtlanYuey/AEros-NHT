@@ -1,0 +1,54 @@
+name: native_liquid_glass
+description: "Liquid Glass iOS platform views for Flutter using native UIKit components."
+version: 0.3.1
+homepage: https://github.com/tienanh306201z/native_liquid_glass
+repository: https://github.com/tienanh306201z/native_liquid_glass
+
+topics:
+  - ui
+  - ios
+  - liquid-glass
+  - uikit
+
+screenshots:
+  - description: "Showcase page — every widget on one screen, light theme"
+    path: doc/screenshots/Showcase-light.png
+  - description: "Showcase page — every widget on one screen, dark theme"
+    path: doc/screenshots/Showcase-dark.png
+  - description: "LiquidGlassTabBar with a split action button (iOS 26/27)"
+    path: doc/screenshots/gallery/TabBar.png
+  - description: "LiquidGlassNavigationBar"
+    path: doc/screenshots/gallery/NavigationBar.png
+  - description: "LiquidGlassToolbar"
+    path: doc/screenshots/gallery/Toolbar.png
+  - description: "LiquidGlassMenu — native UIMenu with submenu items"
+    path: doc/screenshots/gallery/MenuOpen.png
+  - description: "LiquidGlassSheet — native bottom sheet"
+    path: doc/screenshots/gallery/SheetOpen.png
+  - description: "LiquidGlassAlert — native alert"
+    path: doc/screenshots/gallery/AlertOpen.png
+  - description: "LiquidGlassSegmentedControl"
+    path: doc/screenshots/gallery/SegmentedControl.png
+  - description: "LiquidGlassDatePicker"
+    path: doc/screenshots/gallery/DatePicker.png
+
+environment:
+  sdk: ^3.11.0
+  flutter: ">=3.41.2"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_svg: ^2.1.0
+  path_parsing: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: NativeLiquidGlassPlugin

@@ -2,7 +2,7 @@ name: eros_n
 description: An unofficial nhentai app.
 
 publish_to: 'none'
-version: 1.1.0+24
+version: 1.1.0+25
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -88,7 +88,10 @@ dependencies:
   uuid: ^4.4.0
   easy_debounce: ^2.0.3
   flutter_socks_proxy: ^0.0.3
-  native_liquid_glass: ^0.3.1
+  # Vendored with a patch: the button group did not pass dark mode to the
+  # native view (third_party/native_liquid_glass, MIT).
+  native_liquid_glass:
+    path: third_party/native_liquid_glass
 
 dev_dependencies:
   # dart run build_runner build --delete-conflicting-outputs

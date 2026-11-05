@@ -13,7 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// "Card Size": how many cards fit across in the grid / waterfall styles.
+/// "Card Size": how many cards fit across in the grid / waterfall styles,
+/// set separately for portrait and landscape.
 class CardSizeSettingPage extends HookConsumerWidget {
   const CardSizeSettingPage({super.key, this.previousPageTitle});
 
@@ -28,9 +29,10 @@ class CardSizeSettingPage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = L10n.of(context);
-    final cardSize = ref.watch(cardSizeProvider);
+    final sizes = ref.watch(cardSizeProvider);
     final listModel = ref.watch(settingsProvider.select((s) => s.listModel));
     final isGrid = listModel == ListModel.grid;
+    final notifier = ref.read(cardSizeProvider.notifier);
 
     final footer = StringBuffer(l10n.card_size_footer);
     if (listModel == ListModel.list) {
@@ -39,24 +41,33 @@ class CardSizeSettingPage extends HookConsumerWidget {
         ..write(l10n.card_size_list_hint);
     }
 
+    Widget section(Orientation orientation, String header, {String? footer}) {
+      return AppleSection(
+        header: header,
+        footer: footer,
+        children: [
+          _CardSizeSlider(
+            value: sizes.of(orientation),
+            onChanged: (value) => notifier.set(orientation, value),
+          ),
+          _OrientationPreview(
+            orientation: orientation,
+            cardSize: sizes.of(orientation),
+            isGrid: isGrid,
+          ),
+        ],
+      );
+    }
+
     return AppleGroupedPage(
       title: l10n.card_size,
       previousPageTitle: previousPageTitle,
       children: [
-        AppleSection(
-          children: [
-            _CardSizeSlider(
-              value: cardSize,
-              onChanged: (value) =>
-                  ref.read(cardSizeProvider.notifier).set(value),
-            ),
-          ],
-        ),
-        AppleSection(
+        section(Orientation.portrait, l10n.card_size_portrait),
+        section(
+          Orientation.landscape,
+          l10n.card_size_landscape,
           footer: footer.toString(),
-          children: [
-            _CardSizePreview(cardSize: cardSize, isGrid: isGrid),
-          ],
         ),
       ],
     );
@@ -171,10 +182,15 @@ class _CardSizeSlider extends StatelessWidget {
   }
 }
 
-/// Miniature portrait and landscape screens showing the resulting columns.
-class _CardSizePreview extends StatelessWidget {
-  const _CardSizePreview({required this.cardSize, required this.isGrid});
+/// A miniature screen in one orientation showing the resulting columns.
+class _OrientationPreview extends StatelessWidget {
+  const _OrientationPreview({
+    required this.orientation,
+    required this.cardSize,
+    required this.isGrid,
+  });
 
+  final Orientation orientation;
   final CardSize cardSize;
   final bool isGrid;
 
@@ -188,130 +204,83 @@ class _CardSizePreview extends StatelessWidget {
     final palette = context.palette;
     final theme = Theme.of(context);
 
-    final isPortrait = mq.size.height >= mq.size.width;
+    final isPortraitNow = mq.size.height >= mq.size.width;
     final shortSide = math.min(mq.size.width, mq.size.height);
     final longSide = math.max(mq.size.width, mq.size.height);
+    final portrait = orientation == Orientation.portrait;
 
-    // Side insets in landscape: on notched phones the status bar inset
-    // moves to both sides when rotated.
-    final double landscapeInsets;
-    final double portraitInsets;
-    if (isPortrait) {
-      portraitInsets = mq.padding.left + mq.padding.right;
-      landscapeInsets = mq.padding.top > 30 ? mq.padding.top * 2 : 0;
+    // Side insets in the previewed orientation: on notched phones the
+    // status bar inset moves to both sides in landscape.
+    final double insets;
+    if (portrait) {
+      insets = isPortraitNow ? mq.padding.left + mq.padding.right : 0;
     } else {
-      landscapeInsets = mq.padding.left + mq.padding.right;
-      portraitInsets = 0;
+      insets = isPortraitNow
+          ? (mq.padding.top > 30 ? mq.padding.top * 2 : 0)
+          : mq.padding.left + mq.padding.right;
     }
+    final deviceWidth = (portrait ? shortSide : longSide) - insets;
+    final deviceHeight = portrait ? longSide : shortSide;
 
-    final portraitWidth = shortSide - portraitInsets;
-    final landscapeWidth = longSide - landscapeInsets;
-
-    final maxExtent = isGrid
-        ? gridMaxCrossAxisExtent
-        : NHConst.waterfallFlowLargeMaxCrossAxisExtent;
-    final spacing = isGrid
-        ? gridCrossAxisSpacing
-        : NHConst.waterfallFlowLargeCrossAxisSpacing;
-
-    int columns(double width) => cardSize.columnsFor(
-          crossAxisExtent: width - _listPadding * 2,
-          maxCrossAxisExtent: maxExtent,
-          crossAxisSpacing: spacing,
-        );
-
-    final portraitColumns = columns(portraitWidth);
-    final landscapeColumns = columns(landscapeWidth);
-
-    Widget label(String title, int count) {
-      return Column(
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '$count ${l10n.card_size_columns}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: palette.label,
-              fontWeight: FontWeight.w600,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      );
-    }
+    final columns = cardSize.columnsFor(
+      crossAxisExtent: deviceWidth - _listPadding * 2,
+      maxCrossAxisExtent: isGrid
+          ? gridMaxCrossAxisExtent
+          : NHConst.waterfallFlowLargeMaxCrossAxisExtent,
+      crossAxisSpacing: isGrid
+          ? gridCrossAxisSpacing
+          : NHConst.waterfallFlowLargeCrossAxisSpacing,
+    );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
       child: LayoutBuilder(builder: (context, constraints) {
-        const gap = 18.0;
-        final available = constraints.maxWidth - gap;
-        final portraitAspect = portraitWidth / longSide;
-        final landscapeAspect = landscapeWidth / shortSide;
-        // Same height for both screens; split the width between them. The
-        // portrait column is at least as wide as its label.
-        const minPortraitColumn = 84.0;
-        var height = available / (portraitAspect + landscapeAspect);
-        if (height * portraitAspect < minPortraitColumn) {
-          height = (available - minPortraitColumn) / landscapeAspect;
-        }
-        height = height.clamp(40.0, 200.0);
-
-        Widget screen(double width, double deviceWidth, int count) {
-          return SizedBox(
-            width: width,
-            height: height,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(end: count.toDouble()),
-              duration: const Duration(milliseconds: 260),
-              curve: Curves.easeOutCubic,
-              builder: (context, animatedColumns, _) => CustomPaint(
-                painter: _MiniScreenPainter(
-                  columns: animatedColumns,
-                  scale: width / deviceWidth,
-                  isGrid: isGrid,
-                  screen: palette.background,
-                  frame: palette.separator,
-                  card: theme.colorScheme.primary,
-                  text: palette.tertiaryLabel,
-                  dark: palette.brightness == Brightness.dark,
+        final aspect = deviceWidth / deviceHeight;
+        final height = portrait
+            ? 170.0
+            : math.min(150.0, constraints.maxWidth * 0.62 / aspect);
+        final width = height * aspect;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: width,
+              height: height,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: columns.toDouble()),
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                builder: (context, animatedColumns, _) => CustomPaint(
+                  painter: _MiniScreenPainter(
+                    columns: animatedColumns,
+                    scale: width / deviceWidth,
+                    isGrid: isGrid,
+                    screen: palette.background,
+                    frame: palette.separator,
+                    card: theme.colorScheme.primary,
+                    text: palette.tertiaryLabel,
+                    dark: palette.brightness == Brightness.dark,
+                  ),
                 ),
               ),
             ),
-          );
-        }
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            const SizedBox(width: 20),
             Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                screen(height * portraitAspect, portraitWidth, portraitColumns),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: math.max(height * portraitAspect, minPortraitColumn),
-                  child: label(l10n.card_size_portrait, portraitColumns),
+                Text(
+                  '$columns',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: palette.label,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(width: gap),
-            Column(
-              children: [
-                screen(
-                  height * landscapeAspect,
-                  landscapeWidth,
-                  landscapeColumns,
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  width: height * landscapeAspect,
-                  child: label(l10n.card_size_landscape, landscapeColumns),
+                Text(
+                  l10n.card_size_columns,
+                  style: theme.textTheme.bodyMedium
+                      ?.copyWith(color: palette.secondaryLabel),
                 ),
               ],
             ),

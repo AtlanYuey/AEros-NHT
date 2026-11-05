@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:eros_n/common/global.dart';
 import 'package:eros_n/generated/l10n.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -89,29 +90,74 @@ enum CardSize {
   }
 }
 
-class CardSizeNotifier extends StateNotifier<CardSize> {
+/// Card size per screen orientation (set separately, like the column
+/// count of a photo grid in portrait and landscape).
+@immutable
+class CardSizes {
+  const CardSizes({
+    this.portrait = CardSize.standard,
+    this.landscape = CardSize.standard,
+  });
+
+  final CardSize portrait;
+  final CardSize landscape;
+
+  CardSize of(Orientation orientation) =>
+      orientation == Orientation.portrait ? portrait : landscape;
+
+  CardSizes copyWith(Orientation orientation, CardSize value) =>
+      orientation == Orientation.portrait
+          ? CardSizes(portrait: value, landscape: landscape)
+          : CardSizes(portrait: portrait, landscape: value);
+
+  /// Short summary for a settings row, e.g. "Standard" or "Smaller / Large".
+  String label(BuildContext context) => portrait == landscape
+      ? portrait.label(context)
+      : '${portrait.label(context)} / ${landscape.label(context)}';
+
+  @override
+  bool operator ==(Object other) =>
+      other is CardSizes &&
+      other.portrait == portrait &&
+      other.landscape == landscape;
+
+  @override
+  int get hashCode => Object.hash(portrait, landscape);
+}
+
+class CardSizeNotifier extends StateNotifier<CardSizes> {
   CardSizeNotifier() : super(_load());
 
-  static CardSize _load() {
+  static const _keys = {
+    Orientation.portrait: _cardSizeKey,
+    Orientation.landscape: '${_cardSizeKey}_landscape',
+  };
+
+  static CardSizes _load() {
     try {
-      return CardSize.fromName(hiveHelper.getString(_cardSizeKey));
+      return CardSizes(
+        portrait: CardSize.fromName(
+            hiveHelper.getString(_keys[Orientation.portrait]!)),
+        landscape: CardSize.fromName(
+            hiveHelper.getString(_keys[Orientation.landscape]!)),
+      );
     } catch (_) {
       // Storage is not available (tests).
-      return CardSize.standard;
+      return const CardSizes();
     }
   }
 
-  void set(CardSize value) {
-    if (value == state) {
+  void set(Orientation orientation, CardSize value) {
+    if (state.of(orientation) == value) {
       return;
     }
-    state = value;
+    state = state.copyWith(orientation, value);
     try {
-      hiveHelper.setString(_cardSizeKey, value.name);
+      hiveHelper.setString(_keys[orientation]!, value.name);
     } catch (_) {}
   }
 }
 
-final cardSizeProvider = StateNotifierProvider<CardSizeNotifier, CardSize>(
+final cardSizeProvider = StateNotifierProvider<CardSizeNotifier, CardSizes>(
   (ref) => CardSizeNotifier(),
 );

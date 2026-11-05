@@ -13,6 +13,7 @@ import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/apple.dart';
 import 'package:eros_n/pages/list_view/item/item_base.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:eros_n/pages/gallery/gallery_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -39,36 +40,7 @@ class ThumbPage extends HookConsumerWidget {
         return Scaffold(
           floatingActionButtonLocation:
               FloatingActionButtonLocation.centerFloat,
-          floatingActionButton: Consumer(builder: (context, ref, child) {
-            final currentPageIndex = ref
-                .watch(galleryProvider(gid).select((g) => g.currentPageIndex));
-            final label = currentPageIndex == 0
-                ? L10n.of(context).read
-                : '${L10n.of(context).resume} · ${currentPageIndex + 1}';
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: CapsuleButton(
-                label: label,
-                icon: CupertinoIcons.book_fill,
-                height: 50,
-                onPressed: () {
-                  RouteUtil.goRead(context, ref);
-                },
-              ),
-            );
-          }),
+          floatingActionButton: GalleryReadButton(gid: gid, floating: true),
           body: ThumbBody(
             scrollController: scrollController,
             gid: gid,

@@ -125,7 +125,9 @@ class GalleryCardSliverGridView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cardSize = ref.watch(cardSizeProvider);
+    final cardSize = ref
+        .watch(cardSizeProvider)
+        .of(MediaQuery.orientationOf(context));
     final titleStyle = Theme.of(context).textTheme.bodySmall;
     // Two lines of the title below the cover.
     final titleExtent = MediaQuery.textScalerOf(context)
@@ -252,7 +254,9 @@ class GalleryWaterfallFlowView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cardSize = ref.watch(cardSizeProvider);
+    final cardSize = ref
+        .watch(cardSizeProvider)
+        .of(MediaQuery.orientationOf(context));
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
         16,

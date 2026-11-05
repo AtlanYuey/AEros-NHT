@@ -10,6 +10,7 @@ import 'package:eros_n/pages/read/read_provider.dart';
 import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/utils/logger.dart';
 import 'package:eros_n/component/theme/theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -262,11 +263,8 @@ class _ReadListViewState extends ConsumerState<ReadListView> {
           child: SizedBox(
             width: _kMinCircularProgressIndicatorSize * _kMaxScale,
             height: _kMinCircularProgressIndicatorSize * _kMaxScale,
-            child: CircularProgressIndicator(
+            child: _ReaderProgress(
               value: downloadProgress.progress,
-              color: Colors.white,
-              backgroundColor: Colors.white24,
-              strokeCap: StrokeCap.round,
               strokeWidth: 3 * _kMaxScale,
             ),
           ),
@@ -441,15 +439,11 @@ class ReadPageView extends HookConsumerWidget {
           preloadPagesCount: preloadPagesCount,
           itemCount: pages.length,
           loadingBuilder: (context, event) => Center(
-            child: CircularProgressIndicator(
-              color: Colors.white,
-              backgroundColor: Colors.white24,
-              strokeCap: StrokeCap.round,
+            child: _ReaderProgress(
               strokeWidth: 3,
-              value: event == null
+              value: event == null || event.expectedTotalBytes == null
                   ? null
-                  : event.cumulativeBytesLoaded /
-                      (event.expectedTotalBytes ?? 1),
+                  : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
             ),
           ),
           pageController: readNotifier.preloadPageController,
@@ -459,3 +453,30 @@ class ReadPageView extends HookConsumerWidget {
     );
   }
 }
+
+/// Page loading indicator: the iOS activity indicator until the size is
+/// known, then a thin progress ring.
+class _ReaderProgress extends StatelessWidget {
+  const _ReaderProgress({required this.value, required this.strokeWidth});
+
+  final double? value;
+  final double strokeWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    if (value == null) {
+      return const CupertinoActivityIndicator(
+        color: Colors.white70,
+        radius: 14,
+      );
+    }
+    return CircularProgressIndicator(
+      value: value,
+      color: Colors.white,
+      backgroundColor: Colors.white24,
+      strokeCap: StrokeCap.round,
+      strokeWidth: strokeWidth,
+    );
+  }
+}
+

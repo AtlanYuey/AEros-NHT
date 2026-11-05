@@ -1,12 +1,15 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple_menu.dart';
 import 'package:eros_n/component/widget/liquid_glass.dart';
 import 'package:eros_n/component/widget/scroll_edge.dart';
-import 'package:eros_n/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:native_liquid_glass/native_liquid_glass.dart';
 
+export 'apple_menu.dart' show showAppleMenu, globalRectOf;
 export 'liquid_glass.dart' show LiquidGlassStyle;
 
 /// A small kit of widgets that follow Apple's Human Interface Guidelines.
@@ -289,8 +292,10 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   final ApplePalette palette;
   final TextScaler textScaler;
 
-  static const double _toolbarHeight = 44;
-  static const double _largeTitleHeight = 52;
+  /// Taller than the classic 44pt bar so 44pt glass buttons keep some air
+  /// above the large title (iOS 26).
+  static const double _toolbarHeight = 52;
+  static const double _largeTitleHeight = 56;
 
   /// How far the scroll edge effect reaches past the bottom of the bar.
   static const double _edgeOverhang = 6;
@@ -929,34 +934,193 @@ class CapsuleButton extends StatelessWidget {
   }
 }
 
-/// Shows a native looking alert (UIAlertController .alert).
+/// Shows an iOS 26 style alert (UIAlertController .alert): a rounded glass
+/// card with capsule buttons. The preferred action is tinted; when an alert
+/// also has a destructive action, its default action is the cancel button.
 Future<T?> showAppleAlert<T>({
   required BuildContext context,
   required String title,
   String? message,
   required List<AppleAlertAction<T>> actions,
 }) {
-  return showCupertinoDialog<T>(
+  HapticFeedback.mediumImpact();
+  return showGeneralDialog<T>(
     context: context,
     barrierDismissible: true,
-    builder: (context) => CupertinoAlertDialog(
-      title: Text(title),
-      content: message == null ? null : Text(message),
-      actions: actions
-          .map(
-            (a) => CupertinoDialogAction(
-              isDefaultAction: a.isDefault,
-              isDestructiveAction: a.isDestructive,
-              onPressed: () {
-                Navigator.of(context).pop(a.value);
-                a.onPressed?.call();
-              },
-              child: Text(a.label),
-            ),
-          )
-          .toList(),
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.28),
+    transitionDuration: const Duration(milliseconds: 260),
+    pageBuilder: (context, _, __) => _AppleAlert<T>(
+      title: title,
+      message: message,
+      actions: actions,
     ),
+    transitionBuilder: (context, animation, _, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutBack,
+        reverseCurve: Curves.easeIn,
+      );
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 1.12, end: 1).animate(curved),
+          child: child,
+        ),
+      );
+    },
   );
+}
+
+class _AppleAlert<T> extends StatelessWidget {
+  const _AppleAlert({
+    required this.title,
+    required this.actions,
+    this.message,
+  });
+
+  final String title;
+  final String? message;
+  final List<AppleAlertAction<T>> actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final dark = palette.brightness == Brightness.dark;
+    final hasDestructive = actions.any((a) => a.isDestructive);
+    final shape = RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(34),
+    );
+
+    Widget button(AppleAlertAction<T> a) {
+      final preferred = a.isDefault && !a.isDestructive && !hasDestructive;
+      final fill = preferred
+          ? theme.colorScheme.primary
+          : (dark ? const Color(0x3D767680) : const Color(0x1F767680));
+      final color = a.isDestructive
+          ? (dark ? const Color(0xFFFF453A) : const Color(0xFFFF3B30))
+          : preferred
+              ? Colors.white
+              : palette.label;
+      return CupertinoButton(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 48),
+        onPressed: () {
+          Navigator.of(context).pop(a.value);
+          a.onPressed?.call();
+        },
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: ShapeDecoration(
+            color: fill,
+            shape: const StadiumBorder(),
+          ),
+          child: Text(
+            a.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: color,
+              fontWeight:
+                  a.isDefault || preferred ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final Widget buttons = actions.length <= 2
+        ? Row(
+            children: [
+              for (var i = 0; i < actions.length; i++) ...[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(child: button(actions[i])),
+              ],
+            ],
+          )
+        : Column(
+            children: [
+              for (var i = 0; i < actions.length; i++) ...[
+                if (i > 0) const SizedBox(height: 8),
+                SizedBox(width: double.infinity, child: button(actions[i])),
+              ],
+            ],
+          );
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: shape,
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: dark ? 0.5 : 0.18),
+                  blurRadius: 50,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: ClipPath(
+              clipper: ShapeBorderClipper(shape: shape),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      color: dark
+                          ? const Color(0xD92C2C2E)
+                          : const Color(0xE6F9F9F9),
+                      shape: RoundedSuperellipseBorder(
+                        borderRadius: BorderRadius.circular(34),
+                        side: BorderSide(
+                          color:
+                              Colors.white.withValues(alpha: dark ? 0.1 : 0.6),
+                          width: 0.6,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            title,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                          if (message != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              message!,
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium
+                                  ?.copyWith(color: palette.secondaryLabel),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          buttons,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AppleAlertAction<T> {
@@ -975,54 +1139,32 @@ class AppleAlertAction<T> {
   final bool isDestructive;
 }
 
-/// Shows an action sheet listing [options]; the current [selected] value
-/// gets a checkmark. Resolves to the picked value (or null if cancelled).
+/// Lets the user pick one of [options] from an iOS 26 menu anchored to
+/// [anchor] (global rect) or, by default, to the widget that owns
+/// [context]. The current [selected] value gets a checkmark. Resolves to
+/// the picked value, or null when dismissed.
 Future<T?> showAppleOptionsSheet<T>({
   required BuildContext context,
   required Map<T, String> options,
   T? selected,
   String? title,
   String? message,
+  Rect? anchor,
 }) {
-  final accent = Theme.of(context).colorScheme.primary;
-  return showCupertinoModalPopup<T>(
+  final size = MediaQuery.sizeOf(context);
+  final rect = anchor ??
+      globalRectOf(context) ??
+      Rect.fromCenter(
+        center: Offset(size.width / 2, size.height / 2),
+        width: 0,
+        height: 0,
+      );
+  return showAppleMenu<T>(
     context: context,
-    builder: (context) => CupertinoActionSheet(
-      title: title == null ? null : Text(title),
-      message: message == null ? null : Text(message),
-      actions: options.entries
-          .map(
-            (e) => CupertinoActionSheetAction(
-              isDefaultAction: e.key == selected,
-              onPressed: () => Navigator.of(context).pop(e.key),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(width: 26),
-                  Flexible(
-                    child: Text(
-                      e.value,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: accent),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 26,
-                    child: e.key == selected
-                        ? Icon(CupertinoIcons.checkmark_alt,
-                            size: 20, color: accent)
-                        : null,
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-      cancelButton: CupertinoActionSheetAction(
-        onPressed: () => Navigator.of(context).pop(),
-        child: Text(L10n.of(context).cancel),
-      ),
-    ),
+    anchor: rect,
+    items: options,
+    selected: selected,
+    title: title ?? message,
   );
 }
 
@@ -1048,73 +1190,33 @@ class ApplePullDownButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<T>(
-      enabled: enabled,
-      tooltip: title ?? '',
+    return CupertinoButton(
       padding: EdgeInsets.zero,
-      position: PopupMenuPosition.under,
-      offset: const Offset(0, 6),
-      constraints: _kPullDownConstraints,
-      onSelected: onSelected,
-      itemBuilder: (context) => _pullDownItems<T>(
-        context,
-        items: items,
-        selected: selected,
-        title: title,
-      ),
+      minimumSize: Size.zero,
+      onPressed: !enabled
+          ? null
+          : () async {
+              final rect = globalRectOf(context);
+              if (rect == null) {
+                return;
+              }
+              final value = await showAppleMenu<T>(
+                context: context,
+                anchor: rect,
+                items: items,
+                selected: selected,
+                title: title,
+              );
+              if (value != null) {
+                onSelected(value);
+              }
+            },
       child: child,
     );
   }
 }
 
-const BoxConstraints _kPullDownConstraints =
-    BoxConstraints(minWidth: 220, maxWidth: 280);
-
-List<PopupMenuEntry<T>> _pullDownItems<T>(
-  BuildContext context, {
-  required Map<T, String> items,
-  T? selected,
-  String? title,
-}) {
-  final palette = context.palette;
-  final theme = Theme.of(context);
-  return [
-    if (title != null)
-      PopupMenuItem<T>(
-        enabled: false,
-        height: 30,
-        child: Text(
-          title,
-          style: theme.textTheme.labelMedium,
-        ),
-      ),
-    ...items.entries.map(
-      (e) => PopupMenuItem<T>(
-        value: e.key,
-        height: 44,
-        child: Row(
-          children: [
-            SizedBox(
-              width: 26,
-              child: e.key == selected
-                  ? Icon(CupertinoIcons.checkmark_alt,
-                      size: 18, color: palette.label)
-                  : null,
-            ),
-            Expanded(
-              child: Text(
-                e.value,
-                style: theme.textTheme.bodyLarge,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  ];
-}
-
-/// Opens the same menu as [ApplePullDownButton] below [anchor] (global
+/// Opens the same menu as [ApplePullDownButton] next to [anchor] (global
 /// coordinates), for triggers that are not Flutter buttons (e.g. native
 /// Liquid Glass buttons). Completes with the chosen value, or null.
 Future<T?> showApplePullDownMenu<T>({
@@ -1124,28 +1226,17 @@ Future<T?> showApplePullDownMenu<T>({
   T? selected,
   String? title,
 }) {
-  final overlay =
-      Overlay.of(context).context.findRenderObject()! as RenderBox;
-  final origin = overlay.localToGlobal(Offset.zero);
-  final below = anchor.shift(-origin).translate(0, 6);
-  return showMenu<T>(
+  return showAppleMenu<T>(
     context: context,
-    position: RelativeRect.fromRect(
-      Rect.fromLTRB(below.left, below.bottom, below.right, below.bottom),
-      Offset.zero & overlay.size,
-    ),
-    constraints: _kPullDownConstraints,
-    items: _pullDownItems<T>(
-      context,
-      items: items,
-      selected: selected,
-      title: title,
-    ),
+    anchor: anchor,
+    items: items,
+    selected: selected,
+    title: title,
   );
 }
 
 /// iOS search field: a filled capsule, as in iOS 26.
-class AppleSearchField extends StatelessWidget {
+class AppleSearchField extends StatefulWidget {
   const AppleSearchField({
     super.key,
     this.controller,
@@ -1153,7 +1244,6 @@ class AppleSearchField extends StatelessWidget {
     this.placeholder,
     this.onChanged,
     this.onSubmitted,
-    this.onSuffixTap,
     this.autofocus = false,
   });
 
@@ -1165,36 +1255,248 @@ class AppleSearchField extends StatelessWidget {
   final String? placeholder;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
-  final VoidCallback? onSuffixTap;
   final bool autofocus;
+
+  @override
+  State<AppleSearchField> createState() => _AppleSearchFieldState();
+}
+
+class _AppleSearchFieldState extends State<AppleSearchField> {
+  TextEditingController? _ownController;
+
+  TextEditingController get _controller =>
+      widget.controller ?? (_ownController ??= TextEditingController());
+
+  @override
+  void dispose() {
+    _ownController?.dispose();
+    super.dispose();
+  }
+
+  void _clear() {
+    _controller.clear();
+    widget.onChanged?.call('');
+  }
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final theme = Theme.of(context);
     final dark = palette.brightness == Brightness.dark;
+    final textStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.2);
+    // The text is centred vertically in the capsule (CJK fonts have a
+    // taller line box than the search glyph; fixed padding pushed the
+    // placeholder below the icon).
     return SizedBox(
-      height: height,
-      child: CupertinoSearchTextField(
-        controller: controller,
-        focusNode: focusNode,
-        placeholder: placeholder,
-        autofocus: autofocus,
-        onChanged: onChanged,
-        onSubmitted: onSubmitted,
-        onSuffixTap: onSuffixTap,
-        style: theme.textTheme.bodyLarge,
-        placeholderStyle: theme.textTheme.bodyLarge
-            ?.copyWith(color: palette.secondaryLabel),
+      height: AppleSearchField.height,
+      child: CupertinoTextField(
+        controller: _controller,
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        placeholder: widget.placeholder,
+        onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted,
+        textInputAction: TextInputAction.search,
+        textAlignVertical: TextAlignVertical.center,
+        maxLines: 1,
+        style: textStyle,
+        placeholderStyle: textStyle?.copyWith(color: palette.secondaryLabel),
+        cursorColor: theme.colorScheme.primary,
+        padding: const EdgeInsetsDirectional.fromSTEB(6, 0, 6, 0),
         // tertiarySystemFill
-        backgroundColor:
-            dark ? const Color(0x3D767680) : const Color(0x1F767680),
-        borderRadius: const BorderRadius.all(Radius.circular(height / 2)),
-        itemSize: 19,
-        itemColor: palette.secondaryLabel,
-        prefixInsets: const EdgeInsetsDirectional.fromSTEB(14, 0, 0, 2),
-        suffixInsets: const EdgeInsetsDirectional.fromSTEB(0, 0, 10, 2),
-        padding: const EdgeInsetsDirectional.fromSTEB(8, 11, 8, 11),
+        decoration: BoxDecoration(
+          color: dark ? const Color(0x3D767680) : const Color(0x1F767680),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(AppleSearchField.height / 2),
+          ),
+        ),
+        prefix: Padding(
+          padding: const EdgeInsetsDirectional.only(start: 14),
+          child: Icon(
+            CupertinoIcons.search,
+            size: 19,
+            color: palette.secondaryLabel,
+          ),
+        ),
+        suffixMode: OverlayVisibilityMode.editing,
+        suffix: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _clear,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 14, 0),
+            child: Icon(
+              CupertinoIcons.xmark_circle_fill,
+              size: 18,
+              color: palette.tertiaryLabel,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// iOS 26 sheet: a floating, rounded glass card inset from the screen
+/// edges, with a centred title and a glass done (checkmark) button.
+class AppleSheet extends StatelessWidget {
+  const AppleSheet({
+    super.key,
+    required this.title,
+    required this.child,
+    this.onDone,
+  });
+
+  final String title;
+  final Widget child;
+
+  /// Defaults to closing the sheet.
+  final VoidCallback? onDone;
+
+  static const double radius = 36;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final dark = palette.brightness == Brightness.dark;
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final shape = RoundedSuperellipseBorder(
+      borderRadius: BorderRadius.circular(radius),
+    );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(8, 0, 8, bottom > 0 ? bottom / 2 : 8),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          shape: shape,
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: dark ? 0.5 : 0.18),
+              blurRadius: 40,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: ClipPath(
+          clipper: ShapeBorderClipper(shape: shape),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
+            child: Material(
+              color: dark ? const Color(0xE01C1C1E) : const Color(0xEBF2F2F7),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+                    child: SizedBox(
+                      height: 44,
+                      child: NavigationToolbar(
+                        middle: Text(
+                          title,
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        trailing: GlassIconButton(
+                          icon: CupertinoIcons.checkmark_alt,
+                          sfSymbol: 'checkmark',
+                          iconSize: 18,
+                          tooltip: MaterialLocalizations.of(context)
+                              .okButtonLabel,
+                          onPressed: onDone ??
+                              () => Navigator.of(context).maybePop(),
+                        ),
+                      ),
+                    ),
+                  ),
+                  child,
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Presents [AppleSheet]-style content from the bottom of the screen.
+Future<T?> showAppleSheet<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+}) {
+  return showCupertinoModalPopup<T>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: 0.25),
+    builder: builder,
+  );
+}
+
+/// Non-scrolling top bar (iOS 26) for pages whose content cannot sit under
+/// a translucent bar, such as web views: inline title, glass buttons.
+class AppleTopBar extends StatelessWidget implements PreferredSizeWidget {
+  const AppleTopBar({
+    super.key,
+    required this.title,
+    this.leading,
+    this.trailing,
+    this.closeIcon = false,
+  });
+
+  final String title;
+  final Widget? leading;
+  final Widget? trailing;
+
+  /// Use a close (xmark) button instead of a back chevron.
+  final bool closeIcon;
+
+  static const double _height = 56;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(_height);
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final top = MediaQuery.paddingOf(context).top;
+    Widget? lead = leading;
+    if (lead == null && (ModalRoute.of(context)?.canPop ?? false)) {
+      lead = GlassIconButton(
+        icon: closeIcon ? CupertinoIcons.xmark : CupertinoIcons.back,
+        sfSymbol: closeIcon ? 'xmark' : 'chevron.backward',
+        iconSize: 18,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: () => Navigator.of(context).maybePop(),
+      );
+    }
+    final dark = palette.brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: ColoredBox(
+        color: palette.background,
+        child: Padding(
+          padding: EdgeInsets.only(top: top),
+          child: SizedBox(
+            height: _height,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: NavigationToolbar(
+                leading: lead,
+                middle: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: CupertinoTheme.of(context)
+                      .textTheme
+                      .navTitleTextStyle
+                      .copyWith(color: palette.label),
+                ),
+                trailing: trailing,
+                middleSpacing: 8,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -238,11 +238,11 @@ class _ChallengeOverlay extends StatelessWidget {
                             color: palette.secondaryGroupedBackground,
                             shape: const RoundedSuperellipseBorder(
                               borderRadius:
-                                  BorderRadius.all(Radius.circular(20)),
+                                  BorderRadius.all(Radius.circular(34)),
                             ),
                             child: Padding(
                               padding:
-                                  const EdgeInsets.fromLTRB(24, 28, 24, 12),
+                                  const EdgeInsets.fromLTRB(22, 28, 22, 18),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -254,7 +254,8 @@ class _ChallengeOverlay extends StatelessWidget {
                                   const SizedBox(height: 14),
                                   Text(
                                     '正在进行安全验证',
-                                    style: theme.textTheme.titleMedium,
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                     textAlign: TextAlign.center,
                                   ),
                                   const SizedBox(height: 6),
@@ -264,7 +265,9 @@ class _ChallengeOverlay extends StatelessWidget {
                                       (value == null || value.isEmpty)
                                           ? 'nhentai.net 需要确认你不是机器人，通常几秒内自动完成'
                                           : value,
-                                      style: theme.textTheme.bodySmall,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                              color: palette.secondaryLabel),
                                       textAlign: TextAlign.center,
                                       maxLines: 3,
                                       overflow: TextOverflow.ellipsis,
@@ -272,33 +275,21 @@ class _ChallengeOverlay extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 18),
                                   const CupertinoActivityIndicator(radius: 11),
-                                  const SizedBox(height: 14),
-                                  Divider(color: palette.separator),
+                                  const SizedBox(height: 20),
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: CupertinoButton(
+                                        child: _CapsuleAction(
+                                          label: L10n.of(context).cancel,
                                           onPressed: onCancel,
-                                          child: Text(
-                                            L10n.of(context).cancel,
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                                    color:
-                                                        palette.secondaryLabel),
-                                          ),
                                         ),
                                       ),
+                                      const SizedBox(width: 10),
                                       Expanded(
-                                        child: CupertinoButton(
+                                        child: _CapsuleAction(
+                                          label: '手动验证',
+                                          prominent: true,
                                           onPressed: onShowWebView,
-                                          child: Text(
-                                            '手动验证',
-                                            style: theme.textTheme.bodyLarge
-                                                ?.copyWith(
-                                              color: theme.colorScheme.primary,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
                                         ),
                                       ),
                                     ],
@@ -321,6 +312,48 @@ class _ChallengeOverlay extends StatelessWidget {
   }
 }
 
+/// Capsule button of an iOS 26 alert.
+class _CapsuleAction extends StatelessWidget {
+  const _CapsuleAction({
+    required this.label,
+    required this.onPressed,
+    this.prominent = false,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+  final bool prominent;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final theme = Theme.of(context);
+    final dark = palette.brightness == Brightness.dark;
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: const Size(0, 48),
+      onPressed: onPressed,
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: ShapeDecoration(
+          color: prominent
+              ? theme.colorScheme.primary
+              : (dark ? const Color(0x3D767680) : const Color(0x1F767680)),
+          shape: const StadiumBorder(),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: prominent ? Colors.white : palette.label,
+            fontWeight: prominent ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ChallengeWebView extends StatelessWidget {
   const _ChallengeWebView({
     required this.webViewState,
@@ -335,48 +368,26 @@ class _ChallengeWebView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final theme = Theme.of(context);
-    final top = MediaQuery.paddingOf(context).top;
+    // Native glass is suppressed while this overlay is up, so these are
+    // Flutter glass buttons (no SF Symbol).
     return Scaffold(
       backgroundColor: palette.background,
+      appBar: AppleTopBar(
+        title: '安全验证',
+        leading: GlassIconButton(
+          icon: CupertinoIcons.xmark,
+          iconSize: 18,
+          tooltip: L10n.of(context).cancel,
+          onPressed: onCancel,
+        ),
+        trailing: GlassIconButton(
+          icon: CupertinoIcons.arrow_clockwise,
+          iconSize: 18,
+          onPressed: () => webViewState.currentState?.reload(),
+        ),
+      ),
       body: Column(
         children: [
-          ClipRect(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-              child: Container(
-                color: palette.bar,
-                padding: EdgeInsets.only(top: top),
-                height: top + 52,
-                child: Row(
-                  children: [
-                    CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      onPressed: onCancel,
-                      child: Text(
-                        L10n.of(context).cancel,
-                        style: theme.textTheme.bodyLarge
-                            ?.copyWith(color: theme.colorScheme.primary),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '安全验证',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium,
-                      ),
-                    ),
-                    NavBarIconButton(
-                      icon: CupertinoIcons.arrow_clockwise,
-                      onPressed: () => webViewState.currentState?.reload(),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Divider(color: palette.separator),
           Expanded(
             child: GetCookieWebView(
               key: webViewState,

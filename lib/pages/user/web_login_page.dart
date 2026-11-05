@@ -3,12 +3,13 @@ import 'dart:io' as io;
 
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/common/global.dart';
-import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/web_view.dart';
 import 'package:eros_n/network/app_dio/api_v2_auth.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:eros_n/pages/webview/webview.dart';
 import 'package:eros_n/utils/logger.dart';
+import 'package:eros_n/component/widget/apple.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -29,11 +30,10 @@ class _WebLoginPageState extends State<WebLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: palette.bar,
-        title: Text(L10n.of(context).login),
+      appBar: AppleTopBar(
+        title: L10n.of(context).login,
+        closeIcon: true,
       ),
       // The website handles Cloudflare Turnstile and its proof of work; we
       // only wait for the API token cookie it sets after signing in.
@@ -90,15 +90,16 @@ class WebLoginPage extends HookConsumerWidget {
     }, const []);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(L10n.of(context).login),
+      appBar: AppleTopBar(
+        title: L10n.of(context).login,
+        closeIcon: true,
       ),
       body: FutureBuilder<void>(
           future: setCookies(),
           builder: (context, snapshot) {
             if (snapshot.connectionState != ConnectionState.done) {
               return const Center(
-                child: CircularProgressIndicator(),
+                child: CupertinoActivityIndicator(),
               );
             }
             return InAppWebView(

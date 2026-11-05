@@ -32,11 +32,17 @@ class AppleOptionTile<T> extends StatelessWidget {
       value: options[value],
       showChevron: true,
       onTap: () async {
+        // iOS 26 pop-up button: the menu opens from the value at the
+        // trailing edge of the row.
+        final row = globalRectOf(context);
         final result = await showAppleOptionsSheet<T>(
           context: context,
-          title: title,
           options: options,
           selected: value,
+          anchor: row == null
+              ? null
+              : Rect.fromLTRB(row.right - 17, row.top, row.right - 16,
+                  row.bottom - 4),
         );
         if (result != null) {
           onChanged(result);

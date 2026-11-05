@@ -39,10 +39,13 @@ class AppleOptionTile<T> extends StatelessWidget {
           context: context,
           options: options,
           selected: value,
+          popUp: true,
+          // The value at the trailing edge of the row: the menu morphs out
+          // of it with the selected item over the row.
           anchor: row == null
               ? null
-              : Rect.fromLTRB(row.right - 17, row.top, row.right - 16,
-                  row.bottom - 4),
+              : Rect.fromLTRB(row.right - 150, row.top + 6, row.right - 16,
+                  row.bottom - 6),
         );
         if (result != null) {
           onChanged(result);
@@ -96,7 +99,7 @@ class AppleSliderTile extends StatelessWidget {
           ),
           SizedBox(
             width: double.infinity,
-            child: CupertinoSlider(
+            child: AppleSlider(
               value: value.clamp(min, max),
               min: min,
               max: max,

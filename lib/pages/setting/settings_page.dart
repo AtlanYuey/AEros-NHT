@@ -16,7 +16,7 @@ class SettingsPage extends StatelessWidget {
       title: L10n.of(context).settings,
       children: [
         AppleSection(
-          dividerIndent: 59,
+          dividerIndent: appleContentInset(context) + 43,
           children: [
             AppleListTile(
               leading: const AppleIconBadge(
@@ -51,7 +51,7 @@ class SettingsPage extends StatelessWidget {
           ],
         ),
         AppleSection(
-          dividerIndent: 59,
+          dividerIndent: appleContentInset(context) + 43,
           children: [
             AppleListTile(
               leading: const AppleIconBadge(

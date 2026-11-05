@@ -53,7 +53,7 @@ class _MorePageState extends ConsumerState<MorePage>
               delegate: SliverChildListDelegate([
                 const _AccountSection(),
                 AppleSection(
-                  dividerIndent: 59,
+                  dividerIndent: appleContentInset(context) + 43,
                   children: [
                     AppleListTile(
                       leading: const AppleIconBadge(
@@ -78,7 +78,7 @@ class _MorePageState extends ConsumerState<MorePage>
                   ],
                 ),
                 AppleSection(
-                  dividerIndent: 59,
+                  dividerIndent: appleContentInset(context) + 43,
                   children: [
                     AppleListTile(
                       leading: const AppleIconBadge(

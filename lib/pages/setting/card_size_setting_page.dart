@@ -81,8 +81,8 @@ class _CardSizeSlider extends StatelessWidget {
   final ValueChanged<CardSize> onChanged;
 
   /// Distance from the slider's edge to the centre of the thumb at either
-  /// end (CupertinoSlider: 8 padding + 14 thumb radius).
-  static const double _thumbInset = 22;
+  /// end (half of the 37pt iOS 26 thumb).
+  static const double _thumbInset = 18.5;
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +111,7 @@ class _CardSizeSlider extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CupertinoSlider(
+                AppleSlider(
                   value: value.index.toDouble(),
                   max: last.toDouble(),
                   divisions: last,
@@ -119,7 +119,6 @@ class _CardSizeSlider extends StatelessWidget {
                   onChanged: (v) {
                     final next = CardSize.values[v.round().clamp(0, last)];
                     if (next != value) {
-                      HapticFeedback.selectionClick();
                       onChanged(next);
                     }
                   },

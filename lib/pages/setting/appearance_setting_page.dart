@@ -47,7 +47,7 @@ class AppearanceSettingPage extends HookConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: SizedBox(
                 width: double.infinity,
-                child: CupertinoSlidingSegmentedControl<ThemeMode>(
+                child: AppleSegmentedControl<ThemeMode>(
                   groupValue: themeMode,
                   children: {
                     ThemeMode.system: _SegmentLabel(
@@ -64,10 +64,7 @@ class AppearanceSettingPage extends HookConsumerWidget {
                     ),
                   },
                   onValueChanged: (value) {
-                    if (value != null) {
-                      HapticFeedback.selectionClick();
-                      ref.read(settingsProvider.notifier).setThemeMode(value);
-                    }
+                    ref.read(settingsProvider.notifier).setThemeMode(value);
                   },
                 ),
               ),

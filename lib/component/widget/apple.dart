@@ -1,6 +1,5 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/apple_controls.dart';
 import 'package:eros_n/component/widget/apple_menu.dart';
 import 'package:eros_n/component/widget/liquid_glass.dart';
 import 'package:eros_n/component/widget/scroll_edge.dart';
@@ -9,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:native_liquid_glass/native_liquid_glass.dart';
 
-export 'apple_menu.dart' show showAppleMenu, globalRectOf;
+export 'apple_controls.dart';
+export 'apple_menu.dart' show showAppleMenu, globalRectOf, glassPanelStyle;
 export 'liquid_glass.dart' show LiquidGlassStyle;
 
 /// A small kit of widgets that follow Apple's Human Interface Guidelines.
@@ -60,6 +60,11 @@ class GlassContainer extends StatelessWidget {
     );
   }
 }
+
+/// Leading / trailing content inset used by bars and lists: 20pt on large
+/// iPhones (414pt and wider), 16pt otherwise, as UIKit's layout margins.
+double appleContentInset(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= 414 ? 20 : 16;
 
 /// Whether Apple's own Liquid Glass (UIKit, iOS 26+) is available. When it
 /// is, glass chrome is drawn by real UIKit controls instead of Flutter.
@@ -214,12 +219,18 @@ class AppleSliverNavBar extends StatelessWidget {
     this.automaticallyImplyLeading = true,
     this.backgroundColor,
     this.pageBackgroundColor,
+    this.largeTitle,
   });
 
   final String title;
   final Widget? leading;
   final Widget? trailing;
   final PreferredSizeWidget? bottom;
+
+  /// Whether to show a large title. Defaults to true only for root pages:
+  /// pages with a back button use a standard (inline) centred title, as
+  /// the iOS 26 Settings sub pages do.
+  final bool? largeTitle;
 
   /// Kept for API compatibility; iOS 26 back buttons show only a chevron.
   final String? previousPageTitle;
@@ -259,6 +270,8 @@ class AppleSliverNavBar extends StatelessWidget {
       pinned: true,
       delegate: _AppleNavBarDelegate(
         title: title,
+        largeTitle: largeTitle ?? leadingWidget == null,
+        margin: appleContentInset(context),
         leading: leadingWidget,
         trailing: trailing,
         bottom: bottom,
@@ -274,6 +287,8 @@ class AppleSliverNavBar extends StatelessWidget {
 class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   _AppleNavBarDelegate({
     required this.title,
+    required this.largeTitle,
+    required this.margin,
     required this.leading,
     required this.trailing,
     required this.bottom,
@@ -284,6 +299,8 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   });
 
   final String title;
+  final bool largeTitle;
+  final double margin;
   final Widget? leading;
   final Widget? trailing;
   final PreferredSizeWidget? bottom;
@@ -292,10 +309,11 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   final ApplePalette palette;
   final TextScaler textScaler;
 
-  /// Taller than the classic 44pt bar so 44pt glass buttons keep some air
-  /// above the large title (iOS 26).
-  static const double _toolbarHeight = 52;
-  static const double _largeTitleHeight = 56;
+  /// With a large title the bar is a little taller than 44pt so the 44pt
+  /// glass buttons keep some air above the title; inline bars are the
+  /// standard 44pt (measured on iOS 26 Settings).
+  double get _toolbarHeight => largeTitle ? 52 : 44;
+  double get _largeTitleHeight => largeTitle ? 56 : 0;
 
   /// How far the scroll edge effect reaches past the bottom of the bar.
   static const double _edgeOverhang = 6;
@@ -317,7 +335,8 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
     final theme = CupertinoTheme.of(context);
     final extent = (maxExtent - shrinkOffset).clamp(minExtent, maxExtent);
     final largeTitleExtent = extent - minExtent;
-    final collapse = 1 - largeTitleExtent / _largeTitleHeight;
+    final collapse =
+        largeTitle ? 1 - largeTitleExtent / _largeTitleHeight : 1.0;
 
     // Content only passes under the bar once the large title has
     // collapsed; fade the edge effect in over the first few points.
@@ -328,7 +347,7 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
         theme.textTheme.navLargeTitleTextStyle.copyWith(color: palette.label);
     final titleStyle =
         theme.textTheme.navTitleTextStyle.copyWith(color: palette.label);
-    final showInlineTitle = largeTitleExtent < 10;
+    final showInlineTitle = !largeTitle || largeTitleExtent < 10;
 
     final dark = palette.brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -355,7 +374,7 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
             top: topPadding,
             height: _toolbarHeight,
             child: Padding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 16),
+              padding: EdgeInsetsDirectional.symmetric(horizontal: margin),
               child: NavigationToolbar(
                 leading: leading,
                 middle: AnimatedOpacity(
@@ -387,9 +406,9 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
                   child: Opacity(
                     opacity: (1 - collapse * 1.15).clamp(0.0, 1.0),
                     child: Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        start: 16,
-                        end: 16,
+                      padding: EdgeInsetsDirectional.only(
+                        start: margin,
+                        end: margin,
                         bottom: 8,
                       ),
                       child: Semantics(
@@ -422,6 +441,8 @@ class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_AppleNavBarDelegate oldDelegate) {
     return title != oldDelegate.title ||
+        largeTitle != oldDelegate.largeTitle ||
+        margin != oldDelegate.margin ||
         leading != oldDelegate.leading ||
         trailing != oldDelegate.trailing ||
         bottom != oldDelegate.bottom ||
@@ -570,50 +591,61 @@ class AppleSection extends StatelessWidget {
     required this.children,
     this.header,
     this.footer,
-    this.margin = const EdgeInsets.fromLTRB(16, 0, 16, 0),
-    this.dividerIndent = 16,
+    this.margin,
+    this.dividerIndent,
   });
+
+  /// iOS 26 inset grouped corner radius (measured on iOS 26 Settings).
+  static const double radius = 26;
 
   final List<Widget> children;
   final String? header;
   final String? footer;
-  final EdgeInsetsGeometry margin;
 
-  /// Leading inset for separators between rows.
-  final double dividerIndent;
+  /// Defaults to the screen's content inset (20pt / 16pt) on both sides.
+  final EdgeInsetsGeometry? margin;
+
+  /// Leading inset for separators between rows; defaults to the row's
+  /// content inset.
+  final double? dividerIndent;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final theme = Theme.of(context);
+    final inset = appleContentInset(context);
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i++) {
       rows.add(children[i]);
       if (i != children.length - 1) {
         rows.add(Padding(
-          padding: EdgeInsetsDirectional.only(start: dividerIndent),
+          padding: EdgeInsetsDirectional.only(start: dividerIndent ?? inset),
           child: Divider(height: 0.5, thickness: 0.5, color: palette.separator),
         ));
       }
     }
 
     return Padding(
-      padding: margin,
+      padding: margin ?? EdgeInsets.symmetric(horizontal: inset),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // iOS 26 section headers: sentence case, larger and semibold.
           if (header != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 22, 16, 7),
+              padding: EdgeInsets.fromLTRB(inset, 24, inset, 8),
               child: Text(
-                header!.toUpperCase(),
-                style: theme.textTheme.bodySmall,
+                header!,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: palette.secondaryLabel,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             )
           else
-            const SizedBox(height: 22),
+            const SizedBox(height: 24),
           ClipRSuperellipse(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(radius),
             child: Material(
               color: palette.secondaryGroupedBackground,
               child: Column(children: rows),
@@ -621,7 +653,7 @@ class AppleSection extends StatelessWidget {
           ),
           if (footer != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 7, 16, 0),
+              padding: EdgeInsets.fromLTRB(inset, 8, inset, 0),
               child: Text(footer!, style: theme.textTheme.bodySmall),
             ),
         ],
@@ -643,7 +675,7 @@ class AppleListTile extends StatelessWidget {
     this.onLongPress,
     this.showChevron,
     this.titleColor,
-    this.minHeight = 44,
+    this.minHeight = 52,
   });
 
   final Widget title;
@@ -673,7 +705,10 @@ class AppleListTile extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: minHeight),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: appleContentInset(context),
+            vertical: 10,
+          ),
           child: Row(
             children: [
               if (leading != null) ...[
@@ -760,10 +795,9 @@ class AppleSwitchTile extends StatelessWidget {
       onTap: onChanged == null ? null : () => onChanged!(!value),
       onLongPress: onLongPress,
       showChevron: false,
-      trailing: CupertinoSwitch(
+      trailing: AppleSwitch(
         value: value,
         onChanged: onChanged,
-        activeTrackColor: CupertinoColors.systemGreen,
       ),
     );
   }
@@ -989,9 +1023,6 @@ class _AppleAlert<T> extends StatelessWidget {
     final theme = Theme.of(context);
     final dark = palette.brightness == Brightness.dark;
     final hasDestructive = actions.any((a) => a.isDestructive);
-    final shape = RoundedSuperellipseBorder(
-      borderRadius: BorderRadius.circular(34),
-    );
 
     Widget button(AppleAlertAction<T> a) {
       final preferred = a.isDefault && !a.isDestructive && !hasDestructive;
@@ -1055,64 +1086,35 @@ class _AppleAlert<T> extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 40),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 320),
-          child: DecoratedBox(
-            decoration: ShapeDecoration(
-              shape: shape,
-              shadows: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: dark ? 0.5 : 0.18),
-                  blurRadius: 50,
-                  offset: const Offset(0, 16),
-                ),
-              ],
-            ),
-            child: ClipPath(
-              clipper: ShapeBorderClipper(shape: shape),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      color: dark
-                          ? const Color(0xD92C2C2E)
-                          : const Color(0xE6F9F9F9),
-                      shape: RoundedSuperellipseBorder(
-                        borderRadius: BorderRadius.circular(34),
-                        side: BorderSide(
-                          color:
-                              Colors.white.withValues(alpha: dark ? 0.1 : 0.6),
-                          width: 0.6,
-                        ),
-                      ),
+          child: LiquidGlass(
+            borderRadius: 34,
+            style: glassPanelStyle(dark, opacity: 0.86),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            title,
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          if (message != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              message!,
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium
-                                  ?.copyWith(color: palette.secondaryLabel),
-                            ),
-                          ],
-                          const SizedBox(height: 20),
-                          buttons,
-                        ],
+                    if (message != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        message!,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: palette.secondaryLabel),
                       ),
-                    ),
-                  ),
+                    ],
+                    const SizedBox(height: 20),
+                    buttons,
+                  ],
                 ),
               ),
             ),
@@ -1150,6 +1152,7 @@ Future<T?> showAppleOptionsSheet<T>({
   String? title,
   String? message,
   Rect? anchor,
+  bool popUp = false,
 }) {
   final size = MediaQuery.sizeOf(context);
   final rect = anchor ??
@@ -1165,6 +1168,7 @@ Future<T?> showAppleOptionsSheet<T>({
     items: options,
     selected: selected,
     title: title ?? message,
+    popUp: popUp,
   );
 }
 
@@ -1283,53 +1287,87 @@ class _AppleSearchFieldState extends State<AppleSearchField> {
     final palette = context.palette;
     final theme = Theme.of(context);
     final dark = palette.brightness == Brightness.dark;
-    final textStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.2);
-    // The text is centred vertically in the capsule (CJK fonts have a
-    // taller line box than the search glyph; fixed padding pushed the
-    // placeholder below the icon).
+    // No line-height override: with one, Flutter places CJK text (drawn
+    // with a fallback font) visibly below the centre on iOS.
+    final textStyle = theme.textTheme.bodyLarge;
+    final controller = _controller;
+    // The placeholder is a plain label centred in the row like the icon
+    // (CupertinoTextField baseline-aligns its placeholder to the empty
+    // editable line, which puts Chinese placeholders too low).
     return SizedBox(
       height: AppleSearchField.height,
-      child: CupertinoTextField(
-        controller: _controller,
-        focusNode: widget.focusNode,
-        autofocus: widget.autofocus,
-        placeholder: widget.placeholder,
-        onChanged: widget.onChanged,
-        onSubmitted: widget.onSubmitted,
-        textInputAction: TextInputAction.search,
-        textAlignVertical: TextAlignVertical.center,
-        maxLines: 1,
-        style: textStyle,
-        placeholderStyle: textStyle?.copyWith(color: palette.secondaryLabel),
-        cursorColor: theme.colorScheme.primary,
-        padding: const EdgeInsetsDirectional.fromSTEB(6, 0, 6, 0),
-        // tertiarySystemFill
+      child: DecoratedBox(
         decoration: BoxDecoration(
+          // tertiarySystemFill
           color: dark ? const Color(0x3D767680) : const Color(0x1F767680),
           borderRadius: const BorderRadius.all(
             Radius.circular(AppleSearchField.height / 2),
           ),
         ),
-        prefix: Padding(
-          padding: const EdgeInsetsDirectional.only(start: 14),
-          child: Icon(
-            CupertinoIcons.search,
-            size: 19,
-            color: palette.secondaryLabel,
-          ),
-        ),
-        suffixMode: OverlayVisibilityMode.editing,
-        suffix: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: _clear,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(8, 0, 14, 0),
-            child: Icon(
-              CupertinoIcons.xmark_circle_fill,
-              size: 18,
-              color: palette.tertiaryLabel,
+        child: Row(
+          children: [
+            const SizedBox(width: 14),
+            Icon(
+              CupertinoIcons.search,
+              size: 19,
+              color: palette.secondaryLabel,
             ),
-          ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Stack(
+                alignment: AlignmentDirectional.centerStart,
+                children: [
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, _) => value.text.isEmpty &&
+                            !value.composing.isValid
+                        ? IgnorePointer(
+                            child: Text(
+                              widget.placeholder ?? '',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: textStyle?.copyWith(
+                                  color: palette.secondaryLabel),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  CupertinoTextField(
+                    controller: controller,
+                    focusNode: widget.focusNode,
+                    autofocus: widget.autofocus,
+                    onChanged: widget.onChanged,
+                    onSubmitted: widget.onSubmitted,
+                    textInputAction: TextInputAction.search,
+                    textAlignVertical: TextAlignVertical.center,
+                    maxLines: 1,
+                    style: textStyle,
+                    cursorColor: theme.colorScheme.primary,
+                    padding: EdgeInsets.zero,
+                    decoration: null,
+                  ),
+                ],
+              ),
+            ),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, _) => value.text.isEmpty
+                  ? const SizedBox(width: 14)
+                  : GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _clear,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                            8, 0, 14, 0),
+                        child: Icon(
+                          CupertinoIcons.xmark_circle_fill,
+                          size: 18,
+                          color: palette.tertiaryLabel,
+                        ),
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );
@@ -1360,59 +1398,41 @@ class AppleSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final dark = palette.brightness == Brightness.dark;
     final bottom = MediaQuery.paddingOf(context).bottom;
-    final shape = RoundedSuperellipseBorder(
-      borderRadius: BorderRadius.circular(radius),
-    );
     return Padding(
       padding: EdgeInsets.fromLTRB(8, 0, 8, bottom > 0 ? bottom / 2 : 8),
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          shape: shape,
-          shadows: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? 0.5 : 0.18),
-              blurRadius: 40,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: ClipPath(
-          clipper: ShapeBorderClipper(shape: shape),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-            child: Material(
-              color: dark ? const Color(0xE01C1C1E) : const Color(0xEBF2F2F7),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
-                    child: SizedBox(
-                      height: 44,
-                      child: NavigationToolbar(
-                        middle: Text(
-                          title,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
-                        trailing: GlassIconButton(
-                          icon: CupertinoIcons.checkmark_alt,
-                          sfSymbol: 'checkmark',
-                          iconSize: 18,
-                          tooltip: MaterialLocalizations.of(context)
-                              .okButtonLabel,
-                          onPressed: onDone ??
-                              () => Navigator.of(context).maybePop(),
-                        ),
-                      ),
+      child: LiquidGlass(
+        borderRadius: radius,
+        style: glassPanelStyle(dark, opacity: 0.88),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+                child: SizedBox(
+                  height: 44,
+                  child: NavigationToolbar(
+                    middle: Text(
+                      title,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    trailing: GlassIconButton(
+                      icon: CupertinoIcons.checkmark_alt,
+                      sfSymbol: 'checkmark',
+                      iconSize: 18,
+                      tooltip: MaterialLocalizations.of(context).okButtonLabel,
+                      onPressed:
+                          onDone ?? () => Navigator.of(context).maybePop(),
                     ),
                   ),
-                  child,
-                  const SizedBox(height: 8),
-                ],
+                ),
               ),
-            ),
+              child,
+              const SizedBox(height: 8),
+            ],
           ),
         ),
       ),

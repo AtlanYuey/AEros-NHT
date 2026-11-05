@@ -90,7 +90,6 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
   Widget build(BuildContext context) {
     logger.t('build HistoryPage');
     super.build(context);
-    final palette = context.palette;
     return Scaffold(
       body: CupertinoScrollbar(
         controller: scrollController,
@@ -170,23 +169,22 @@ class _HistoryPageState extends ConsumerState<HistoryPage>
                               : date.toLocal().toString().split(' ')[0];
                       final historysInDate = e.value;
                       return MultiSliver(
-                        pushPinnedChildren: true,
                         children: [
-                          SliverPinnedHeader(
-                            child: ClipRect(
-                              child: BackdropFilter(
-                                filter:
-                                    ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                                child: Container(
-                                  color: palette.bar,
-                                  padding:
-                                      const EdgeInsets.fromLTRB(20, 10, 20, 6),
-                                  child: Text(
-                                    dateStr,
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                ),
+                          // iOS 26 list section header: plain text that
+                          // scrolls with the list (no pinned bar).
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                  appleContentInset(context),
+                                  22,
+                                  appleContentInset(context),
+                                  6),
+                              child: Text(
+                                dateStr,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
                           ),

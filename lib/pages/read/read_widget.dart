@@ -279,18 +279,14 @@ class _ViewPageSliderState extends State<ViewPageSlider> {
         Expanded(
           child: Transform.flip(
             flipX: widget.reverse,
-            child: CupertinoSlider(
+            child: AppleSlider(
               min: 0,
               max: widget.max > 0 ? widget.max : 1,
               value: _value.clamp(0, widget.max > 0 ? widget.max : 1),
               divisions: widget.max > 0 ? widget.max.round() : null,
               activeColor: Colors.white,
-              thumbColor: Colors.white,
               onChanged: widget.max > 0
                   ? (double newValue) {
-                      if (newValue.round() != _value.round()) {
-                        HapticFeedback.selectionClick();
-                      }
                       setState(() {
                         _value = newValue;
                       });

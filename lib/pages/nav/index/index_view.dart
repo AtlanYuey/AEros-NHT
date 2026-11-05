@@ -162,7 +162,16 @@ class GlassTabBar extends StatelessWidget {
             style: (palette.brightness == Brightness.dark
                     ? LiquidGlassStyle.dark
                     : LiquidGlassStyle.light)
-                .copyWith(refraction: 14, bevel: 20, blur: 3),
+                .copyWith(
+              refraction: 14,
+              bevel: 20,
+              // A little more frosting than buttons keeps labels legible
+              // over busy covers while the glass stays clear.
+              blur: 4,
+              tint: palette.brightness == Brightness.dark
+                  ? const Color(0x47000000)
+                  : const Color(0x1AFFFFFF),
+            ),
             child: SizedBox(
               height: barHeight - 8,
               child: LayoutBuilder(builder: (context, constraints) {

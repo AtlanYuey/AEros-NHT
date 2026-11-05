@@ -1,87 +1,61 @@
-import 'package:collection/collection.dart';
-import 'package:eros_n/common/const/const.dart';
+import 'dart:io';
+
 import 'package:eros_n/common/global.dart';
 import 'package:eros_n/component/models/index.dart';
-import 'package:eros_n/network/app_dio/pdio.dart';
+import 'package:eros_n/network/app_dio/api_v2_auth.dart';
 import 'package:eros_n/network/request.dart';
 import 'package:eros_n/utils/logger.dart';
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart' as iaw;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class UserNotifier extends StateNotifier<User> {
   UserNotifier(super.state);
 
-  Future<bool> login({
-    required String username,
-    required String password,
-  }) async {
-    late final String csrfToken;
-
-    try {
-      csrfToken = await getLoginToken() ?? '';
-    } on HttpException catch (e) {
-      rethrow;
+  /// Finish a website login: keep the API tokens from its cookies and load
+  /// the profile. Returns false when the cookies hold no token yet.
+  Future<bool> loginWithCookies(Iterable<Cookie> cookies) async {
+    if (!await ApiV2Auth.saveFromCookies(cookies)) {
+      return false;
     }
-
-    logger.d('csrfToken $csrfToken');
-    final loginResult = await loginNhentai(
-        username: username, password: password, csrfToken: csrfToken);
-
-    return loginResult;
+    await loginGetMore();
+    return true;
   }
 
   Future<void> loginGetMore() async {
-    logger.d('loginWithCookie');
-
-    final cookie =
-        await Global.cookieJar.loadForRequest(Uri.parse(NHConst.baseUrl));
-    final sessionid =
-        cookie.firstWhereOrNull((element) => element.name == 'sessionid');
-
-    state = state.copyWith(sessionid: sessionid?.value);
-    hiveHelper.setUser(state);
-
-    late User userFromIndex;
-    try {
-      userFromIndex = await getInfoFromIndex(refresh: true);
-    } on HttpException catch (e) {
-      rethrow;
-    }
-    // log userFromIndex
-    logger.d('userFromIndex $userFromIndex');
-
-    state = state.copyWith(
-      userUrl: userFromIndex.userUrl,
-      userName: userFromIndex.userName,
-      userId: userFromIndex.userId,
-    );
-    hiveHelper.setUser(state);
-
-    if (userFromIndex.userUrl == null) {
+    final token = ApiV2Auth.accessToken;
+    if (token == null) {
       return;
     }
-    late User userFromProfile;
-    try {
-      userFromProfile = await getInfoFromUserPage(
-          url: userFromIndex.userUrl ?? '', refresh: true);
-    } on HttpException catch (e) {
-      rethrow;
-    }
+    state = state.copyWith(sessionid: token);
+    hiveHelper.setUser(state);
 
+    final user = await getCurrentUser();
+    logger.d('current user ${user.userName}');
     state = state.copyWith(
-      avatarUrl: userFromProfile.avatarUrl,
+      userName: user.userName,
+      userId: user.userId,
+      userUrl: user.userUrl,
+      avatarUrl: user.avatarUrl,
     );
     hiveHelper.setUser(state);
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await ApiV2Auth.clear();
     Global.cookieJar.deleteAll();
-    CookieManager.instance().deleteAllCookies();
+    iaw.CookieManager.instance().deleteAllCookies();
     state = const User();
     hiveHelper.setUser(state);
   }
 }
 
 final userProvider = StateNotifierProvider<UserNotifier, User>((ref) {
-  return UserNotifier(hiveHelper.getUser());
+  final saved = hiveHelper.getUser();
+  // Sessions from the old cookie based site cannot call the API; ask for a
+  // new login instead of failing on every account request.
+  if (saved.isLogin && !ApiV2Auth.isLoggedIn) {
+    hiveHelper.setUser(const User());
+    return UserNotifier(const User());
+  }
+  return UserNotifier(saved);
 });

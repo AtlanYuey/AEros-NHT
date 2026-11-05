@@ -1,18 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/common/enum.dart';
-import 'package:eros_n/common/extension.dart';
 import 'package:eros_n/common/global.dart';
-import 'package:eros_n/common/parser/parser.dart';
 import 'package:eros_n/component/models/index.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tuple/tuple.dart';
 
 import '../utils/logger.dart';
 import 'api.dart';
+import 'api_v2.dart';
+import 'app_dio/api_v2_auth.dart';
 import 'app_dio/pdio.dart';
 
 Options getOptions({bool forceRefresh = false}) {
@@ -25,53 +26,87 @@ Options getOptions({bool forceRefresh = false}) {
   return options;
 }
 
-/// 使用API进行搜索
-/// 有严重的bug
-/// 某些情况某些页码会报 404 "error": "does not exist"
-/// 严重影响搜索 暂时不使用
-Future<GallerySearch> searchGalleryByApi({
+// ---------------------------------------------------------------------------
+// nhentai API v2. The HTML pages sit behind Cloudflare's browser challenge,
+// the JSON API does not, so all browsing goes through it.
+// ---------------------------------------------------------------------------
+
+Future<T> _apiGet<T>(
+  String path, {
+  Map<String, dynamic>? queryParameters,
   bool refresh = false,
   CancelToken? cancelToken,
-  int? page,
-  String? query,
-  SearchSort? sort,
+  required FutureOr<T> Function(dynamic data) parse,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  const url = '/api/galleries/search';
-  final params = <String, dynamic>{
-    if (page != null) 'page': page,
-    if (sort != null) 'sort': sort.value,
-    'query': query ?? '',
-  };
-
-  final httpTransformer = HttpTransformerBuilder(
-    (response) {
-      logger.d('statusCode ${response.statusCode}');
-      final data = jsonEncode(response.data).processApi;
-      final result =
-          GallerySearch.fromJson(jsonDecode(data) as Map<String, dynamic>);
-      logger.v('result $result');
-      return DioHttpResponse<GallerySearch>.success(result);
-    },
-  );
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    queryParameters: params,
-    httpTransformer: httpTransformer,
+  final dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
+  final httpResponse = await dioHttpClient.get(
+    path,
+    queryParameters: queryParameters,
     options: getOptions(forceRefresh: refresh),
     cancelToken: cancelToken,
+    httpTransformer: HttpTransformerBuilder(
+      (response) async {
+        final data = response.data is String
+            ? jsonDecode(response.data as String)
+            : response.data;
+        return DioHttpResponse<T>.success(await parse(data));
+      },
+    ),
   );
-
-  if (httpResponse.ok && httpResponse.data is GallerySearch) {
-    final data = httpResponse.data as GallerySearch;
-    return data;
-  } else {
-    throw httpResponse.error ?? HttpException('searchGalleryByApi error');
+  if (httpResponse.ok && httpResponse.data is T) {
+    return httpResponse.data as T;
   }
+  logger.e('$path ${httpResponse.error}');
+  throw httpResponse.error ?? HttpException('$path error');
 }
 
+Future<T> _apiSend<T>(
+  String method,
+  String path, {
+  Object? data,
+  Map<String, dynamic>? queryParameters,
+  CancelToken? cancelToken,
+  required FutureOr<T> Function(dynamic data) parse,
+}) async {
+  final dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
+  final options = Options(
+    method: method,
+    contentType: Headers.jsonContentType,
+    responseType: ResponseType.json,
+    validateStatus: (status) => status != null && status < 500,
+  );
+  final httpResponse = await dioHttpClient.request(
+    path,
+    data: data,
+    queryParameters: queryParameters,
+    options: options,
+    cancelToken: cancelToken,
+    httpTransformer: HttpTransformerBuilder(
+      (response) async {
+        final body =
+            response.data is String && (response.data as String).isNotEmpty
+                ? jsonDecode(response.data as String)
+                : response.data;
+        final status = response.statusCode ?? 0;
+        if (status >= 400) {
+          final message = body is Map
+              ? (body['error'] ?? body['detail'] ?? body['message'] ?? '$body')
+              : '$body';
+          return DioHttpResponse<T>.failure(
+              errorMsg: '$message', errorCode: status);
+        }
+        return DioHttpResponse<T>.success(await parse(body));
+      },
+    ),
+  );
+  if (httpResponse.ok && httpResponse.data is T) {
+    return httpResponse.data as T;
+  }
+  logger.e('$method $path ${httpResponse.error}');
+  throw httpResponse.error ?? HttpException('$path error');
+}
+
+/// Search, or list everything when [query] is empty.
 Future<GallerySet> searchGallery({
   bool refresh = false,
   CancelToken? cancelToken,
@@ -79,89 +114,53 @@ Future<GallerySet> searchGallery({
   String? query,
   SearchSort? sort,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  const url = '/search/';
-  final params = <String, dynamic>{
-    if (page != null) 'page': page,
-    if (sort != null && sort.value.isNotEmpty) 'sort': sort.value,
-    'q': query ?? '',
-  };
-
-  logger.d('searchGallery params $params');
-
-  int? statusCode;
-  final httpTransformer = HttpTransformerBuilder(
-    (response) async {
-      logger.v('statusCode ${response.statusCode}');
-      statusCode = response.statusCode;
-      final list = await parseGalleryList(response.data as String);
-      return DioHttpResponse<GallerySet>.success(list);
-    },
-  );
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    queryParameters: params,
-    httpTransformer: httpTransformer,
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-  );
-
-  if (httpResponse.ok && httpResponse.data is GallerySet) {
-    GallerySet data = httpResponse.data as GallerySet;
-    if (statusCode == 304) {
-      data = data.copyWith(fromCache: true);
-    }
-    return data;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getGalleryList error');
+  final q = (query ?? '').trim();
+  final sortValue = NhApiV2.sortValue(sort);
+  if (q.isEmpty && sortValue == 'date') {
+    return _apiGet(
+      '${NhApiV2.prefix}/galleries',
+      queryParameters: {'page': page ?? 1},
+      refresh: refresh,
+      cancelToken: cancelToken,
+      parse: (data) =>
+          NhApiV2.gallerySetFromPage(data as Map<String, dynamic>, page: page),
+    );
   }
+  logger.d('searchGallery q:$q sort:$sortValue page:$page');
+  return _apiGet(
+    '${NhApiV2.prefix}/search',
+    queryParameters: {
+      // The API requires a query; "*" matches everything.
+      'query': q.isEmpty ? '*' : q,
+      'sort': sortValue,
+      'page': page ?? 1,
+    },
+    refresh: refresh,
+    cancelToken: cancelToken,
+    parse: (data) =>
+        NhApiV2.gallerySetFromPage(data as Map<String, dynamic>, page: page),
+  );
 }
 
+/// Front page: latest galleries plus the "popular now" row.
 Future<GallerySet> getGalleryList({
   bool refresh = false,
   CancelToken? cancelToken,
   String? referer,
   int? page,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final params = <String, dynamic>{
-    if (page != null) 'page': page,
-  };
-
-  int? statusCode;
-
-  final httpTransformer = HttpTransformerBuilder(
-    (response) async {
-      logger.v('statusCode ${response.statusCode}');
-      statusCode = response.statusCode;
-      final list = await parseGalleryList(response.data as String);
-      return DioHttpResponse<GallerySet>.success(list);
-    },
-  );
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    '/',
-    queryParameters: params,
-    httpTransformer: httpTransformer,
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-  );
-
-  if (httpResponse.ok && httpResponse.data is GallerySet) {
-    GallerySet data = httpResponse.data as GallerySet;
-    if (statusCode == 304) {
-      logger.v('fromCache');
-      data = data.copyWith(fromCache: true);
-    }
-    return data;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getGalleryList error');
-  }
+  final results = await Future.wait([
+    _apiGet<List<Gallery>>(
+      '${NhApiV2.prefix}/galleries/popular',
+      refresh: refresh,
+      cancelToken: cancelToken,
+      parse: (data) => NhApiV2.galleriesFromList(data as List?),
+    ),
+    searchGallery(refresh: refresh, cancelToken: cancelToken, page: page),
+  ]);
+  final popular = results[0] as List<Gallery>;
+  final list = results[1] as GallerySet;
+  return list.copyWith(populars: popular);
 }
 
 Future<GallerySet> getFavoriteList({
@@ -170,97 +169,38 @@ Future<GallerySet> getFavoriteList({
   String? referer,
   int? page,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final params = <String, dynamic>{
-    if (page != null && page > 1) 'page': page,
-  };
-
-  int? statusCode;
-
-  final httpTransformer = HttpTransformerBuilder(
-    (response) async {
-      logger.v('statusCode ${response.statusCode}');
-      statusCode = response.statusCode;
-      final list = await parseGalleryList(response.data as String);
-      return DioHttpResponse<GallerySet>.success(list);
+  return _apiGet(
+    '${NhApiV2.prefix}/favorites',
+    queryParameters: {'page': page ?? 1},
+    refresh: refresh,
+    cancelToken: cancelToken,
+    parse: (data) async {
+      final set = await NhApiV2.gallerySetFromPage(data as Map<String, dynamic>,
+          page: page);
+      return set.copyWith(favorites: set.gallerys);
     },
   );
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    '/favorites/',
-    queryParameters: params,
-    httpTransformer: httpTransformer,
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-  );
-
-  if (httpResponse.ok && httpResponse.data is GallerySet) {
-    GallerySet data = httpResponse.data as GallerySet;
-    if (statusCode == 304) {
-      data = data.copyWith(fromCache: true);
-    }
-    return data;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getFavoriteList error');
-  }
 }
 
+/// [url] may be a gallery URL (`/g/123/`) or a gallery id.
 Future<Gallery> getGalleryDetail({
   required String url,
   bool refresh = false,
   CancelToken? cancelToken,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    httpTransformer: HttpTransformerBuilder(
-      (response) async {
-        logger.v('statusCode ${response.statusCode}');
-        final gallery = await parseGalleryDetail(response.data as String);
-        return DioHttpResponse<Gallery>.success(gallery);
-      },
-    ),
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-  );
-
-  if (httpResponse.ok && httpResponse.data is Gallery) {
-    return httpResponse.data as Gallery;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getGalleryDetail error');
+  final gid = NhApiV2.gidFromUrl(url);
+  if (gid == null) {
+    throw HttpException('invalid gallery url: $url');
   }
-}
-
-Future<GalleryImage> getGalleryImage({
-  required String url,
-  bool refresh = false,
-  CancelToken? cancelToken,
-}) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        logger.d('statusCode ${response.statusCode}');
-        final galleryThumb = parseGalleryImage(response.data as String);
-        return DioHttpResponse<GalleryImage>.success(galleryThumb);
-      },
-    ),
-    options: getOptions(forceRefresh: refresh),
+  return _apiGet(
+    '${NhApiV2.prefix}/galleries/$gid',
+    queryParameters: {
+      'include': ApiV2Auth.isLoggedIn ? 'related,favorite' : 'related',
+    },
+    refresh: refresh,
     cancelToken: cancelToken,
+    parse: (data) => NhApiV2.galleryFromDetail(data as Map<String, dynamic>),
   );
-
-  if (httpResponse.ok && httpResponse.data is GalleryImage) {
-    return httpResponse.data as GalleryImage;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getGalleryImage error');
-  }
 }
 
 Future<List<Comment>> getGalleryComments({
@@ -269,123 +209,41 @@ Future<List<Comment>> getGalleryComments({
   bool refresh = false,
   CancelToken? cancelToken,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final url = '/api/gallery/$gid/comments';
-  logger.d('url $url');
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        final comments = <Comment>[];
-        if (response.data is List) {
-          for (final item in response.data as List) {
-            if (item is Map) {
-              comments.add(Comment.fromJson(item as Map<String, dynamic>));
-            }
-          }
-        }
-        return DioHttpResponse<List<Comment>>.success(comments);
-      },
-    ),
-    options: getOptions(forceRefresh: refresh),
+  return _apiGet(
+    '${NhApiV2.prefix}/galleries/$gid/comments',
+    queryParameters: {'page': 1, 'per_page': 50},
+    refresh: refresh,
     cancelToken: cancelToken,
+    parse: (data) => NhApiV2.commentsFromList(
+        (data as Map<String, dynamic>)['result'] as List?),
   );
-
-  if (httpResponse.ok && httpResponse.data is List<Comment>) {
-    return httpResponse.data as List<Comment>;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getGalleryComments error');
-  }
 }
 
-Future<String?> getLoginToken() async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final params = <String, dynamic>{
-    'next': '/',
-  };
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    NHConst.loginUrl,
-    // queryParameters: params,
-    options: getOptions(forceRefresh: true),
-    // cancelToken: cancelToken,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        logger.d('statusCode ${response.statusCode}');
-        final token = parseLoginPage(response.data as String);
-        return DioHttpResponse<String>.success(token);
-      },
-    ),
+/// The signed-in user (needs a token).
+Future<User> getCurrentUser() async {
+  return _apiGet(
+    '${NhApiV2.prefix}/user',
+    refresh: true,
+    parse: (data) {
+      final json = data as Map<String, dynamic>;
+      final avatar = json['avatar_url'] as String? ?? '';
+      return User(
+        userName: json['username'] as String?,
+        userId: '${json['id']}',
+        userUrl: '${NHConst.baseUrl}/users/${json['id']}/${json['slug']}/',
+        avatarUrl: avatar.isEmpty
+            ? null
+            : (avatar.startsWith('http')
+                ? avatar
+                : '${NhApiV2.imageHost}/$avatar'),
+      );
+    },
   );
-
-  if (httpResponse.ok && httpResponse.data is String) {
-    return httpResponse.data as String;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getLoginToken error');
-  }
-}
-
-Future<User> getInfoFromIndex({
-  bool refresh = false,
-  CancelToken? cancelToken,
-}) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    NHConst.infoUrl,
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        final user = parseInfo(response.data as String);
-        return DioHttpResponse<User>.success(user);
-      },
-    ),
-  );
-
-  if (httpResponse.ok && httpResponse.data is User) {
-    return httpResponse.data as User;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getInfo error');
-  }
-}
-
-Future<User> getInfoFromUserPage({
-  required String url,
-  bool refresh = false,
-  CancelToken? cancelToken,
-}) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  DioHttpResponse httpResponse = await dioHttpClient.get(
-    url,
-    options: getOptions(forceRefresh: refresh),
-    cancelToken: cancelToken,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        final user = parseUserPage(response.data as String);
-        return DioHttpResponse<User>.success(user);
-      },
-    ),
-  );
-
-  if (httpResponse.ok && httpResponse.data is User) {
-    return httpResponse.data as User;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('getInfo error');
-  }
 }
 
 Future<Tuple2<bool?, int?>> setFavorite({
   required int? gid,
-  required String? csrfToken,
+  String? csrfToken,
   bool unfavorite = false,
   bool refresh = true,
   CancelToken? cancelToken,
@@ -393,82 +251,18 @@ Future<Tuple2<bool?, int?>> setFavorite({
   if (gid == null) {
     return const Tuple2(null, null);
   }
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final path = '/api/gallery/$gid/${unfavorite ? 'unfavorite' : 'favorite'}';
-
-  DioHttpResponse httpResponse = await dioHttpClient.post(
-    path,
-    options: getOptions(forceRefresh: refresh)
-      ..headers = {'x-csrftoken': csrfToken},
+  return _apiSend(
+    unfavorite ? 'DELETE' : 'POST',
+    '${NhApiV2.prefix}/galleries/$gid/favorite',
     cancelToken: cancelToken,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        final result = response.data;
-        final favNums = result['num_favorites'] as List<dynamic>?;
-        final favNum = favNums?.first as int?;
-        final favorited = result['favorited'] as bool?;
-        return DioHttpResponse<Tuple2<bool?, int?>>.success(
-            Tuple2(favorited, favNum));
-      },
-    ),
+    parse: (data) {
+      final json = data as Map<String, dynamic>;
+      return Tuple2<bool?, int?>(
+        json['favorited'] as bool?,
+        json['num_favorites'] as int?,
+      );
+    },
   );
-
-  if (httpResponse.ok && httpResponse.data is Tuple2<bool?, int?>) {
-    return httpResponse.data as Tuple2<bool?, int?>;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('setFavorite error');
-  }
-}
-
-Future<bool> loginNhentai({
-  required String username,
-  required String password,
-  required String csrfToken,
-  CancelToken? cancelToken,
-}) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final dataMap = <String, dynamic>{
-    'username_or_email': username,
-    'password': password,
-    'csrfmiddlewaretoken': csrfToken
-  };
-
-  final params = <String, dynamic>{
-    'next': '/',
-  };
-
-  final dataForm = FormData.fromMap(dataMap);
-
-  DioHttpResponse httpResponse = await dioHttpClient.post(
-    NHConst.loginUrl,
-    // queryParameters: params,
-    data: dataForm,
-    options: getOptions(forceRefresh: true)
-      ..followRedirects = false
-      ..validateStatus = (status) => status! < 500,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        logger.d('statusCode ${response.statusCode}');
-        logger.d('response ${response.headers}');
-        if (response.statusCode == 302) {
-          return DioHttpResponse<bool>.success(true);
-        } else {
-          return DioHttpResponse<bool>.success(false);
-        }
-      },
-    ),
-    cancelToken: cancelToken,
-  );
-
-  if (httpResponse.ok && httpResponse.data is bool) {
-    return httpResponse.data as bool;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('login error');
-  }
 }
 
 Future<void> nhDownload({
@@ -525,59 +319,35 @@ Future<Map> getGithubApi(String url) async {
 Future<Tuple2<bool, Comment?>> postComment({
   required int gid,
   required String comment,
-  required String? csrfToken,
+  String? csrfToken,
   CancelToken? cancelToken,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final dataMap = <String, dynamic>{
-    'body': comment,
-  };
-
-  final url = '/api/gallery/$gid/comments/submit';
-
-  final dataJson = jsonEncode(dataMap);
-
-  DioHttpResponse httpResponse = await dioHttpClient.post(
-    url,
-    data: dataJson,
-    options: getOptions(forceRefresh: true)
-      ..followRedirects = false
-      ..headers = {'x-csrftoken': csrfToken}
-      ..validateStatus = (status) => status! < 500,
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        logger.d('statusCode ${response.statusCode}');
-        logger.d('response ${response.data}');
-        final success = response.data['success'] as bool?;
-        final comment = response.data['comment'] as Map?;
-        final error = response.data['error'] as String?;
-        if (error != null) {
-          return DioHttpResponse<Tuple2<bool, Comment?>>.failure(
-            errorMsg: error,
-          );
-        }
-
-        if (success == true && comment != null) {
-          final Comment commentObj =
-              Comment.fromJson(comment as Map<String, dynamic>);
-          return DioHttpResponse<Tuple2<bool, Comment?>>.success(
-              Tuple2(true, commentObj));
-        } else {
-          return DioHttpResponse<Tuple2<bool, Comment?>>.success(
-              const Tuple2(false, null));
-        }
-      },
-    ),
-    cancelToken: cancelToken,
+  // Posting needs a proof of work.
+  final pow = await _apiGet<Map<String, dynamic>>(
+    '${NhApiV2.prefix}/pow',
+    queryParameters: {'action': 'comment'},
+    refresh: true,
+    parse: (data) => data as Map<String, dynamic>,
+  );
+  final challenge = pow['challenge'] as String? ?? '';
+  final difficulty = pow['difficulty'] as int? ?? 0;
+  final nonce = await compute(
+    (List<Object> args) => NhApiV2.solvePow(args[0] as String, args[1] as int),
+    <Object>[challenge, difficulty],
   );
 
-  if (httpResponse.ok && httpResponse.data is Tuple2<bool, Comment?>) {
-    return httpResponse.data as Tuple2<bool, Comment?>;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('postComment error');
-  }
+  final created = await _apiSend<Comment>(
+    'POST',
+    '${NhApiV2.prefix}/galleries/$gid/comments',
+    data: {
+      'body': comment,
+      'pow_challenge': challenge,
+      'pow_nonce': nonce,
+    },
+    cancelToken: cancelToken,
+    parse: (data) => NhApiV2.commentFromJson(data as Map<String, dynamic>),
+  );
+  return Tuple2(true, created);
 }
 
 Future<List<Tag>> nhAutocomplete({
@@ -585,38 +355,25 @@ Future<List<Tag>> nhAutocomplete({
   TagCategory? type,
   CancelToken? cancelToken,
 }) async {
-  DioHttpClient dioHttpClient = DioHttpClient(dioConfig: globalDioConfig);
-
-  final dataMap = <String, dynamic>{
-    'name': name,
-    'type': type?.value,
-  };
-
-  const url = '/api/autocomplete';
-  final dataForm = FormData.fromMap(dataMap);
-
-  DioHttpResponse httpResponse = await dioHttpClient.post(
-    url,
-    data: dataForm,
-    options: getOptions(forceRefresh: true),
-    httpTransformer: HttpTransformerBuilder(
-      (response) {
-        logger.d('statusCode ${response.statusCode}');
-        logger.d('response ${response.data}');
-        final List<dynamic> tags = response.data['result'] as List<dynamic>;
-        final List<Tag> tagList = tags
-            .map((e) => Tag.fromJson(e as Map<String, dynamic>))
-            .toList(growable: false);
-        return DioHttpResponse<List<Tag>>.success(tagList);
-      },
-    ),
+  return _apiSend(
+    'POST',
+    '${NhApiV2.prefix}/tags/search',
+    data: {
+      'query': name,
+      if (type != null && type.value.isNotEmpty) 'type': type.value,
+      'limit': 20,
+    },
     cancelToken: cancelToken,
+    parse: (data) => [
+      for (final e in (data as List?) ?? const [])
+        if (e is Map)
+          Tag(
+            id: e['id'] as int?,
+            type: e['type'] as String?,
+            name: e['name'] as String?,
+            url: e['url'] as String?,
+            count: e['count'] as int?,
+          ),
+    ],
   );
-
-  if (httpResponse.ok && httpResponse.data is List<Tag>) {
-    return httpResponse.data as List<Tag>;
-  } else {
-    logger.e('${httpResponse.error.runtimeType}');
-    throw httpResponse.error ?? HttpException('autocomplete error');
-  }
 }

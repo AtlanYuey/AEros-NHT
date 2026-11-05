@@ -3,7 +3,9 @@ import 'dart:io' as io;
 
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/common/global.dart';
+import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/web_view.dart';
+import 'package:eros_n/network/app_dio/api_v2_auth.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:eros_n/pages/webview/webview.dart';
 import 'package:eros_n/utils/logger.dart';
@@ -13,27 +15,43 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 @RoutePage<List<Cookie>>()
-class WebLoginPage extends StatelessWidget {
+class WebLoginPage extends StatefulWidget {
   const WebLoginPage({
     Key? key,
   }) : super(key: key);
 
   @override
+  State<WebLoginPage> createState() => _WebLoginPageState();
+}
+
+class _WebLoginPageState extends State<WebLoginPage> {
+  bool _done = false;
+
+  @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: palette.bar,
         title: Text(L10n.of(context).login),
       ),
+      // The website handles Cloudflare Turnstile and its proof of work; we
+      // only wait for the API token cookie it sets after signing in.
       body: GetCookieWebView(
           url: NHConst.loginUrl,
           deletedCookie: false,
           callback: (info) async {
-            final cookies = info.cookies;
-            logger.d('cookies: $cookies');
-            if (cookies.any((element) => element.name == 'sessionid')) {
+            if (_done || !info.hasCookie(ApiV2Auth.accessCookie)) {
+              return;
+            }
+            _done = true;
+            logger.d('web login: ${info.cookies.map((e) => e.name)}');
+            if (info.userAgent.isNotEmpty) {
               await Global.setUserAgent(info.userAgent);
-              await Global.setCookies(NHConst.baseUrl, info.cookies);
-              erosRouter.pop<List<io.Cookie>>(cookies);
+            }
+            await Global.setCookies(NHConst.baseUrl, info.cookies);
+            if (mounted) {
+              erosRouter.pop<List<io.Cookie>>(info.cookies);
             }
           }),
     );

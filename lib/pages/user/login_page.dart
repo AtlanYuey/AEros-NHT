@@ -29,96 +29,38 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  late final TextEditingController _usernameController;
-  late final TextEditingController _passwordController;
-  late final FocusNode _usernameFocusNode;
-  late final FocusNode _passwordFocusNode;
-  late bool _obscurePassword;
-  late bool _logining;
+  bool _logining = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _usernameController = TextEditingController();
-    _passwordController = TextEditingController();
-    _usernameFocusNode = FocusNode();
-    _passwordFocusNode = FocusNode();
-    _obscurePassword = true;
-    _logining = false;
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _usernameFocusNode.dispose();
-    _passwordFocusNode.dispose();
-  }
-
-  Future<void> _login() async {
-    logger.d('Username: ${_usernameController.text}');
-
+  Future<void> _loginWithWebView() async {
     if (_logining) {
       return;
     }
-
-    setState(() {
-      _logining = true;
-    });
-
+    final cookies = await erosRouter.pushNamed<List<Cookie>>(NHRoutes.webLogin);
+    logger.d('web login cookies: ${cookies?.map((e) => e.name)}');
+    if (cookies == null || !mounted) {
+      return;
+    }
+    setState(() => _logining = true);
     try {
-      final result = await ref.read(userProvider.notifier).login(
-            username: _usernameController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-      if (result) {
-        erosRouter.pop();
-        ref.read(userProvider.notifier).loginGetMore();
+      final ok =
+          await ref.read(userProvider.notifier).loginWithCookies(cookies);
+      if (!mounted) {
+        return;
       }
-    } on NhError catch (e) {
-      if (e.type == NhErrorType.loginCaptcha) {
-        // log in with captcha
-        logger.e('login need captcha');
-        showAppleAlert<void>(
-          context: context,
-          title: L10n.of(context).login_need_captcha,
-          message: L10n.of(context).please_login_web,
-          actions: [
-            AppleAlertAction(
-              label: L10n.of(context).ok,
-              isDefault: true,
-              onPressed: _loginWithWebView,
-            ),
-          ],
-        );
-      } else if (e.type == NhErrorType.loginInvalid) {
-        // log invalid
-        logger.e('login invalid');
-        context.showSnackBar(L10n.of(context).login_invalid);
+      if (ok) {
+        erosRouter.pop();
       } else {
-        logger.e(e);
-        rethrow;
+        context.showSnackBar(L10n.of(context).login_invalid);
       }
     } catch (e) {
-      logger.e(e);
-      rethrow;
+      logger.e('login: $e');
+      if (mounted) {
+        context.showSnackBar('$e');
+      }
     } finally {
-      setState(() {
-        _logining = false;
-      });
-    }
-  }
-
-  Future<void> _loginWithWebView() async {
-    final cookies = await erosRouter.pushNamed<List<Cookie>>(NHRoutes.webLogin);
-    logger.d('==>> cookies: $cookies');
-    if (cookies != null) {
-      erosRouter.pop();
-      await Global.cookieJar.delete(Uri.parse(NHConst.baseUrl));
-      await Global.cookieJar
-          .saveFromResponse(Uri.parse(NHConst.baseUrl), cookies);
-      await ref.read(userProvider.notifier).loginGetMore();
+      if (mounted) {
+        setState(() => _logining = false);
+      }
     }
   }
 
@@ -126,13 +68,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final theme = Theme.of(context);
-    final fieldStyle = theme.textTheme.bodyLarge;
+
+    Widget feature(IconData icon, String text) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Icon(icon, size: 24, color: theme.colorScheme.primary),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(text, style: theme.textTheme.bodyMedium),
+              ),
+            ],
+          ),
+        );
 
     return Scaffold(
       backgroundColor: palette.groupedBackground,
       body: CustomScrollView(
         physics: kAppleScrollPhysics,
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         slivers: [
           AppleSliverNavBar(
             title: L10n.of(context).login,
@@ -170,134 +123,54 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'nhentai.net',
+                  L10n.of(context).sign_in_tip,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: palette.secondaryLabel),
+                  style: theme.textTheme.titleMedium,
                 ),
                 AppleSection(
                   children: [
-                    CupertinoTextField(
-                      controller: _usernameController,
-                      focusNode: _usernameFocusNode,
-                      placeholder: L10n.of(context).username,
-                      style: fieldStyle,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 13),
-                      decoration: null,
-                      autocorrect: false,
-                      textInputAction: TextInputAction.next,
-                      prefix: Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Icon(CupertinoIcons.person,
-                            size: 20, color: palette.secondaryLabel),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                      child: Column(
+                        children: [
+                          feature(CupertinoIcons.lock_shield,
+                              '在 nhentai.net 官方页面登录，人机验证（Turnstile）会在页面中显示'),
+                          feature(
+                              CupertinoIcons.heart, '登录后可同步收藏、收藏/取消收藏与发表评论'),
+                          feature(CupertinoIcons.eye_slash,
+                              '账号密码只在官方网页中输入，App 只保存登录令牌'),
+                        ],
                       ),
-                      onEditingComplete: () {
-                        _usernameFocusNode.unfocus();
-                        FocusScope.of(context).requestFocus(_passwordFocusNode);
-                      },
-                    ),
-                    CupertinoTextField(
-                      controller: _passwordController,
-                      focusNode: _passwordFocusNode,
-                      placeholder: L10n.of(context).password,
-                      style: fieldStyle,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 13),
-                      decoration: null,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      prefix: Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Icon(CupertinoIcons.lock,
-                            size: 20, color: palette.secondaryLabel),
-                      ),
-                      suffix: CupertinoButton(
-                        padding: const EdgeInsets.only(right: 12),
-                        minimumSize: const Size(32, 32),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                        child: Icon(
-                          _obscurePassword
-                              ? CupertinoIcons.eye
-                              : CupertinoIcons.eye_slash,
-                          size: 20,
-                          color: palette.secondaryLabel,
-                        ),
-                      ),
-                      onEditingComplete: () {
-                        _passwordFocusNode.unfocus();
-                        _login();
-                      },
                     ),
                   ],
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 28, 16, 0),
                   child: CapsuleButton(
-                    label: L10n.of(context).login,
+                    label: '前往 nhentai.net 登录',
+                    icon: CupertinoIcons.arrow_up_right_square,
                     height: 50,
                     expand: true,
                     loading: _logining,
-                    onPressed: () async {
-                      await _login();
-                    },
+                    onPressed: _loginWithWebView,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CupertinoButton(
-                      onPressed: _loginWithWebView,
-                      child: Text(
-                        L10n.of(context).login_by_web,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: theme.colorScheme.primary),
-                      ),
+                Center(
+                  child: CupertinoButton(
+                    onPressed: () {
+                      erosRouter.push(NhWebViewRoute(
+                        initialUrl: NHConst.registerUrl,
+                        title: L10n.of(context).register,
+                      ));
+                    },
+                    child: Text(
+                      L10n.of(context).register,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: theme.colorScheme.primary),
                     ),
-                    Container(
-                      width: 0.5,
-                      height: 14,
-                      color: palette.separator,
-                    ),
-                    CupertinoButton(
-                      onPressed: () {
-                        erosRouter.push(NhWebViewRoute(
-                          initialUrl: NHConst.registerUrl,
-                          title: L10n.of(context).register,
-                        ));
-                      },
-                      child: Text(
-                        L10n.of(context).register,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: theme.colorScheme.primary),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                if (kDebugMode)
-                  CupertinoButton(
-                      onPressed: () async {
-                        final u = await getInfoFromIndex(refresh: true);
-                        logger.d('==>> u: $u');
-                      },
-                      child: const Text('Get info from Index')),
-                if (kDebugMode)
-                  CupertinoButton(
-                      onPressed: () async {
-                        final userUrl = ref.read(userProvider).userUrl ?? '';
-                        logger.d('==>> userUrl: $userUrl');
-                        if (userUrl.isNotEmpty) {
-                          final u = await getInfoFromUserPage(
-                              url: userUrl, refresh: true);
-                          logger.d('==>> u: $u');
-                        }
-                      },
-                      child: const Text('Get info from user page')),
               ]),
             ),
           ),

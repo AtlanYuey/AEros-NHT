@@ -9,7 +9,6 @@ import 'package:eros_n/pages/nav/front/list_view_state.dart';
 import 'package:eros_n/utils/get_utils/extensions/export.dart';
 import 'package:eros_n/utils/logger.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:uuid/uuid.dart';
 
 class GallerysNotifier extends StateNotifier<List<Gallery>> {
   GallerysNotifier(super.create);
@@ -102,15 +101,11 @@ class FrontNotifier extends StateNotifier<ListViewState> {
         });
       }
 
-      late String query;
-      final queryUuid = '-"${const Uuid().v4()}"';
-      if (ref.read(settingsProvider).frontLanguagesFilter !=
-          LanguagesFilter.all) {
-        query =
-            'language:${ref.read(settingsProvider).frontLanguagesFilter.value}';
-      } else {
-        query = queryUuid;
-      }
+      // Empty query = everything (served by /api/v2/galleries for "recent").
+      final languagesFilter = ref.read(settingsProvider).frontLanguagesFilter;
+      final query = languagesFilter == LanguagesFilter.all
+          ? ''
+          : 'language:${languagesFilter.value}';
 
       final gallerySet = await searchGallery(
         refresh: refresh || next || prev,

@@ -31,6 +31,10 @@ class LiquidGlassShader {
       _program != null && ui.ImageFilter.isShaderFilterSupported;
 
   static ui.FragmentShader? createShader() => _program?.fragmentShader();
+
+  /// Test hook: replace the program (e.g. with a debug shader).
+  @visibleForTesting
+  static set debugProgram(ui.FragmentProgram? program) => _program = program;
 }
 
 /// Optical parameters of a glass surface (logical pixels).

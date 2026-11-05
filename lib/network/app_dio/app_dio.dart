@@ -15,6 +15,7 @@ import 'package:system_proxy/system_proxy.dart';
 
 import 'dio_user_agent.dart';
 import 'http_config.dart';
+import 'api_v2_auth.dart';
 import 'proxy.dart';
 
 export 'http_config.dart';
@@ -110,6 +111,9 @@ class AppDio with DioMixin implements Dio {
     //   // logPrint: kDebugMode ? loggerSimple.d : loggerSimpleOnlyFile.d,
     //   logPrint: loggerSimpleOnlyFile.d,
     // ));
+
+    // nhentai API v2 token + User-Agent (after the UA interceptor).
+    interceptors.add(ApiV2AuthInterceptor(this));
 
     if (dioConfig?.interceptors?.isNotEmpty ?? false) {
       interceptors.addAll(interceptors);

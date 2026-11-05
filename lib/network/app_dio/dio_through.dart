@@ -10,9 +10,30 @@ class DioThroughInterceptor extends Interceptor {
   Dio dio;
   Future<bool> Function(DioException err) throughHandler;
 
+  /// Only Cloudflare's browser challenge — not every 403/503 (the API
+  /// answers 403 for its own reasons, e.g. retired endpoints).
   static bool _isChallenge(DioException err) {
-    final status = err.response?.statusCode;
-    return status == 403 || status == 503;
+    final response = err.response;
+    final status = response?.statusCode;
+    if (status != 403 && status != 503) {
+      return false;
+    }
+    final mitigated = response?.headers.value('cf-mitigated');
+    if (mitigated != null && mitigated.toLowerCase() == 'challenge') {
+      return true;
+    }
+    final server = response?.headers.value('server') ?? '';
+    final body = response?.data;
+    if (server.toLowerCase().contains('cloudflare') && body is String) {
+      const markers = [
+        'cf_chl_opt',
+        '/cdn-cgi/challenge-platform/',
+        'Just a moment...',
+        'cf-browser-verification',
+      ];
+      return markers.any(body.contains);
+    }
+    return false;
   }
 
   @override

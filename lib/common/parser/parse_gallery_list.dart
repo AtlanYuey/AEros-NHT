@@ -1,5 +1,7 @@
 import 'package:eros_n/common/global.dart';
 import 'package:eros_n/component/models/index.dart';
+import 'package:eros_n/store/db/entity/nh_tag.dart';
+import 'package:eros_n/store/db/entity/tag_translate.dart';
 import 'package:eros_n/utils/eros_utils.dart';
 import 'package:eros_n/utils/logger.dart';
 import 'package:html/dom.dart';
@@ -145,9 +147,16 @@ Future<List<Tag>> getTags(List<String> dataTags) async {
   final List<Tag> tags = [];
   for (final String tag in dataTags) {
     final id = int.tryParse(tag) ?? 0;
-    final nhTag = isarHelper.findNhTag(id);
-    final translated = await isarHelper.findTagTranslateAsync(nhTag?.name ?? '',
-        namespace: getTagNamespace(nhTag?.type ?? ''));
+    NhTag? nhTag;
+    TagTranslate? translated;
+    try {
+      nhTag = isarHelper.findNhTag(id);
+      translated = await isarHelper.findTagTranslateAsync(nhTag?.name ?? '',
+          namespace: getTagNamespace(nhTag?.type ?? ''));
+    } catch (e) {
+      // The local tag database may not be ready (first launch, tests).
+      logger.t('tag lookup failed for $id: $e');
+    }
     final Tag t = Tag(
       id: id,
       name: nhTag?.name,

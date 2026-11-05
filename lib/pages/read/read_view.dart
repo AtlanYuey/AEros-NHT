@@ -295,8 +295,9 @@ class _ReadListViewState extends ConsumerState<ReadListView> {
       itemCount: pages.length,
       itemBuilder: (context, index) {
         final GalleryImage page = pages[index];
-        final imageUrl = getGalleryImageUrl(
-            mediaId ?? '', index, NHConst.extMap[page.type] ?? '');
+        final imageUrl = page.imageUrl ??
+            getGalleryImageUrl(
+                mediaId ?? '', index, NHConst.extMap[page.type] ?? '');
 
         ref.read(readProvider.notifier).getCompleter(index);
 
@@ -398,8 +399,9 @@ class ReadPageView extends HookConsumerWidget {
           scrollDirection: scrollDirection,
           wantKeepAlive: false,
           builder: (BuildContext context, int index) {
-            final imageUrl = getGalleryImageUrl(
-                mediaId ?? '', index, NHConst.extMap[pages[index].type] ?? '');
+            final imageUrl = pages[index].imageUrl ??
+                getGalleryImageUrl(mediaId ?? '', index,
+                    NHConst.extMap[pages[index].type] ?? '');
 
             final completer =
                 ref.read(readProvider.notifier).getCompleter(index);

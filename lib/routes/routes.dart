@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:auto_route/auto_route.dart';
 import 'package:eros_n/common/global.dart';
 import 'package:eros_n/component/models/index.dart';
+import 'package:eros_n/network/api_v2.dart';
 import 'package:eros_n/pages/gallery/comments_page.dart';
 import 'package:eros_n/pages/gallery/gallery_provider.dart';
 import 'package:eros_n/pages/gallery/thumb_page.dart';
@@ -178,7 +179,7 @@ class RouteUtil {
     if (query.contains(' ')) {
       query = '"$query"';
     }
-    query = '${tag?.type?.toLowerCase()}:$query';
+    query = '${NhApiV2.searchPrefix(tag)}:$query';
 
     pushSearchDepth();
     try {

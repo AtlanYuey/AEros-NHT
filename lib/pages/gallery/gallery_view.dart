@@ -1289,7 +1289,7 @@ class ThumbListView extends HookConsumerWidget {
                             child: mediaId == null
                                 ? nil
                                 : ErosCachedNetworkImage(
-                                    imageUrl:
+                                    imageUrl: image.href ??
                                         'https://t.nhentai.net/galleries/$mediaId/${index + 1}t.${NHConst.extMap[image.type]}',
                                     fit: BoxFit.cover,
                                   ),

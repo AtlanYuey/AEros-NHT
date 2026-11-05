@@ -84,6 +84,32 @@ class DioHttpClient {
     }
   }
 
+  /// Request with any method (set via [Options.method]).
+  Future<DioHttpResponse> request(String uri,
+      {data,
+      Map<String, dynamic>? queryParameters,
+      Options? options,
+      CancelToken? cancelToken,
+      HttpTransformer? httpTransformer}) async {
+    try {
+      final response = await _dio.request<dynamic>(
+        uri,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+      return handleResponse(
+        response,
+        httpTransformer: httpTransformer,
+        validateStatus: options?.validateStatus,
+      );
+    } on Exception catch (e) {
+      logger.e('error ${options?.method} $e');
+      return handleException(e);
+    }
+  }
+
   Future<DioHttpResponse> patch(String uri,
       {data,
       Map<String, dynamic>? queryParameters,

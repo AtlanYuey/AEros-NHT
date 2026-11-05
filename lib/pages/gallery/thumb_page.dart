@@ -165,7 +165,7 @@ class ThumbsView extends HookConsumerWidget {
           delegate: SliverChildBuilderDelegate(
             (context, index) {
               final thumb = pages[index];
-              final imageUrl =
+              final imageUrl = thumb.href ??
                   'https://t.nhentai.net/galleries/$mediaId/${index + 1}t.${NHConst.extMap[thumb.type]}';
               return PressableScale(
                 onTap: () {

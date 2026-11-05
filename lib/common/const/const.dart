@@ -40,6 +40,7 @@ class NHConst {
     'j': 'jpg',
     'p': 'png',
     'g': 'gif',
+    'w': 'webp',
   };
 
   static const Map<String, String> localeMap = {

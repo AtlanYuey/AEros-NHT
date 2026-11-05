@@ -133,13 +133,21 @@ class _MobileWebViewState extends State<MobileWebView> {
   Future<List<Cookie>> _collectCookies(String documentCookie) async {
     final uri = WebUri(NHConst.baseUrl);
     var cookies = await cookieManager.getCookies(url: uri);
-    if (cookies.isEmpty && (Platform.isIOS || Platform.isMacOS)) {
-      // WKHTTPCookieStore may only report the cookies under their exact
-      // domain; fall back to scanning everything for the site.
-      final all = await cookieManager.getAllCookies();
-      cookies = all
-          .where((c) => (c.domain ?? '').contains(NHConst.baseHost))
-          .toList();
+    if (Platform.isIOS || Platform.isMacOS) {
+      // A URL lookup misses cookies scoped to other paths (e.g. the API
+      // token); also scan the whole store for the site's cookies.
+      try {
+        final all = await cookieManager.getAllCookies();
+        final names = cookies.map((c) => c.name).toSet();
+        cookies = [
+          ...cookies,
+          ...all.where((c) =>
+              (c.domain ?? '').contains(NHConst.baseHost) &&
+              !names.contains(c.name)),
+        ];
+      } catch (e) {
+        logger.t('getAllCookies failed: $e');
+      }
     }
     final result = <String, Cookie>{
       for (final c in cookies) c.name: Cookie(c.name, '${c.value}'),

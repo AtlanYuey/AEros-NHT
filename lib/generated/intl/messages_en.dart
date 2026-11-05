@@ -25,6 +25,17 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "card_size": MessageLookupByLibrary.simpleMessage("Card Size"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("Small"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("Smaller"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("Standard"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("Larger"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("Large"),
+        "card_size_portrait": MessageLookupByLibrary.simpleMessage("Portrait"),
+        "card_size_landscape": MessageLookupByLibrary.simpleMessage("Landscape · follows split view"),
+        "card_size_columns": MessageLookupByLibrary.simpleMessage("columns"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("Columns are calculated from the actual width of this pane: switching screens, rotating or dragging the split divider adds or removes columns automatically. \"Standard\" matches the original automatic column count."),
+        "card_size_list_hint": MessageLookupByLibrary.simpleMessage("Applies to the Grid and Waterfall list styles."),
         "see_all": MessageLookupByLibrary.simpleMessage("See All"),
         "pages": MessageLookupByLibrary.simpleMessage("Pages"),
         "uploaded": MessageLookupByLibrary.simpleMessage("Uploaded"),

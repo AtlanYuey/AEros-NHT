@@ -114,5 +114,16 @@
   "no_comments": "暂无评论",
   "logout_tip": "确定要退出登录吗？",
   "feature_unavailable": "功能开发中，暂不可用",
-  "reading": "阅读"
+  "reading": "阅读",
+  "card_size": "卡片大小",
+  "card_size_small": "小",
+  "card_size_smaller": "较小",
+  "card_size_standard": "标准",
+  "card_size_larger": "较大",
+  "card_size_large": "大",
+  "card_size_portrait": "竖屏",
+  "card_size_landscape": "横屏 · 分栏随分割条",
+  "card_size_columns": "列",
+  "card_size_footer": "列数按这一栏的实际宽度计算：换屏、旋转或拖动分割条都会自动增减。「标准」与原来的自动列数相同。",
+  "card_size_list_hint": "仅对「网格」和「瀑布流」列表样式生效。"
 }

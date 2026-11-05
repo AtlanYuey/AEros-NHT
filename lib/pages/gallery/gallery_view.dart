@@ -10,6 +10,7 @@ import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/component/models/index.dart';
 import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/apple.dart';
+import 'package:eros_n/component/widget/scroll_edge.dart';
 import 'package:eros_n/component/widget/blur_image.dart';
 import 'package:eros_n/component/widget/eros_cached_network_image.dart';
 import 'package:eros_n/generated/l10n.dart';
@@ -297,7 +298,6 @@ class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
     final topInset = MediaQuery.paddingOf(context).top;
     return ValueListenableBuilder<bool>(
       valueListenable: collapsed,
@@ -309,21 +309,23 @@ class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
             height: topInset + _kTopBarHeight,
             child: Stack(
               fit: StackFit.expand,
+              clipBehavior: Clip.none,
               children: [
-                AnimatedOpacity(
-                  opacity: isCollapsed ? 1 : 0,
-                  duration: const Duration(milliseconds: 220),
-                  child: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: palette.bar,
-                          border: Border(
-                            bottom: BorderSide(
-                                color: palette.separator, width: 0.0),
-                          ),
-                        ),
+                // iOS 26 soft scroll edge: blur and fade the content under
+                // the bar progressively, reaching a little past it.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: topInset + _kTopBarHeight + 28,
+                  child: IgnorePointer(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(end: isCollapsed ? 1 : 0),
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOut,
+                      builder: (context, value, _) => ScrollEdgeEffect(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        visibility: value,
                       ),
                     ),
                   ),

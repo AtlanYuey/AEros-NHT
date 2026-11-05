@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:eros_n/common/const/const.dart';
 import 'package:eros_n/common/enum.dart';
+import 'package:eros_n/common/provider/card_size_provider.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/component/models/gallery.dart';
 import 'package:eros_n/pages/enum.dart';
@@ -9,6 +12,7 @@ import 'package:eros_n/utils/get_utils/get_utils.dart';
 import 'package:eros_n/component/theme/theme.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_list_view/flutter_list_view.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -81,7 +85,7 @@ class GallerySliverList extends HookConsumerWidget {
   }
 }
 
-class GalleryCardSliverGridView extends StatelessWidget {
+class GalleryCardSliverGridView extends ConsumerWidget {
   const GalleryCardSliverGridView({
     Key? key,
     required this.gallerys,
@@ -120,15 +124,19 @@ class GalleryCardSliverGridView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cardSize = ref.watch(cardSizeProvider);
+    final titleStyle = Theme.of(context).textTheme.bodySmall;
+    // Two lines of the title below the cover.
+    final titleExtent = MediaQuery.textScalerOf(context)
+            .scale((titleStyle?.fontSize ?? 12) * 1.25) *
+        2;
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: gridMaxCrossAxisExtent,
-          crossAxisSpacing: gridCrossAxisSpacing,
-          mainAxisSpacing: gridMainAxisSpacing,
-          childAspectRatio: gridChildAspectRatio,
+        gridDelegate: CardSizeGridDelegate(
+          cardSize: cardSize,
+          titleExtent: titleExtent + 2,
         ),
         delegate: SliverChildBuilderDelegate(
           itemCardBuilder,
@@ -192,7 +200,7 @@ class GalleryCardSliverListView extends StatelessWidget {
   }
 }
 
-class GalleryWaterfallFlowView extends StatelessWidget {
+class GalleryWaterfallFlowView extends ConsumerWidget {
   const GalleryWaterfallFlowView({
     Key? key,
     required this.gallerys,
@@ -243,7 +251,8 @@ class GalleryWaterfallFlowView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cardSize = ref.watch(cardSizeProvider);
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
         16,
@@ -256,16 +265,90 @@ class GalleryWaterfallFlowView extends StatelessWidget {
           itemCardBuilder,
           childCount: gallerys.length,
         ),
-        gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: NHConst.waterfallFlowLargeMaxCrossAxisExtent,
-          crossAxisSpacing: NHConst.waterfallFlowLargeCrossAxisSpacing,
-          mainAxisSpacing: NHConst.waterfallFlowLargeMainAxisSpacing,
+        gridDelegate: CardSizeWaterfallFlowDelegate(
+          cardSize: cardSize,
           lastChildLayoutTypeBuilder: (int index) => index == gallerys.length
               ? LastChildLayoutType.foot
               : LastChildLayoutType.none,
         ),
       ),
     );
+  }
+}
+
+/// Grid layout whose column count follows the card size setting and the
+/// width of the pane; each tile is a 3:4 cover plus two title lines.
+class CardSizeGridDelegate extends SliverGridDelegate {
+  const CardSizeGridDelegate({
+    required this.cardSize,
+    required this.titleExtent,
+  });
+
+  final CardSize cardSize;
+  final double titleExtent;
+
+  /// Gap between the cover and the title (see ItemGridCard).
+  static const double _titleGap = 7;
+
+  @override
+  SliverGridLayout getLayout(SliverConstraints constraints) {
+    final columns = cardSize.columnsFor(
+      crossAxisExtent: constraints.crossAxisExtent,
+      maxCrossAxisExtent: gridMaxCrossAxisExtent,
+      crossAxisSpacing: gridCrossAxisSpacing,
+    );
+    final usable = math.max(
+      0.0,
+      constraints.crossAxisExtent - gridCrossAxisSpacing * (columns - 1),
+    );
+    final tileWidth = usable / columns;
+    final tileHeight = tileWidth * 4 / 3 + _titleGap + titleExtent;
+    return SliverGridRegularTileLayout(
+      crossAxisCount: columns,
+      mainAxisStride: tileHeight + gridMainAxisSpacing,
+      crossAxisStride: tileWidth + gridCrossAxisSpacing,
+      childMainAxisExtent: tileHeight,
+      childCrossAxisExtent: tileWidth,
+      reverseCrossAxis: axisDirectionIsReversed(constraints.crossAxisDirection),
+    );
+  }
+
+  @override
+  bool shouldRelayout(CardSizeGridDelegate oldDelegate) {
+    return oldDelegate.cardSize != cardSize ||
+        oldDelegate.titleExtent != titleExtent;
+  }
+}
+
+/// Waterfall layout whose column count follows the card size setting and
+/// the width of the pane ("standard" equals the original automatic count).
+class CardSizeWaterfallFlowDelegate
+    extends SliverWaterfallFlowDelegateWithMaxCrossAxisExtent {
+  const CardSizeWaterfallFlowDelegate({
+    required this.cardSize,
+    super.lastChildLayoutTypeBuilder,
+  }) : super(
+          maxCrossAxisExtent: NHConst.waterfallFlowLargeMaxCrossAxisExtent,
+          crossAxisSpacing: NHConst.waterfallFlowLargeCrossAxisSpacing,
+          mainAxisSpacing: NHConst.waterfallFlowLargeMainAxisSpacing,
+        );
+
+  final CardSize cardSize;
+
+  @override
+  int getCrossAxisCount(SliverConstraints constraints) {
+    return cardSize.columnsFor(
+      crossAxisExtent: constraints.crossAxisExtent,
+      maxCrossAxisExtent: maxCrossAxisExtent,
+      crossAxisSpacing: crossAxisSpacing,
+    );
+  }
+
+  @override
+  bool shouldRelayout(SliverWaterfallFlowDelegate oldDelegate) {
+    return super.shouldRelayout(oldDelegate) ||
+        (oldDelegate is CardSizeWaterfallFlowDelegate &&
+            oldDelegate.cardSize != cardSize);
   }
 }
 

@@ -46,9 +46,6 @@ class _MorePageState extends ConsumerState<MorePage>
             title: L10n.of(context).more,
             heroTag: 'nav_more',
             pageBackgroundColor: palette.groupedBackground,
-            backgroundColor: palette.brightness == Brightness.dark
-                ? palette.bar
-                : const Color(0xEBF2F2F7),
           ),
           SliverSafeArea(
             top: false,

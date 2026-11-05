@@ -1,8 +1,10 @@
 import 'package:eros_n/component/theme/theme.dart';
 import 'package:eros_n/component/widget/liquid_glass.dart';
+import 'package:eros_n/component/widget/scroll_edge.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:native_liquid_glass/native_liquid_glass.dart';
 
 export 'liquid_glass.dart' show LiquidGlassStyle;
@@ -190,10 +192,13 @@ class _PressableScaleState extends State<PressableScale> {
   }
 }
 
-/// iOS large-title navigation bar for scroll views.
+/// iOS large-title navigation bar for scroll views (iOS 26 style).
 ///
-/// Wraps [CupertinoSliverNavigationBar] with app-wide defaults:
-/// transparent until content scrolls beneath it, then frosted.
+/// The bar itself has no background: while content scrolls beneath it,
+/// a soft scroll edge effect ([ScrollEdgeEffect]) progressively blurs and
+/// fades that content into the page colour, extending a little past the
+/// bar so there is no hard edge. The large title collapses into the inline
+/// title as the page scrolls, and the back button is a glass circle.
 class AppleSliverNavBar extends StatelessWidget {
   const AppleSliverNavBar({
     super.key,
@@ -212,43 +217,217 @@ class AppleSliverNavBar extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final PreferredSizeWidget? bottom;
+
+  /// Kept for API compatibility; iOS 26 back buttons show only a chevron.
   final String? previousPageTitle;
+
+  /// Kept for API compatibility (no hero transition between bars).
   final Object? heroTag;
   final bool automaticallyImplyLeading;
 
-  /// Bar color once content scrolls beneath it (blurred).
+  /// Colour content is washed into under the bar; defaults to
+  /// [pageBackgroundColor].
   final Color? backgroundColor;
 
-  /// Color of the page behind the bar; while the large title is fully
-  /// expanded the bar blends into it (iOS 15+ scroll-edge appearance).
+  /// Colour of the page behind the bar.
   final Color? pageBackgroundColor;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    return CupertinoPageScaffoldBackgroundColor(
-      color: pageBackgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
-      child: _buildBar(palette),
+    final pageColor =
+        pageBackgroundColor ?? Theme.of(context).scaffoldBackgroundColor;
+
+    Widget? leadingWidget = leading;
+    if (leadingWidget == null && automaticallyImplyLeading) {
+      final route = ModalRoute.of(context);
+      if (route?.canPop ?? false) {
+        leadingWidget = GlassIconButton(
+          icon: CupertinoIcons.back,
+          sfSymbol: 'chevron.backward',
+          size: 40,
+          iconSize: 18,
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () => Navigator.of(context).maybePop(),
+        );
+      }
+    }
+
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _AppleNavBarDelegate(
+        title: title,
+        leading: leadingWidget,
+        trailing: trailing,
+        bottom: bottom,
+        topPadding: MediaQuery.paddingOf(context).top,
+        edgeColor: backgroundColor?.withValues(alpha: 1) ?? pageColor,
+        palette: palette,
+        textScaler: MediaQuery.textScalerOf(context),
+      ),
+    );
+  }
+}
+
+class _AppleNavBarDelegate extends SliverPersistentHeaderDelegate {
+  _AppleNavBarDelegate({
+    required this.title,
+    required this.leading,
+    required this.trailing,
+    required this.bottom,
+    required this.topPadding,
+    required this.edgeColor,
+    required this.palette,
+    required this.textScaler,
+  });
+
+  final String title;
+  final Widget? leading;
+  final Widget? trailing;
+  final PreferredSizeWidget? bottom;
+  final double topPadding;
+  final Color edgeColor;
+  final ApplePalette palette;
+  final TextScaler textScaler;
+
+  static const double _toolbarHeight = 44;
+  static const double _largeTitleHeight = 52;
+
+  /// How far the scroll edge effect reaches past the bottom of the bar.
+  static const double _edgeOverhang = 28;
+
+  double get _bottomHeight => bottom?.preferredSize.height ?? 0;
+
+  @override
+  double get minExtent => topPadding + _toolbarHeight + _bottomHeight;
+
+  @override
+  double get maxExtent => minExtent + _largeTitleHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final theme = CupertinoTheme.of(context);
+    final extent = (maxExtent - shrinkOffset).clamp(minExtent, maxExtent);
+    final largeTitleExtent = extent - minExtent;
+    final collapse = 1 - largeTitleExtent / _largeTitleHeight;
+
+    // Content only passes under the bar once the large title has
+    // collapsed; fade the edge effect in over the first few points.
+    final scrolledUnder =
+        ((shrinkOffset - _largeTitleHeight) / 14).clamp(0.0, 1.0);
+
+    final largeTitleStyle =
+        theme.textTheme.navLargeTitleTextStyle.copyWith(color: palette.label);
+    final titleStyle =
+        theme.textTheme.navTitleTextStyle.copyWith(color: palette.label);
+    final showInlineTitle = largeTitleExtent < 10;
+
+    final dark = palette.brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Stack(
+        clipBehavior: Clip.none,
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: extent + _edgeOverhang,
+            child: IgnorePointer(
+              child: ScrollEdgeEffect(
+                color: edgeColor,
+                visibility: scrolledUnder,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: topPadding,
+            height: _toolbarHeight,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: leading == null ? 16 : 12,
+                end: 10,
+              ),
+              child: NavigationToolbar(
+                leading: leading,
+                middle: AnimatedOpacity(
+                  opacity: showInlineTitle ? 1 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: titleStyle,
+                  ),
+                ),
+                trailing: trailing,
+                middleSpacing: 8,
+              ),
+            ),
+          ),
+          if (largeTitleExtent > 0)
+            Positioned(
+              left: 0,
+              right: 0,
+              top: topPadding + _toolbarHeight,
+              height: largeTitleExtent,
+              child: ClipRect(
+                child: OverflowBox(
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  alignment: AlignmentDirectional.bottomStart,
+                  child: Opacity(
+                    opacity: (1 - collapse * 1.15).clamp(0.0, 1.0),
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        start: 16,
+                        end: 16,
+                        bottom: 8,
+                      ),
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: largeTitleStyle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (bottom != null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: _bottomHeight,
+              child: bottom!,
+            ),
+        ],
+      ),
     );
   }
 
-  Widget _buildBar(ApplePalette palette) {
-    return CupertinoSliverNavigationBar(
-      largeTitle: Text(title),
-      leading: leading,
-      trailing: trailing,
-      bottom: bottom,
-      bottomMode: bottom == null ? null : NavigationBarBottomMode.always,
-      previousPageTitle: previousPageTitle,
-      automaticallyImplyLeading: automaticallyImplyLeading,
-      transitionBetweenRoutes: false,
-      heroTag: heroTag ?? 'nav_$title',
-      stretch: true,
-      backgroundColor: backgroundColor ?? palette.bar,
-      border: Border(
-        bottom: BorderSide(color: palette.separator, width: 0.0),
-      ),
-    );
+  @override
+  bool shouldRebuild(_AppleNavBarDelegate oldDelegate) {
+    return title != oldDelegate.title ||
+        leading != oldDelegate.leading ||
+        trailing != oldDelegate.trailing ||
+        bottom != oldDelegate.bottom ||
+        topPadding != oldDelegate.topPadding ||
+        edgeColor != oldDelegate.edgeColor ||
+        palette != oldDelegate.palette ||
+        textScaler != oldDelegate.textScaler;
   }
 }
 
@@ -617,9 +796,6 @@ class AppleGroupedPage extends StatelessWidget {
             previousPageTitle: previousPageTitle,
             trailing: trailing,
             pageBackgroundColor: palette.groupedBackground,
-            backgroundColor: palette.brightness == Brightness.dark
-                ? palette.bar
-                : const Color(0xEBF2F2F7),
           ),
           SliverSafeArea(
             top: false,

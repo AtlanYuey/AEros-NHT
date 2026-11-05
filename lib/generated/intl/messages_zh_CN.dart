@@ -24,6 +24,17 @@ class MessageLookup extends MessageLookupByLibrary {
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+        "card_size": MessageLookupByLibrary.simpleMessage("卡片大小"),
+        "card_size_small": MessageLookupByLibrary.simpleMessage("小"),
+        "card_size_smaller": MessageLookupByLibrary.simpleMessage("较小"),
+        "card_size_standard": MessageLookupByLibrary.simpleMessage("标准"),
+        "card_size_larger": MessageLookupByLibrary.simpleMessage("较大"),
+        "card_size_large": MessageLookupByLibrary.simpleMessage("大"),
+        "card_size_portrait": MessageLookupByLibrary.simpleMessage("竖屏"),
+        "card_size_landscape": MessageLookupByLibrary.simpleMessage("横屏 · 分栏随分割条"),
+        "card_size_columns": MessageLookupByLibrary.simpleMessage("列"),
+        "card_size_footer": MessageLookupByLibrary.simpleMessage("列数按这一栏的实际宽度计算：换屏、旋转或拖动分割条都会自动增减。「标准」与原来的自动列数相同。"),
+        "card_size_list_hint": MessageLookupByLibrary.simpleMessage("仅对「网格」和「瀑布流」列表样式生效。"),
         "see_all": MessageLookupByLibrary.simpleMessage("查看全部"),
         "pages": MessageLookupByLibrary.simpleMessage("页数"),
         "uploaded": MessageLookupByLibrary.simpleMessage("上传"),

@@ -840,6 +840,116 @@ class L10n {
     );
   }
 
+  /// `Card Size`
+  String get card_size {
+    return Intl.message(
+      'Card Size',
+      name: 'card_size',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Small`
+  String get card_size_small {
+    return Intl.message(
+      'Small',
+      name: 'card_size_small',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Smaller`
+  String get card_size_smaller {
+    return Intl.message(
+      'Smaller',
+      name: 'card_size_smaller',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Standard`
+  String get card_size_standard {
+    return Intl.message(
+      'Standard',
+      name: 'card_size_standard',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Larger`
+  String get card_size_larger {
+    return Intl.message(
+      'Larger',
+      name: 'card_size_larger',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Large`
+  String get card_size_large {
+    return Intl.message(
+      'Large',
+      name: 'card_size_large',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Portrait`
+  String get card_size_portrait {
+    return Intl.message(
+      'Portrait',
+      name: 'card_size_portrait',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Landscape · follows split view`
+  String get card_size_landscape {
+    return Intl.message(
+      'Landscape · follows split view',
+      name: 'card_size_landscape',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `columns`
+  String get card_size_columns {
+    return Intl.message(
+      'columns',
+      name: 'card_size_columns',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Columns are calculated from the actual width of this pane: switching screens, rotating or dragging the split divider adds or removes columns automatically. "Standard" matches the original automatic column count.`
+  String get card_size_footer {
+    return Intl.message(
+      'Columns are calculated from the actual width of this pane: switching screens, rotating or dragging the split divider adds or removes columns automatically. "Standard" matches the original automatic column count.',
+      name: 'card_size_footer',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Applies to the Grid and Waterfall list styles.`
+  String get card_size_list_hint {
+    return Intl.message(
+      'Applies to the Grid and Waterfall list styles.',
+      name: 'card_size_list_hint',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `Waterfall Flow (Compact)`
   String get waterfall_compact {
     return Intl.message(

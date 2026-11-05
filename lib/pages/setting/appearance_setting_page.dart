@@ -1,5 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:eros_n/common/enum.dart';
+import 'package:eros_n/common/provider/card_size_provider.dart';
 import 'package:eros_n/common/provider/settings_provider.dart';
 import 'package:eros_n/common/provider/tag_translate_provider.dart';
 import 'package:eros_n/component/theme/theme.dart';
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
+import 'card_size_setting_page.dart';
 import 'setting_base.dart';
 
 @RoutePage()
@@ -33,6 +35,7 @@ class AppearanceSettingPage extends HookConsumerWidget {
     final tagTranslateInfo = ref.watch(tagTranslateProvider);
     final isCoverBlur =
         ref.watch(settingsProvider.select((settings) => settings.isCoverBlur));
+    final cardSize = ref.watch(cardSizeProvider);
 
     return AppleGroupedPage(
       title: L10n.of(context).appearance,
@@ -95,6 +98,16 @@ class AppearanceSettingPage extends HookConsumerWidget {
               onChanged: (value) {
                 ref.read(settingsProvider.notifier).setListModel(value);
               },
+            ),
+            AppleListTile(
+              title: Text(L10n.of(context).card_size),
+              value: cardSize.label(context),
+              showChevron: true,
+              onTap: () => Navigator.of(context).push(
+                CardSizeSettingPage.route(
+                  previousPageTitle: L10n.of(context).appearance,
+                ),
+              ),
             ),
             AppleSwitchTile(
               title: Text(L10n.of(context).show_tags),

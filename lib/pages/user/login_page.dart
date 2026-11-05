@@ -90,9 +90,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           AppleSliverNavBar(
             title: L10n.of(context).login,
             pageBackgroundColor: palette.groupedBackground,
-            backgroundColor: palette.brightness == Brightness.dark
-                ? palette.bar
-                : const Color(0xEBF2F2F7),
           ),
           SliverSafeArea(
             top: false,

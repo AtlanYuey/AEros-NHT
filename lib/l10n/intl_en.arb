@@ -114,5 +114,16 @@
   "no_comments": "No Comments",
   "logout_tip": "Are you sure you want to log out?",
   "feature_unavailable": "Feature in development, currently unavailable",
-  "reading": "Reading"
+  "reading": "Reading",
+  "card_size": "Card Size",
+  "card_size_small": "Small",
+  "card_size_smaller": "Smaller",
+  "card_size_standard": "Standard",
+  "card_size_larger": "Larger",
+  "card_size_large": "Large",
+  "card_size_portrait": "Portrait",
+  "card_size_landscape": "Landscape · follows split view",
+  "card_size_columns": "columns",
+  "card_size_footer": "Columns are calculated from the actual width of this pane: switching screens, rotating or dragging the split divider adds or removes columns automatically. \"Standard\" matches the original automatic column count.",
+  "card_size_list_hint": "Applies to the Grid and Waterfall list styles."
 }

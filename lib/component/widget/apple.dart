@@ -1,9 +1,10 @@
-import 'dart:ui';
-
 import 'package:eros_n/component/theme/theme.dart';
+import 'package:eros_n/component/widget/liquid_glass.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+export 'liquid_glass.dart' show LiquidGlassStyle;
 
 /// A small kit of widgets that follow Apple's Human Interface Guidelines.
 ///
@@ -13,61 +14,43 @@ import 'package:flutter/material.dart';
 const kAppleScrollPhysics =
     BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics());
 
-/// Frosted "liquid glass" surface: blurred backdrop, translucent fill and
-/// a hairline highlight border.
+/// Apple "Liquid Glass" surface.
+///
+/// On Impeller (iOS) the backdrop is refracted through a lens-shaped rim
+/// with a specular highlight, while the centre stays clear. Elsewhere it
+/// falls back to a light frosted look.
 class GlassContainer extends StatelessWidget {
   const GlassContainer({
     super.key,
     required this.child,
-    this.borderRadius = const BorderRadius.all(Radius.circular(28)),
+    this.borderRadius = 28,
     this.padding,
-    this.color,
-    this.blur = 24,
+    this.style,
     this.shadow = true,
   });
 
   final Widget child;
-  final BorderRadius borderRadius;
+
+  /// Corner radius in logical pixels (capped at half the shortest side).
+  final double borderRadius;
   final EdgeInsetsGeometry? padding;
-  final Color? color;
-  final double blur;
+
+  /// Override the default light/dark glass.
+  final LiquidGlassStyle? style;
   final bool shadow;
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        boxShadow: shadow
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(
-                      alpha:
-                          palette.brightness == Brightness.dark ? 0.45 : 0.12),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
-      ),
-      child: ClipRSuperellipse(
-        borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: Container(
-            padding: padding,
-            decoration: ShapeDecoration(
-              color: color ?? palette.glass,
-              shape: RoundedSuperellipseBorder(
-                borderRadius: borderRadius,
-                side: BorderSide(color: palette.glassBorder, width: 0.6),
-              ),
-            ),
-            child: child,
-          ),
-        ),
-      ),
+    final dark = context.palette.brightness == Brightness.dark;
+    var effective =
+        style ?? (dark ? LiquidGlassStyle.dark : LiquidGlassStyle.light);
+    if (!shadow) {
+      effective = effective.copyWith(shadowBlur: 0);
+    }
+    return LiquidGlass(
+      borderRadius: borderRadius,
+      style: effective,
+      child: padding == null ? child : Padding(padding: padding!, child: child),
     );
   }
 }
@@ -95,8 +78,12 @@ class GlassIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget button = GlassContainer(
-      borderRadius: BorderRadius.circular(size / 2),
-      shadow: false,
+      borderRadius: size / 2,
+      style: (context.palette.brightness == Brightness.dark
+              ? LiquidGlassStyle.dark
+              : LiquidGlassStyle.light)
+          .copyWith(
+              refraction: 7, shadowBlur: 10, shadowOffset: const Offset(0, 3)),
       child: SizedBox(
         width: size,
         height: size,

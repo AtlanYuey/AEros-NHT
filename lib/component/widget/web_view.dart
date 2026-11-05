@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:eros_n/utils/logger.dart';
@@ -10,24 +11,62 @@ import '../../common/const/const.dart';
 import '../../pages/webview/webview.dart';
 
 class WebViewCookieInfo {
-  const WebViewCookieInfo(
-      {required this.url,
-      required this.cookies,
-      required this.userAgent,
-      this.manualRequired = false,
-      this.message});
+  const WebViewCookieInfo({
+    required this.url,
+    required this.cookies,
+    required this.userAgent,
+    this.manualRequired = false,
+    this.message,
+    this.challengePage = false,
+    this.pageReady = false,
+  });
 
   @override
   String toString() {
-    return 'WebViewCookieInfo<MR:$manualRequired, $message, $userAgent, $cookies>';
+    return 'WebViewCookieInfo<MR:$manualRequired, challenge:$challengePage, '
+        'ready:$pageReady, $message, $userAgent, '
+        '${cookies.map((e) => e.name).join(',')}>';
   }
 
   final String url;
   final List<Cookie> cookies;
   final String userAgent;
+
+  /// The challenge needs the user (Turnstile checkbox, captcha...), or it
+  /// has been running for too long.
   final bool manualRequired;
   final String? message;
+
+  /// The page currently shown is a Cloudflare challenge page.
+  final bool challengePage;
+
+  /// The document finished loading.
+  final bool pageReady;
+
+  bool hasCookie(String name) => cookies.any((e) => e.name == name);
 }
+
+/// JavaScript that describes the Cloudflare state of the current page.
+const String _kChallengeProbeJs = '''
+(function () {
+  var title = (document.title || '').toLowerCase();
+  var challenge = title.indexOf('just a moment') >= 0 ||
+      title.indexOf('attention required') >= 0 ||
+      title.indexOf('请稍候') >= 0 ||
+      !!document.querySelector('#challenge-form, #challenge-running, #challenge-stage, #cf-challenge-running, .cf-browser-verification, #turnstile-wrapper, .cf-turnstile');
+  var interactive = !!document.querySelector(
+      'iframe[src*="challenges.cloudflare.com"], .cf-turnstile, input[type="checkbox"], .pow-button, .captcha-prompt, #challenge-stage input');
+  var msgEl = document.querySelector('#challenge-body-text, #challenge-stage, .core-msg');
+  return JSON.stringify({
+    challenge: challenge,
+    interactive: challenge && interactive,
+    ready: document.readyState === 'complete',
+    host: location.hostname || '',
+    message: msgEl ? (msgEl.textContent || '').trim().substring(0, 120) : '',
+    cookie: document.cookie || ''
+  });
+})()
+''';
 
 typedef WebViewCallback = Function(WebViewCookieInfo);
 
@@ -52,6 +91,9 @@ class _MobileWebViewState extends State<MobileWebView> {
 
   Timer? anomalyTimer;
 
+  /// Seconds a challenge may run on its own before we show it to the user.
+  static const int _kAutoChallengeSeconds = 12;
+
   @override
   void initState() {
     initWebView();
@@ -61,9 +103,15 @@ class _MobileWebViewState extends State<MobileWebView> {
     }
   }
 
+  @override
+  void dispose() {
+    anomalyTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> anomalyMonitor(Timer timer) async {
     if (mounted && initOk && _controller != null) {
-      callbackChallengeInfo();
+      await callbackChallengeInfo();
     }
   }
 
@@ -80,44 +128,89 @@ class _MobileWebViewState extends State<MobileWebView> {
     });
   }
 
-  Future callbackChallengeInfo() async {
-    if (_controller == null) {
+  bool _reporting = false;
+
+  Future<List<Cookie>> _collectCookies(String documentCookie) async {
+    final uri = WebUri(NHConst.baseUrl);
+    var cookies = await cookieManager.getCookies(url: uri);
+    if (cookies.isEmpty && (Platform.isIOS || Platform.isMacOS)) {
+      // WKHTTPCookieStore may only report the cookies under their exact
+      // domain; fall back to scanning everything for the site.
+      final all = await cookieManager.getAllCookies();
+      cookies = all
+          .where((c) => (c.domain ?? '').contains(NHConst.baseHost))
+          .toList();
+    }
+    final result = <String, Cookie>{
+      for (final c in cookies) c.name: Cookie(c.name, '${c.value}'),
+    };
+    // document.cookie also exposes cookies set by scripts that the cookie
+    // store has not flushed yet (HttpOnly ones are not visible there).
+    for (final part in documentCookie.split(';')) {
+      final index = part.indexOf('=');
+      if (index <= 0) {
+        continue;
+      }
+      final name = part.substring(0, index).trim();
+      final value = part.substring(index + 1).trim();
+      if (name.isNotEmpty && !result.containsKey(name)) {
+        try {
+          result[name] = Cookie(name, value);
+        } on FormatException {
+          // Ignore values dart:io refuses (e.g. quotes, spaces).
+        }
+      }
+    }
+    return result.values.toList();
+  }
+
+  Future<void> callbackChallengeInfo() async {
+    final controller = _controller;
+    if (controller == null || _reporting || widget.callback == null) {
       return;
     }
-    final cookies =
-        await cookieManager.getCookies(url: WebUri(NHConst.baseUrl));
-    final ioCookies = cookies.map((e) => Cookie(e.name, '${e.value}')).toList();
-    final ua =
-        await _controller!.evaluateJavascript(source: 'navigator.userAgent');
-    final userAgent = ua is String ? ua : '';
-    widget.callback?.call(WebViewCookieInfo(
+    _reporting = true;
+    try {
+      Map<String, dynamic> probe = const {};
+      try {
+        final raw =
+            await controller.evaluateJavascript(source: _kChallengeProbeJs);
+        if (raw is String && raw.isNotEmpty) {
+          probe = jsonDecode(raw) as Map<String, dynamic>;
+        }
+      } catch (e) {
+        logger.t('challenge probe failed: $e');
+      }
+      final challengePage = probe['challenge'] == true;
+      final interactive = probe['interactive'] == true;
+      final host = (probe['host'] as String?) ?? '';
+      // Only a loaded page of the site itself counts (not about:blank).
+      final ready = probe['ready'] == true && host.endsWith(NHConst.baseHost);
+
+      final cookies = await _collectCookies((probe['cookie'] as String?) ?? '');
+      final ua =
+          await controller.evaluateJavascript(source: 'navigator.userAgent');
+      final userAgent = ua is String ? ua : '';
+      final waited = anomalyTimer?.tick ?? 0;
+
+      if (!mounted) {
+        return;
+      }
+      widget.callback?.call(WebViewCookieInfo(
         url: NHConst.baseUrl,
-        cookies: ioCookies,
+        cookies: cookies,
         userAgent: userAgent,
+        challengePage: challengePage,
+        pageReady: ready,
         manualRequired:
-            (anomalyTimer?.tick ?? 0) >= 10 || await getManualRequired(),
-        message: await getChallengeMessage()));
-  }
-
-  Future<bool> getManualRequired() async {
-    if (_controller != null) {
-      final manualRequiredText = await _controller!.evaluateJavascript(
-          source:
-              '(document.querySelector(".pow-button") != null  || document.querySelector(".captcha-prompt")) ? "true" : null');
-      return manualRequiredText == 'true';
+            challengePage && (interactive || waited >= _kAutoChallengeSeconds),
+        message: probe['message'] as String?,
+      ));
+    } catch (e) {
+      logger.e('callbackChallengeInfo: $e');
+    } finally {
+      _reporting = false;
     }
-    return false;
-  }
-
-  Future<String?> getChallengeMessage() async {
-    if (_controller != null) {
-      final String msg = await _controller!.evaluateJavascript(
-              source:
-                  '(document.querySelector("#challenge-body-text") != null) ? document.querySelector("#challenge-body-text").textContent : ""')
-          as String;
-      return msg.trim();
-    }
-    return null;
   }
 
   InAppWebViewController? _controller;
@@ -133,7 +226,10 @@ class _MobileWebViewState extends State<MobileWebView> {
         initialUrlRequest: URLRequest(
           url: WebUri(widget.url),
         ),
-        initialOptions: inAppWebViewOptions,
+        initialSettings: inAppWebViewSettings,
+        onWebViewCreated: (controller) {
+          _controller = controller;
+        },
         shouldOverrideUrlLoading: (controller, navigationAction) async {
           return NavigationActionPolicy.ALLOW;
         },
@@ -142,23 +238,11 @@ class _MobileWebViewState extends State<MobileWebView> {
           logger.d('onTitleChanged: $title');
           callbackChallengeInfo();
         },
-        // onLoadStop: (InAppWebViewController controller, Uri? uri) async {
-        //   if (uri == null) {
-        //     return;
-        //   }
-        //   final cookies = await cookieManager.getCookies(url: uri);
-        //   final ioCookies =
-        //       cookies.map((e) => Cookie(e.name, '${e.value}')).toList();
-        //   final ua = await controller.evaluateJavascript(
-        //       source: 'navigator.userAgent');
-        //   if (widget.callback != null) {
-        //     widget.callback!(WebViewCookieInfo(
-        //         url: uri.toString(),
-        //         cookies: ioCookies,
-        //         userAgent: ua as String,
-        //         completed: true));
-        //   }
-        // },
+        onLoadStop: (controller, url) async {
+          _controller = controller;
+          logger.d('onLoadStop: $url');
+          callbackChallengeInfo();
+        },
       );
     }
     return Container();

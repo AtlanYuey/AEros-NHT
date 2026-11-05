@@ -69,10 +69,8 @@ class _IndexPageState extends ConsumerState<IndexPage> {
         offset: state.hideNavigationBar ? const Offset(0, 1.6) : Offset.zero,
         duration: 320.milliseconds,
         curve: Curves.easeOutCubic,
-        child: AnimatedOpacity(
-          opacity: state.hideNavigationBar ? 0 : 1,
-          duration: 220.milliseconds,
-          child: GlassTabBar(
+        child: Builder(builder: (context) {
+          return GlassTabBar(
             currentIndex: state.selectedIndex,
             items: [
               GlassTabItem(
@@ -107,8 +105,8 @@ class _IndexPageState extends ConsumerState<IndexPage> {
                   .read(indexProvider.notifier)
                   .setIndex(index, context: context, jumpToPage: true);
             },
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
@@ -159,8 +157,12 @@ class GlassTabBar extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: GlassContainer(
-            borderRadius: BorderRadius.circular(barHeight / 2),
+            borderRadius: barHeight / 2,
             padding: const EdgeInsets.all(4),
+            style: (palette.brightness == Brightness.dark
+                    ? LiquidGlassStyle.dark
+                    : LiquidGlassStyle.light)
+                .copyWith(refraction: 14, bevel: 20, blur: 3),
             child: SizedBox(
               height: barHeight - 8,
               child: LayoutBuilder(builder: (context, constraints) {

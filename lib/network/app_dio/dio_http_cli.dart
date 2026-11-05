@@ -19,14 +19,13 @@ class DioHttpClient {
 
   late final AppDio _dio;
 
-  void initThroughInterceptor(Future<bool> Function(DioError err) handler) {
+  void initThroughInterceptor(Future<bool> Function(DioException err) handler) {
     print('initThroughInterceptor');
     _dio.interceptors
         .removeWhere((element) => element is DioThroughInterceptor);
     _dio.interceptors
         .add(DioThroughInterceptor(dio: _dio, throughHandler: handler));
   }
-
 
   Future<DioHttpResponse> get(String uri,
       {Map<String, dynamic>? queryParameters,

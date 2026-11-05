@@ -19,23 +19,15 @@ class NhWebViewPage extends StatelessWidget {
         initialUrlRequest: URLRequest(
           url: WebUri(initialUrl),
         ),
-        initialOptions: inAppWebViewOptions,
+        initialSettings: inAppWebViewSettings,
       ),
     );
   }
 }
 
-final InAppWebViewGroupOptions inAppWebViewOptions = InAppWebViewGroupOptions(
-  crossPlatform: InAppWebViewOptions(
-    useShouldOverrideUrlLoading: true,
-    mediaPlaybackRequiresUserGesture: false,
-    // clearCache: true,
-    // userAgent: NHConst.userAgent,
-  ),
-  android: AndroidInAppWebViewOptions(
-    useHybridComposition: true,
-  ),
-  ios: IOSInAppWebViewOptions(
-    allowsInlineMediaPlayback: true,
-  ),
+final InAppWebViewSettings inAppWebViewSettings = InAppWebViewSettings(
+  useShouldOverrideUrlLoading: true,
+  mediaPlaybackRequiresUserGesture: false,
+  useHybridComposition: true,
+  allowsInlineMediaPlayback: true,
 );

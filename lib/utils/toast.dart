@@ -19,7 +19,7 @@ void showActionToast(String msg, {IconData? icon, VoidCallback? onPressed}) {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 520),
           child: GlassContainer(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: 22,
             padding: const EdgeInsets.only(left: 18, right: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,

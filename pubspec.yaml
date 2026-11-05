@@ -105,6 +105,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+  shaders:
+    - shaders/liquid_glass.frag
 
 flutter_intl:
   enabled: true

@@ -17,6 +17,7 @@ import 'package:window_size/window_size.dart';
 
 import 'component/widget/broken_shield.dart';
 import 'component/widget/desktop.dart';
+import 'component/widget/liquid_glass.dart';
 import 'component/widget/system_ui_overlay.dart';
 import 'generated/l10n.dart';
 
@@ -24,6 +25,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Global.init();
+  await LiquidGlassShader.load();
 
   initLogger();
   runApp(const ProviderScope(

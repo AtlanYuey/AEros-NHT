@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  FLUTTER_VERSION: '3.38.10'
+  FLUTTER_VERSION: '3.41.9'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,7 +19,9 @@ concurrency:
 jobs:
   build_ios:
     name: Build iOS (unsigned IPA)
-    runs-on: macos-15
+    # Xcode 26 / iOS 26 SDK: UIKit only renders Liquid Glass for apps
+    # built against it.
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -42,6 +44,7 @@ jobs:
       - name: Show toolchain
         run: |
           xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
           flutter --version
           pod --version
 

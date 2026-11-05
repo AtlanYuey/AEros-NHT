@@ -12,6 +12,7 @@ import 'package:eros_n/utils/logger.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:native_liquid_glass/native_liquid_glass.dart';
 
 import '../../common/const/const.dart';
 import '../../common/global.dart';
@@ -92,6 +93,8 @@ class _BrokenShieldState extends State<BrokenShield> {
     );
 
     overlay.currentState!.insert(entry!);
+    // Native glass views sit above Flutter; hide them under the overlay.
+    NativeLiquidGlassLifecycle.suppressGlassEffects();
 
     return completer!.future;
   }
@@ -111,6 +114,9 @@ class _BrokenShieldState extends State<BrokenShield> {
   }
 
   void _finish(bool passed, {Object? error}) {
+    if (entry != null) {
+      NativeLiquidGlassLifecycle.unsuppressGlassEffects();
+    }
     entry?.remove();
     entry = null;
     final c = completer;

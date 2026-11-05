@@ -3,6 +3,7 @@ import 'package:eros_n/component/widget/liquid_glass.dart';
 import 'package:eros_n/generated/l10n.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:native_liquid_glass/native_liquid_glass.dart';
 
 export 'liquid_glass.dart' show LiquidGlassStyle;
 
@@ -55,20 +56,31 @@ class GlassContainer extends StatelessWidget {
   }
 }
 
+/// Whether Apple's own Liquid Glass (UIKit, iOS 26+) is available. When it
+/// is, glass chrome is drawn by real UIKit controls instead of Flutter.
+bool get useNativeLiquidGlass => NativeLiquidGlassUtils.supportsLiquidGlass;
+
 /// Circular glass button, used for floating toolbar actions over content
 /// (e.g. back / share buttons above a cover image).
+///
+/// On iOS 26+ this is a native `UIButton` with the system glass
+/// configuration; elsewhere a Flutter approximation.
 class GlassIconButton extends StatelessWidget {
   const GlassIconButton({
     super.key,
     required this.icon,
+    this.sfSymbol,
     this.onPressed,
-    this.size = 40,
+    this.size = 44,
     this.iconSize = 20,
     this.color,
     this.tooltip,
   });
 
   final IconData icon;
+
+  /// SF Symbol used by the native button (e.g. `chevron.backward`).
+  final String? sfSymbol;
   final VoidCallback? onPressed;
   final double size;
   final double iconSize;
@@ -77,13 +89,35 @@ class GlassIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (useNativeLiquidGlass && sfSymbol != null) {
+      return SizedBox(
+        width: size,
+        height: size,
+        child: LiquidGlassButton.icon(
+          onPressed: onPressed ?? () {},
+          icon: NativeLiquidGlassIcon.sfSymbol(sfSymbol!),
+          size: size,
+          iconSize: iconSize,
+          iconColor: color ?? context.palette.label,
+          tooltip: tooltip,
+        ),
+      );
+    }
     Widget button = GlassContainer(
       borderRadius: size / 2,
       style: (context.palette.brightness == Brightness.dark
               ? LiquidGlassStyle.dark
               : LiquidGlassStyle.light)
           .copyWith(
-              refraction: 7, shadowBlur: 10, shadowOffset: const Offset(0, 3)),
+        refraction: 6,
+        bevel: 10,
+        blur: 6,
+        tint: context.palette.brightness == Brightness.dark
+            ? const Color(0x4D000000)
+            : const Color(0x4DFFFFFF),
+        shadowBlur: 10,
+        shadowOffset: const Offset(0, 3),
+      ),
       child: SizedBox(
         width: size,
         height: size,

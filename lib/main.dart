@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:native_liquid_glass/native_liquid_glass.dart';
 import 'package:window_size/window_size.dart';
 
 import 'component/widget/broken_shield.dart';
@@ -126,6 +127,8 @@ class _MyAppState extends ConsumerState<MyApp> with WidgetsBindingObserver {
             navigatorObservers: () => [
               AppRouteObserver(),
               FlutterSmartDialog.observer,
+              // Hides native Liquid Glass views under Flutter popups.
+              LiquidGlassNavigatorObserver(),
             ],
           ),
           builder: SystemUIOverlay.init(

@@ -26,6 +26,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:native_liquid_glass/native_liquid_glass.dart';
 import 'package:intl/intl.dart';
 import 'package:nil/nil.dart';
 import 'package:palette_generator/palette_generator.dart';
@@ -337,6 +338,7 @@ class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
                     children: [
                       GlassIconButton(
                         icon: CupertinoIcons.chevron_back,
+                        sfSymbol: 'chevron.backward',
                         tooltip:
                             MaterialLocalizations.of(context).backButtonTooltip,
                         onPressed: () => Navigator.of(context).maybePop(),
@@ -360,6 +362,7 @@ class _GalleryTopBar extends StatelessWidget implements PreferredSizeWidget {
                       Builder(builder: (context) {
                         return GlassIconButton(
                           icon: CupertinoIcons.share,
+                          sfSymbol: 'square.and.arrow.up',
                           tooltip: L10n.of(context).share,
                           onPressed: () => onShare(context),
                         );
@@ -1089,6 +1092,25 @@ class _ReadButton extends HookConsumerWidget {
 
     if (!floating) {
       return button;
+    }
+    if (useNativeLiquidGlass) {
+      // Floating over content: Apple's prominent (tinted) glass button.
+      return SizedBox(
+        height: 50,
+        child: LiquidGlassButton(
+          label: label,
+          icon: NativeLiquidGlassIcon.sfSymbol(
+              currentPageIndex == 0 ? 'book.fill' : 'play.fill'),
+          style: LiquidGlassButtonStyle.prominentGlass,
+          tint: Theme.of(context).colorScheme.primary,
+          height: 50,
+          shrinkWrap: true,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            RouteUtil.goRead(context, ref);
+          },
+        ),
+      );
     }
     return DecoratedBox(
       decoration: BoxDecoration(

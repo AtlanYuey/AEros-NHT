@@ -88,6 +88,7 @@ dependencies:
   uuid: ^4.4.0
   easy_debounce: ^2.0.3
   flutter_socks_proxy: ^0.0.3
+  native_liquid_glass: ^0.3.1
 
 dev_dependencies:
   # dart run build_runner build --delete-conflicting-outputs

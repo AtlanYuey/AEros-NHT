@@ -16,6 +16,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:native_liquid_glass/native_liquid_glass.dart';
 
 import '../../../utils/logger.dart';
 import 'index_provider.dart';
@@ -70,41 +71,76 @@ class _IndexPageState extends ConsumerState<IndexPage> {
         duration: 320.milliseconds,
         curve: Curves.easeOutCubic,
         child: Builder(builder: (context) {
+          void onTap(int index) {
+            HapticFeedback.selectionClick();
+            ref
+                .read(indexProvider.notifier)
+                .setIndex(index, context: context, jumpToPage: true);
+          }
+
+          final labels = [
+            L10n.of(context).home,
+            L10n.of(context).favorites,
+            L10n.of(context).search,
+            L10n.of(context).history,
+            L10n.of(context).more,
+          ];
+
+          if (useNativeLiquidGlass) {
+            // iOS 26+: the system tab bar (UITabBarController), i.e. Apple's
+            // own Liquid Glass with its lensing and selection droplet.
+            const symbols = [
+              ('house', 'house.fill'),
+              ('heart', 'heart.fill'),
+              ('magnifyingglass', 'magnifyingglass'),
+              ('clock', 'clock.fill'),
+              ('ellipsis.circle', 'ellipsis.circle.fill'),
+            ];
+            return LiquidGlassTabBar(
+              currentIndex: state.selectedIndex,
+              selectedItemColor: Theme.of(context).colorScheme.primary,
+              items: [
+                for (var i = 0; i < symbols.length; i++)
+                  LiquidGlassTabItem(
+                    label: labels[i],
+                    icon: NativeLiquidGlassIcon.sfSymbol(symbols[i].$1),
+                    selectedIcon: NativeLiquidGlassIcon.sfSymbol(symbols[i].$2),
+                  ),
+              ],
+              onTabSelected: onTap,
+            );
+          }
+
           return GlassTabBar(
             currentIndex: state.selectedIndex,
             items: [
               GlassTabItem(
                 icon: CupertinoIcons.house,
                 activeIcon: CupertinoIcons.house_fill,
-                label: L10n.of(context).home,
+                label: labels[0],
               ),
               GlassTabItem(
                 icon: CupertinoIcons.heart,
                 activeIcon: CupertinoIcons.heart_fill,
-                label: L10n.of(context).favorites,
+                label: labels[1],
               ),
               GlassTabItem(
                 icon: CupertinoIcons.search,
                 activeIcon: CupertinoIcons.search,
-                label: L10n.of(context).search,
+                label: labels[2],
               ),
               GlassTabItem(
                 icon: CupertinoIcons.clock,
                 activeIcon: CupertinoIcons.clock_fill,
-                label: L10n.of(context).history,
+                label: labels[3],
               ),
               GlassTabItem(
                 icon: CupertinoIcons.ellipsis_circle,
                 activeIcon: CupertinoIcons.ellipsis_circle_fill,
-                label: L10n.of(context).more,
+                label: labels[4],
               ),
             ],
-            onTap: (index) {
-              HapticFeedback.selectionClick();
-              ref
-                  .read(indexProvider.notifier)
-                  .setIndex(index, context: context, jumpToPage: true);
-            },
+            onTap: onTap,
           );
         }),
       ),
@@ -163,14 +199,14 @@ class GlassTabBar extends StatelessWidget {
                     ? LiquidGlassStyle.dark
                     : LiquidGlassStyle.light)
                 .copyWith(
-              refraction: 14,
-              bevel: 20,
-              // A little more frosting than buttons keeps labels legible
-              // over busy covers while the glass stays clear.
-              blur: 4,
+              // Flutter stand-in for the "regular" glass variant: blurred,
+              // brightened backdrop with a lens-like rim.
+              refraction: 10,
+              bevel: 14,
+              blur: 8,
               tint: palette.brightness == Brightness.dark
-                  ? const Color(0x47000000)
-                  : const Color(0x1AFFFFFF),
+                  ? const Color(0x52000000)
+                  : const Color(0x47FFFFFF),
             ),
             child: SizedBox(
               height: barHeight - 8,

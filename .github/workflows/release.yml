@@ -20,8 +20,9 @@ jobs:
   build_ios:
     name: Build iOS (unsigned IPA)
     # Needs Xcode 26 / the iOS 26 SDK: UIKit only renders Liquid Glass for
-    # apps built against it. macos-latest is the macOS 26 image.
-    runs-on: macos-latest
+    # apps built against it. The macos-15 image ships Xcode 26 side by side
+    # (selected below) and gets runners much faster than macos-26.
+    runs-on: macos-15
     timeout-minutes: 60
     steps:
       - name: Checkout

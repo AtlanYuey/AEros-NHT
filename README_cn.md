@@ -26,6 +26,14 @@
 - [x] 搜索
 - [ ] 更多设置
 
+## iOS 安装
+GitHub Actions 会构建**未签名**的 `Eros-N_<版本>.ipa`（在 Release 或 Actions 运行的 Artifacts 中下载）。
+未签名的 IPA 需要自行签名后安装，可任选其一：
+- [AltStore](https://altstore.io) / [SideStore](https://sidestore.io) / [Sideloadly](https://sideloadly.io)：使用自己的 Apple ID 签名安装（免费账号每 7 天需重新签名）
+- [TrollStore](https://github.com/opa334/TrollStore)：在受支持的系统版本上可直接永久安装
+
+最低系统要求：iOS 13
+
 ## Windows 平台需求
 - [WebView2 运行时](https://developer.microsoft.com/zh-CN/microsoft-edge/webview2/)
 - [Microsoft Visual C++ 可再发行程序包](https://learn.microsoft.com/zh-CN/cpp/windows/latest-supported-vc-redist?view=msvc-170)

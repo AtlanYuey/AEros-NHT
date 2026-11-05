@@ -92,6 +92,11 @@ class _GalleryPageState extends ConsumerState<GalleryPage> {
     final baseTheme = Theme.of(context);
     final brightness = baseTheme.brightness;
 
+    // Recompute the tint when switching between light and dark mode.
+    if (tintColorScheme != null && tintColorScheme!.brightness != brightness) {
+      _tintSeed = null;
+    }
+
     if (useGalleryTint) {
       final paletteGenerator =
           ref.watch(paletteGeneratorProvider(thumbUrl ?? ''));

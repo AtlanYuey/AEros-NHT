@@ -208,7 +208,8 @@ class ThumbsView extends HookConsumerWidget {
             maxCrossAxisExtent: 130.0,
             mainAxisSpacing: 12,
             crossAxisSpacing: 10,
-            childAspectRatio: minRatio - 0.2,
+            // image + page number label below it
+            childAspectRatio: 120 / (120 / minRatio + 22),
           )),
     );
   }

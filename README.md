@@ -24,6 +24,14 @@ An unofficial Nhentai app.
 - [x] Search
 - [ ] More settings
 
+## iOS installation
+GitHub Actions builds an **unsigned** `Eros-N_<version>.ipa` (download it from a Release or from the Actions run artifacts).
+Sign and install it with one of:
+- [AltStore](https://altstore.io) / [SideStore](https://sidestore.io) / [Sideloadly](https://sideloadly.io) using your own Apple ID (free accounts must re-sign every 7 days)
+- [TrollStore](https://github.com/opa334/TrollStore) on supported iOS versions
+
+Requires iOS 13 or later.
+
 ## Windows platform requirements
 - [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
 - [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170)

@@ -19,9 +19,9 @@ concurrency:
 jobs:
   build_ios:
     name: Build iOS (unsigned IPA)
-    # Xcode 26 / iOS 26 SDK: UIKit only renders Liquid Glass for apps
-    # built against it.
-    runs-on: macos-26
+    # Needs Xcode 26 / the iOS 26 SDK: UIKit only renders Liquid Glass for
+    # apps built against it. macos-latest is the macOS 26 image.
+    runs-on: macos-latest
     timeout-minutes: 60
     steps:
       - name: Checkout
@@ -41,10 +41,20 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Select Xcode 26
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC/Contents/Developer"; fi
+          xcodebuild -version
+          SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK $SDK"
+          case "$SDK" in
+            2[6-9]*|[3-9][0-9]*) ;;
+            *) echo "::warning::iOS SDK $SDK < 26: native Liquid Glass will not render" ;;
+          esac
+
       - name: Show toolchain
         run: |
-          xcodebuild -version
-          xcrun --sdk iphoneos --show-sdk-version
           flutter --version
           pod --version
 

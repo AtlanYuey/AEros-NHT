@@ -3,8 +3,66 @@ import SwiftData
 import SwiftUI
 import UIKit
 
+// MARK: - Source
+
+struct ReaderPage: Hashable, Identifiable {
+    let index: Int
+    let url: URL?
+    let aspectRatio: CGFloat
+    var id: Int { index }
+}
+
+/// What the reader shows: a gallery's pages (local files when downloaded).
+struct ReaderSource: Hashable {
+    let id: Int
+    let title: String
+    let pages: [ReaderPage]
+    let shareURL: URL
+    let item: GalleryItem
+    let numPages: Int
+
+    @MainActor
+    init(detail: GalleryDetail) {
+        id = detail.id
+        title = detail.displayTitle
+        shareURL = detail.url
+        item = detail.asItem
+        numPages = detail.numPages
+        let downloads = DownloadManager.shared
+        pages = detail.pages.enumerated().map { offset, page in
+            ReaderPage(index: offset,
+                       url: downloads.localURL(gallery: detail.id, page: offset) ?? page.imageURL,
+                       aspectRatio: page.aspectRatio)
+        }
+    }
+
+    @MainActor
+    init(record: DownloadRecord) {
+        id = record.id
+        title = record.title
+        shareURL = NHHost.gallery(record.id)
+        item = record.item
+        numPages = record.pages.count
+        let downloads = DownloadManager.shared
+        pages = record.pages.enumerated().map { offset, page in
+            let ratio = page.width > 0 && page.height > 0 ? CGFloat(page.width) / CGFloat(page.height) : 0.7
+            return ReaderPage(index: offset,
+                              url: downloads.localURL(gallery: record.id, page: offset) ?? URL(string: page.remote),
+                              aspectRatio: ratio)
+        }
+    }
+}
+
+/// Pushes the reader (so the back swipe works).
+struct ReaderRoute: Hashable {
+    let source: ReaderSource
+    let page: Int
+}
+
+// MARK: - Reader
+
 struct ReaderView: View {
-    let gallery: GalleryDetail
+    let source: ReaderSource
 
     @State private var page: Int
     @State private var position: Int?
@@ -14,114 +72,122 @@ struct ReaderView: View {
     @State private var sliderValue: Double
 
     @Environment(AppSettings.self) private var settings
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @State private var prefetcher = ImagePrefetcher(pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3)
+    @State private var prefetcher = ImagePrefetcher(
+        pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 3
+    )
 
-    init(gallery: GalleryDetail, startPage: Int) {
-        self.gallery = gallery
-        _page = State(initialValue: startPage)
-        _position = State(initialValue: startPage)
-        _sliderValue = State(initialValue: Double(startPage))
+    init(route: ReaderRoute) {
+        source = route.source
+        let start = min(max(0, route.page), max(0, route.source.pages.count - 1))
+        _page = State(initialValue: start)
+        _position = State(initialValue: start)
+        _sliderValue = State(initialValue: Double(start))
     }
 
-    private var pageCount: Int { gallery.pages.count }
+    private var pageCount: Int { source.pages.count }
     private var isRTL: Bool { settings.readMode == .rightToLeft }
 
     var body: some View {
-        NavigationStack {
-            pager
-                .background(Color.black)
-                .ignoresSafeArea()
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Close", systemImage: "xmark") { dismiss() }
+        content
+            .background(Color.black)
+            .ignoresSafeArea()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 0) {
+                        Text(source.title)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+                        Text("\(page + 1) / \(pageCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
                     }
-                    ToolbarItem(placement: .principal) {
-                        VStack(spacing: 0) {
-                            Text(gallery.displayTitle)
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                            Text("\(page + 1) / \(pageCount)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                    .frame(maxWidth: 240)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Picker("Reading Direction", selection: Binding(
+                            get: { settings.readMode },
+                            set: { settings.readMode = $0 }
+                        )) {
+                            ForEach(ReadMode.allCases) { mode in
+                                Label(mode.title, systemImage: mode.systemImage).tag(mode)
+                            }
                         }
-                        .frame(maxWidth: 240)
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Picker("Reading Direction", selection: Binding(
-                                get: { settings.readMode },
-                                set: { settings.readMode = $0 }
-                            )) {
-                                ForEach(ReadMode.allCases) { mode in
-                                    Label(mode.title, systemImage: mode.systemImage).tag(mode)
-                                }
-                            }
-                            Button("Reader Settings", systemImage: "slider.horizontal.3") {
-                                showSettings = true
-                            }
-                            ShareLink(item: gallery.url) {
-                                Label("Share", systemImage: "square.and.arrow.up")
-                            }
-                        } label: {
-                            Label("Options", systemImage: "ellipsis")
+                        Button("Reader Settings", systemImage: "slider.horizontal.3") {
+                            showSettings = true
                         }
+                        ShareLink(item: source.shareURL) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    } label: {
+                        Label("Options", systemImage: "ellipsis")
                     }
                 }
-                .toolbar(chromeVisible ? .visible : .hidden, for: .navigationBar)
-                .navigationBarTitleDisplayMode(.inline)
-                .overlay(alignment: .bottom) {
-                    if chromeVisible {
-                        bottomPanel
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+            }
+            .toolbar(chromeVisible ? .visible : .hidden, for: .navigationBar)
+            .toolbar(.hidden, for: .tabBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .overlay(alignment: .bottom) {
+                if chromeVisible {
+                    bottomPanel
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .statusBarHidden(!chromeVisible)
-                .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
-        }
-        .preferredColorScheme(.dark)
-        .animation(.smooth(duration: 0.25), value: chromeVisible)
-        .onChange(of: position) { _, new in
-            guard let new else { return }
-            page = new
-            sliderValue = Double(new)
-            prefetch(around: new)
-            modelContext.recordHistory(gallery, page: new)
-        }
-        .task(id: autoRead) { await runAutoRead() }
-        .onAppear {
-            UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
-            prefetch(around: page)
-        }
-        .onDisappear {
-            UIApplication.shared.isIdleTimerDisabled = false
-            prefetcher.stopPrefetching()
-        }
-        .sheet(isPresented: $showSettings) {
-            ReaderSettingsSheet()
-                .presentationDetents([.medium, .large])
-        }
+            }
+            .statusBarHidden(!chromeVisible)
+            .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
+            .environment(\.colorScheme, .dark)
+            .animation(.smooth(duration: 0.25), value: chromeVisible)
+            .onChange(of: page) { _, new in
+                sliderValue = Double(new)
+                if position != new { position = new }
+                prefetch(around: new)
+                modelContext.recordHistory(item: source.item, title: source.title,
+                                           numPages: source.numPages, page: new)
+            }
+            .onChange(of: position) { _, new in
+                if let new, new != page { page = new }
+            }
+            .onChange(of: settings.readMode) { position = page }
+            .task(id: autoRead) { await runAutoRead() }
+            .onAppear {
+                UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
+                prefetch(around: page)
+                modelContext.recordHistory(item: source.item, title: source.title,
+                                           numPages: source.numPages, page: page)
+            }
+            .onDisappear {
+                UIApplication.shared.isIdleTimerDisabled = false
+                prefetcher.stopPrefetching()
+            }
+            .sheet(isPresented: $showSettings) {
+                ReaderSettingsSheet()
+                    .presentationDetents([.medium, .large])
+            }
     }
 
     // MARK: Pages
 
     @ViewBuilder
-    private var pager: some View {
-        switch settings.readMode {
-        case .vertical:
+    private var content: some View {
+        if settings.readMode.isPaged {
+            PagedReader(pages: source.pages, mode: settings.readMode, page: $page) { fraction in
+                handleTap(at: fraction)
+            }
+            .id(settings.readMode)
+        } else {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 0) {
-                    ForEach(gallery.pages.indices, id: \.self) { index in
-                        let page = gallery.pages[index]
+                    ForEach(source.pages) { page in
                         Color.clear
                             .aspectRatio(page.aspectRatio, contentMode: .fit)
                             .overlay {
-                                RemoteImage(url: page.imageURL, contentMode: .fit, targetWidth: 1400)
+                                RemoteImage(url: page.url, contentMode: .fit, targetWidth: 1400)
                             }
-                            .id(index)
+                            .id(page.index)
                     }
                 }
                 .scrollTargetLayout()
@@ -130,23 +196,6 @@ struct ReaderView: View {
             .scrollIndicators(.hidden)
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
-        case .leftToRight, .rightToLeft:
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 0) {
-                    ForEach(gallery.pages.indices, id: \.self) { index in
-                        ZoomablePage(url: gallery.pages[index].imageURL) { fraction in
-                            handleTap(at: fraction)
-                        }
-                        .containerRelativeFrame([.horizontal, .vertical])
-                        .id(index)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $position)
-            .scrollIndicators(.hidden)
-            .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
         }
     }
 
@@ -164,20 +213,20 @@ struct ReaderView: View {
         }
     }
 
-    private func go(_ target: Int, animated: Bool = true) {
+    private func go(_ target: Int) {
         guard (0..<pageCount).contains(target) else { return }
-        if animated {
-            withAnimation(.smooth(duration: 0.3)) { position = target }
+        if settings.readMode.isPaged {
+            page = target
         } else {
-            position = target
+            withAnimation(.smooth(duration: 0.3)) { position = target }
         }
     }
 
     private func prefetch(around index: Int) {
         let upper = min(pageCount, index + 1 + settings.preloadPages)
-        let lower = max(0, index - 1)
+        let lower = max(0, index - 2)
         guard lower < upper else { return }
-        let urls = gallery.pages[lower..<upper].compactMap(\.imageURL)
+        let urls = source.pages[lower..<upper].compactMap(\.url).filter { !$0.isFileURL }
         prefetcher.startPrefetching(with: urls)
     }
 
@@ -208,7 +257,7 @@ struct ReaderView: View {
                     in: 0...Double(max(1, pageCount - 1)),
                     step: 1,
                     onEditingChanged: { editing in
-                        if !editing { go(Int(sliderValue), animated: false) }
+                        if !editing { go(Int(sliderValue)) }
                     }
                 )
                 .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
@@ -272,7 +321,6 @@ struct ReaderSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        @Bindable var settings = settings
         NavigationStack {
             Form {
                 ReadingSettingsSections(settings: settings)
@@ -325,27 +373,131 @@ struct ReadingSettingsSections: View {
     }
 }
 
-// MARK: - Zoomable page
+// MARK: - Paged reader (UIPageViewController)
 
-/// A page image that can be pinch-zoomed and double-tapped (UIScrollView).
-struct ZoomablePage: UIViewRepresentable {
-    let url: URL?
+/// One page at a time, left-to-right, right-to-left or top-to-bottom.
+/// UIPageViewController keeps the neighbouring pages alive, so turning a
+/// page shows an already decoded image instead of a blank one.
+struct PagedReader: UIViewControllerRepresentable {
+    let pages: [ReaderPage]
+    let mode: ReadMode
+    @Binding var page: Int
     let onTap: (CGFloat) -> Void
 
-    func makeUIView(context: Context) -> ZoomableImageView {
-        ZoomableImageView()
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
     }
 
-    func updateUIView(_ view: ZoomableImageView, context: Context) {
-        view.onTap = onTap
-        view.load(url)
+    func makeUIViewController(context: Context) -> UIPageViewController {
+        let controller = UIPageViewController(
+            transitionStyle: .scroll,
+            navigationOrientation: mode == .verticalPaged ? .vertical : .horizontal,
+            options: [.interPageSpacing: 16]
+        )
+        controller.view.backgroundColor = .black
+        controller.dataSource = context.coordinator
+        controller.delegate = context.coordinator
+        if let first = context.coordinator.controller(for: page) {
+            controller.setViewControllers([first], direction: .forward, animated: false)
+        }
+        return controller
     }
 
-    static func dismantleUIView(_ view: ZoomableImageView, coordinator: ()) {
-        view.cancel()
+    func updateUIViewController(_ controller: UIPageViewController, context: Context) {
+        context.coordinator.parent = self
+        guard let current = (controller.viewControllers?.first as? PageController)?.index,
+              current != page,
+              let target = context.coordinator.controller(for: page)
+        else { return }
+        let forward = page > current
+        let direction: UIPageViewController.NavigationDirection
+        if mode == .rightToLeft {
+            direction = forward ? .reverse : .forward
+        } else {
+            direction = forward ? .forward : .reverse
+        }
+        controller.setViewControllers([target], direction: direction, animated: abs(page - current) == 1)
+    }
+
+    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+        var parent: PagedReader
+
+        init(_ parent: PagedReader) {
+            self.parent = parent
+        }
+
+        func controller(for index: Int) -> PageController? {
+            guard parent.pages.indices.contains(index) else { return nil }
+            let controller = PageController(index: index, url: parent.pages[index].url)
+            controller.onTap = { [weak self] fraction in self?.parent.onTap(fraction) }
+            return controller
+        }
+
+        private func neighbour(of controller: UIViewController, _ delta: Int) -> UIViewController? {
+            guard let page = controller as? PageController else { return nil }
+            let step = parent.mode == .rightToLeft ? -delta : delta
+            return self.controller(for: page.index + step)
+        }
+
+        func pageViewController(_ pageViewController: UIPageViewController,
+                                viewControllerBefore viewController: UIViewController) -> UIViewController? {
+            neighbour(of: viewController, -1)
+        }
+
+        func pageViewController(_ pageViewController: UIPageViewController,
+                                viewControllerAfter viewController: UIViewController) -> UIViewController? {
+            neighbour(of: viewController, 1)
+        }
+
+        func pageViewController(_ pageViewController: UIPageViewController,
+                                didFinishAnimating finished: Bool,
+                                previousViewControllers: [UIViewController],
+                                transitionCompleted completed: Bool) {
+            guard completed, let current = pageViewController.viewControllers?.first as? PageController else {
+                return
+            }
+            if parent.page != current.index {
+                parent.page = current.index
+            }
+        }
     }
 }
 
+final class PageController: UIViewController {
+    let index: Int
+    let url: URL?
+    var onTap: ((CGFloat) -> Void)?
+    private let zoomView = ZoomableImageView()
+
+    init(index: Int, url: URL?) {
+        self.index = index
+        self.url = url
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        view = zoomView
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        zoomView.onTap = { [weak self] fraction in self?.onTap?(fraction) }
+        zoomView.load(url)
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        zoomView.resetZoom()
+    }
+}
+
+// MARK: - Zoomable page
+
+/// A page image that can be pinch-zoomed and double-tapped (UIScrollView).
 final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private let imageView = UIImageView()
     private let spinner = UIActivityIndicatorView(style: .large)
@@ -385,6 +537,10 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        task?.cancel()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         if zoomScale == minimumZoomScale {
@@ -394,32 +550,34 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.center = CGPoint(x: bounds.midX, y: bounds.midY)
     }
 
+    func resetZoom() {
+        if zoomScale != minimumZoomScale {
+            setZoomScale(minimumZoomScale, animated: false)
+        }
+    }
+
     func load(_ url: URL?) {
         guard url != currentURL else { return }
-        cancel()
+        task?.cancel()
         currentURL = url
         imageView.image = nil
-        setZoomScale(minimumZoomScale, animated: false)
+        resetZoom()
         guard let url else { return }
-        if let cached = ImagePipeline.shared.cache[ImageRequest(url: url)] {
+        let request = ImageRequest(url: url)
+        if let cached = ImagePipeline.shared.cache[request] {
             imageView.image = cached.image
             return
         }
         spinner.startAnimating()
-        task = ImagePipeline.shared.loadImage(with: ImageRequest(url: url)) { [weak self] result in
+        task = ImagePipeline.shared.loadImage(with: request) { [weak self] result in
             guard let self, self.currentURL == url else { return }
             self.spinner.stopAnimating()
             if case let .success(response) = result {
-                UIView.transition(with: self.imageView, duration: 0.2, options: .transitionCrossDissolve) {
+                UIView.transition(with: self.imageView, duration: 0.15, options: .transitionCrossDissolve) {
                     self.imageView.image = response.image
                 }
             }
         }
-    }
-
-    func cancel() {
-        task?.cancel()
-        task = nil
     }
 
     func viewForZooming(in scrollView: UIScrollView) -> UIView? {
@@ -446,13 +604,22 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     @objc private func handleSingleTap(_ gesture: UITapGestureRecognizer) {
         guard bounds.width > 0 else { return }
-        var fraction = gesture.location(in: self).x / bounds.width
-        if zoomScale > minimumZoomScale {
-            fraction = 0.5
-        }
-        if effectiveUserInterfaceLayoutDirection == .rightToLeft {
-            fraction = 1 - fraction
-        }
+        let fraction = zoomScale > minimumZoomScale ? 0.5 : gesture.location(in: self).x / bounds.width
         onTap?(fraction)
+    }
+}
+
+// MARK: - Back swipe
+
+/// Keeps the edge swipe-back working when a pushed screen hides its
+/// navigation bar (the reader with its controls hidden).
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }

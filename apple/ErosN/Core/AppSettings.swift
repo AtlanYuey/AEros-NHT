@@ -47,7 +47,7 @@ enum AccentChoice: String, CaseIterable, Identifiable {
 }
 
 enum GalleryListStyle: String, CaseIterable, Identifiable {
-    case waterfall, grid, compact, list
+    case waterfall, compact, grid, list
 
     var id: String { rawValue }
 
@@ -55,7 +55,7 @@ enum GalleryListStyle: String, CaseIterable, Identifiable {
         switch self {
         case .waterfall: String(localized: "Waterfall")
         case .grid: String(localized: "Grid")
-        case .compact: String(localized: "Covers Only")
+        case .compact: String(localized: "Waterfall (Compact)")
         case .list: String(localized: "List")
         }
     }
@@ -80,7 +80,12 @@ enum GalleryListStyle: String, CaseIterable, Identifiable {
 }
 
 enum ReadMode: String, CaseIterable, Identifiable {
-    case leftToRight, rightToLeft, vertical
+    case leftToRight, rightToLeft, verticalPaged
+    /// Continuous vertical scroll (webtoon style).
+    case vertical
+
+    /// Whether pages are turned one at a time.
+    var isPaged: Bool { self != .vertical }
 
     var id: String { rawValue }
 
@@ -88,7 +93,8 @@ enum ReadMode: String, CaseIterable, Identifiable {
         switch self {
         case .leftToRight: String(localized: "Left to Right")
         case .rightToLeft: String(localized: "Right to Left")
-        case .vertical: String(localized: "Vertical Scroll")
+        case .verticalPaged: String(localized: "Top to Bottom")
+        case .vertical: String(localized: "Continuous (Webtoon)")
         }
     }
 
@@ -96,7 +102,8 @@ enum ReadMode: String, CaseIterable, Identifiable {
         switch self {
         case .leftToRight: "arrow.right.square"
         case .rightToLeft: "arrow.left.square"
-        case .vertical: "arrow.down.square"
+        case .verticalPaged: "arrow.down.square"
+        case .vertical: "scroll"
         }
     }
 }
@@ -114,6 +121,8 @@ final class AppSettings {
     var cardSizePortrait: CardSize { didSet { save(cardSizePortrait.rawValue, "cardSizePortrait") } }
     var cardSizeLandscape: CardSize { didSet { save(cardSizeLandscape.rawValue, "cardSizeLandscape") } }
     var blurCovers: Bool { didSet { save(blurCovers, "blurCovers") } }
+    var showTags: Bool { didSet { save(showTags, "showTags") } }
+    var translateTags: Bool { didSet { save(translateTags, "translateTags") } }
 
     var homeLanguage: LanguageFilter { didSet { save(homeLanguage.rawValue, "homeLanguage") } }
     var homeSort: SearchSort { didSet { save(homeSort.rawValue, "homeSort") } }
@@ -135,6 +144,9 @@ final class AppSettings {
         cardSizePortrait = (d.object(forKey: "cardSizePortrait") as? Int).flatMap(CardSize.init(rawValue:)) ?? .standard
         cardSizeLandscape = (d.object(forKey: "cardSizeLandscape") as? Int).flatMap(CardSize.init(rawValue:)) ?? .standard
         blurCovers = d.bool(forKey: "blurCovers")
+        showTags = d.object(forKey: "showTags") as? Bool ?? true
+        translateTags = d.object(forKey: "translateTags") as? Bool
+            ?? (Locale.preferredLanguages.first?.hasPrefix("zh") ?? false)
         homeLanguage = LanguageFilter(rawValue: d.string(forKey: "homeLanguage") ?? "") ?? .all
         homeSort = SearchSort(rawValue: d.string(forKey: "homeSort") ?? "") ?? .recent
         searchLanguage = LanguageFilter(rawValue: d.string(forKey: "searchLanguage") ?? "") ?? .all

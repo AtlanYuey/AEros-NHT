@@ -6,6 +6,8 @@ import UIKit
 struct ErosNApp: App {
     @State private var settings = AppSettings.shared
     @State private var session = UserSession.shared
+    @State private var downloads = DownloadManager.shared
+    @State private var tagStore = TagStore.shared
 
     init() {
         ImageSetup.configure()
@@ -16,9 +18,13 @@ struct ErosNApp: App {
             RootView()
                 .environment(settings)
                 .environment(session)
+                .environment(downloads)
+                .environment(tagStore)
                 .tint(settings.accent.color)
                 .preferredColorScheme(settings.theme.colorScheme)
+                .modifier(SoftScrollEdges())
                 .task { await session.reload() }
+                .task { await tagStore.prepare() }
         }
         .modelContainer(for: HistoryEntry.self)
     }
@@ -117,3 +123,16 @@ struct RootView: View {
 }
 
 extension GalleryRoute: Identifiable {}
+
+/// iOS 26's soft, progressive scroll edge effect under bars, for every
+/// scroll view in the app (instead of whatever the system default is).
+struct SoftScrollEdges: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.soft, for: .all)
+        } else {
+            content
+        }
+    }
+}
+

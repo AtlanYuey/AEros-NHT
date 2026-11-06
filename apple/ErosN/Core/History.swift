@@ -37,19 +37,23 @@ final class HistoryEntry {
 extension ModelContext {
     /// Records that [gallery] was opened (and, when given, the page read).
     func recordHistory(_ gallery: GalleryDetail, page: Int? = nil) {
-        let gid = gallery.id
+        recordHistory(item: gallery.asItem, title: gallery.displayTitle,
+                      numPages: gallery.numPages, page: page)
+    }
+
+    func recordHistory(item: GalleryItem, title: String, numPages: Int, page: Int? = nil) {
+        let gid = item.id
         let descriptor = FetchDescriptor<HistoryEntry>(predicate: #Predicate { $0.gid == gid })
         if let entry = try? fetch(descriptor).first {
             entry.lastRead = .now
-            entry.title = gallery.displayTitle
-            entry.numPages = gallery.numPages
+            entry.title = title
+            if numPages > 0 { entry.numPages = numPages }
             if let page { entry.lastPage = page }
         } else {
-            let item = gallery.asItem
             insert(HistoryEntry(
-                gid: gid, mediaID: gallery.mediaID, title: gallery.displayTitle,
+                gid: gid, mediaID: item.mediaID, title: title,
                 thumbnail: item.thumbnail, thumbWidth: item.thumbnailWidth,
-                thumbHeight: item.thumbnailHeight, numPages: gallery.numPages,
+                thumbHeight: item.thumbnailHeight, numPages: numPages,
                 lastPage: page ?? 0
             ))
         }

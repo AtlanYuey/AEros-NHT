@@ -23,6 +23,9 @@ struct GalleryDestinations: ViewModifier {
                 SearchResultsView(route: route)
                     .environment(\.galleryNamespace, namespace)
             }
+            .navigationDestination(for: ReaderRoute.self) { route in
+                ReaderView(route: route)
+            }
     }
 }
 
@@ -90,6 +93,7 @@ struct GalleryCard: View {
     let style: GalleryListStyle
 
     @Environment(\.galleryNamespace) private var namespace
+    @Environment(AppSettings.self) private var settings
 
     var body: some View {
         NavigationLink(value: GalleryRoute(id: item.id, preview: item)) {
@@ -101,13 +105,16 @@ struct GalleryCard: View {
                     title.frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
                 case .compact:
                     CoverView(item: item)
-                        .overlay(alignment: .bottom) { compactTitle }
+                        .overlay(alignment: .bottom) { compactOverlay }
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .galleryTransitionSource(item.id, namespace)
                 default:
                     CoverView(item: item)
                         .galleryTransitionSource(item.id, namespace)
                     title
+                    if settings.showTags {
+                        CardTagLine(ids: item.tagIDs, style: .plain)
+                    }
                 }
             }
             .contentShape(Rectangle())
@@ -129,18 +136,91 @@ struct GalleryCard: View {
             .multilineTextAlignment(.leading)
     }
 
-    private var compactTitle: some View {
-        Text(item.prettyTitle)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.white)
-            .lineLimit(2)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .padding(.top, 18)
-            .padding(.bottom, 8)
-            .background(
-                LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .top, endPoint: .bottom)
-            )
+    /// Tags and title over the bottom of the cover.
+    private var compactOverlay: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if settings.showTags {
+                CardTagLine(ids: item.tagIDs, style: .overlay)
+            }
+            Text(item.prettyTitle)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.top, 36)
+        .padding(.bottom, 10)
+        .background(
+            LinearGradient(colors: [.clear, .black.opacity(0.55), .black.opacity(0.8)],
+                           startPoint: .top, endPoint: .bottom)
+        )
+    }
+}
+
+/// One line of tag chips; chips that don't fit are left out.
+struct CardTagLine: View {
+    enum Style { case plain, overlay }
+
+    let ids: [Int]
+    let style: Style
+
+    @Environment(TagStore.self) private var tagStore
+
+    var body: some View {
+        let tags = tagStore.cardTags(for: ids)
+        if !tags.isEmpty {
+            FittingRow(spacing: 5) {
+                ForEach(tags, id: \.self) { tag in
+                    Text(tagStore.displayName(tag.name, type: tag.type))
+                        .font(.caption2.weight(.medium))
+                        .lineLimit(1)
+                        .fixedSize()
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .foregroundStyle(style == .overlay ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                        .background(
+                            style == .overlay ? AnyShapeStyle(.white.opacity(0.2)) : AnyShapeStyle(.fill.tertiary),
+                            in: Capsule()
+                        )
+                }
+            }
+        }
+    }
+}
+
+/// Lays children out in one row and hides the ones that don't fit.
+struct FittingRow: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            let next = width == 0 ? size.width : width + spacing + size.width
+            if next > maxWidth { break }
+            width = next
+            height = max(height, size.height)
+        }
+        return CGSize(width: proposal.width ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var full = false
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if full || x + size.width > bounds.maxX + 0.5 {
+                full = true
+                subview.place(at: CGPoint(x: -10_000, y: -10_000), proposal: .zero)
+                continue
+            }
+            subview.place(at: CGPoint(x: x, y: bounds.minY), proposal: ProposedViewSize(size))
+            x += size.width + spacing
+        }
     }
 }
 

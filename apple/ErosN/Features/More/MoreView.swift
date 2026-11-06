@@ -3,31 +3,34 @@ import UIKit
 
 struct MoreView: View {
     @Environment(UserSession.self) private var session
+    @Environment(DownloadManager.self) private var downloads
     @State private var showLogin = false
-    @State private var confirmLogout = false
 
     var body: some View {
         List {
             Section {
                 if session.isLoggedIn {
-                    HStack(spacing: 14) {
-                        avatar
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(session.user?.username ?? String(localized: "Logged In"))
-                                .font(.title3.weight(.semibold))
-                            Text("nhentai account")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                    NavigationLink {
+                        AccountView()
+                    } label: {
+                        HStack(spacing: 14) {
+                            AvatarView(url: session.user?.avatar, size: 56)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(session.user?.username ?? String(localized: "Logged In"))
+                                    .font(.title3.weight(.semibold))
+                                Text("nhentai account")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
-                    Button("Log Out", role: .destructive) { confirmLogout = true }
                 } else {
                     Button {
                         showLogin = true
                     } label: {
                         HStack(spacing: 14) {
-                            avatar
+                            AvatarView(url: nil, size: 56)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Log In")
                                     .font(.title3.weight(.semibold))
@@ -39,6 +42,13 @@ struct MoreView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                }
+            }
+
+            Section {
+                NavigationLink { DownloadsView() } label: {
+                    SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
+                        .badge(downloads.records.filter { $0.state == .downloading }.count)
                 }
             }
 
@@ -62,23 +72,173 @@ struct MoreView: View {
         }
         .navigationTitle("More")
         .sheet(isPresented: $showLogin) { LoginView() }
-        .confirmationDialog("Log out of nhentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
-            Button("Log Out", role: .destructive) { session.logout() }
-        }
     }
+}
 
-    private var avatar: some View {
+struct AvatarView: View {
+    let url: URL?
+    let size: CGFloat
+
+    var body: some View {
         Group {
-            if let url = session.user?.avatar {
-                RemoteImage(url: url, targetWidth: 120)
+            if let url {
+                RemoteImage(url: url, targetWidth: size * 2)
             } else {
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 52, height: 52)
+        .frame(width: size, height: size)
         .clipShape(Circle())
+    }
+}
+
+/// The signed-in account: profile and log out.
+struct AccountView: View {
+    @Environment(UserSession.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmLogout = false
+
+    var body: some View {
+        List {
+            Section {
+                VStack(spacing: 10) {
+                    AvatarView(url: session.user?.avatar, size: 96)
+                    Text(session.user?.username ?? String(localized: "Logged In"))
+                        .font(.title2.bold())
+                    Text("nhentai account")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .listRowBackground(Color.clear)
+            }
+            if let user = session.user {
+                Section {
+                    LabeledContent("User ID", value: "\(user.id)")
+                    Link(destination: NHHost.site.appendingPathComponent("users/\(user.id)/")) {
+                        LabeledContent("Profile", value: "nhentai.net")
+                    }
+                }
+            }
+            Section {
+                Button("Log Out", role: .destructive) { confirmLogout = true }
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .navigationTitle("Account")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await session.reload() }
+        .confirmationDialog("Log out of nhentai?", isPresented: $confirmLogout, titleVisibility: .visible) {
+            Button("Log Out", role: .destructive) {
+                session.logout()
+                dismiss()
+            }
+        }
+    }
+}
+
+/// Galleries saved for offline reading.
+struct DownloadsView: View {
+    @Environment(DownloadManager.self) private var downloads
+    @State private var usage: Int64?
+
+    var body: some View {
+        List {
+            ForEach(downloads.records) { record in
+                DownloadRow(record: record)
+                    .swipeActions(edge: .trailing) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            downloads.delete(record.id)
+                        }
+                    }
+                    .contextMenu {
+                        NavigationLink(value: GalleryRoute(id: record.id, preview: record.item)) {
+                            Label("Open Gallery Page", systemImage: "info.circle")
+                        }
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            downloads.delete(record.id)
+                        }
+                    }
+            }
+        }
+        .listStyle(.plain)
+        .overlay {
+            if downloads.records.isEmpty {
+                ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle",
+                                       description: Text("Download a gallery from its page to read it offline."))
+            }
+        }
+        .navigationTitle("Downloads")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let usage, usage > 0 {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Text(usage, format: .byteCount(style: .file))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .task(id: downloads.records.count) {
+            usage = await Task.detached { DownloadManager.diskUsage() }.value
+        }
+    }
+}
+
+private struct DownloadRow: View {
+    let record: DownloadRecord
+
+    @Environment(DownloadManager.self) private var downloads
+
+    var body: some View {
+        NavigationLink(value: ReaderRoute(source: ReaderSource(record: record), page: 0)) {
+            HStack(spacing: 14) {
+                CoverView(item: record.item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
+                    .frame(width: 72)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(record.item.prettyTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(2)
+                    switch record.state {
+                    case .finished:
+                        Label("\(record.pages.count) pages", systemImage: "checkmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    default:
+                        ProgressView(value: record.progress)
+                        HStack {
+                            Text("\(record.completed) / \(record.pages.count)")
+                                .monospacedDigit()
+                            Spacer()
+                            stateButton
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var stateButton: some View {
+        switch record.state {
+        case .downloading, .queued:
+            Button("Pause") { downloads.pause(record.id) }
+                .buttonStyle(.borderless)
+        case .paused:
+            Button("Resume") { downloads.resume(record.id) }
+                .buttonStyle(.borderless)
+        case .failed:
+            Button("Retry") { downloads.resume(record.id) }
+                .buttonStyle(.borderless)
+        case .finished:
+            EmptyView()
+        }
     }
 }
 
@@ -140,6 +300,7 @@ struct AppearanceSettingsView: View {
             } footer: {
                 Text("Card size applies to the grid and waterfall styles.")
             }
+            TagSettingsSection(settings: settings)
         }
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
@@ -184,6 +345,38 @@ private struct AccentPicker: View {
             .padding(.vertical, 4)
         }
         .scrollIndicators(.hidden)
+    }
+}
+
+/// Tag display options and the local tag database.
+private struct TagSettingsSection: View {
+    @Bindable var settings: AppSettings
+    @Environment(TagStore.self) private var tagStore
+
+    var body: some View {
+        Section {
+            Toggle("Show Tags on Cards", isOn: $settings.showTags)
+            Toggle("Translate Tags to Chinese", isOn: $settings.translateTags)
+            Button {
+                Task { await tagStore.update() }
+            } label: {
+                HStack {
+                    Text("Update Tag Database")
+                    Spacer()
+                    if tagStore.isUpdating {
+                        ProgressView()
+                    } else if let date = tagStore.lastUpdated {
+                        Text(date, format: .relative(presentation: .named))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .disabled(tagStore.isUpdating)
+        } header: {
+            Text("Tags")
+        } footer: {
+            Text("\(tagStore.tagCount) tags, \(tagStore.translationCount) translations (EhTagTranslation). Updated automatically every week.")
+        }
     }
 }
 

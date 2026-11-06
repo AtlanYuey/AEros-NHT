@@ -158,6 +158,8 @@ struct ReaderView: View {
             }
             .onChange(of: settings.readMode) { position = page }
             .task(id: autoRead) { await runAutoRead() }
+            .onAppear { AppChrome.shared.readersOpen += 1 }
+            .onDisappear { AppChrome.shared.readersOpen = max(0, AppChrome.shared.readersOpen - 1) }
             .onAppear {
                 UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
                 prefetch(around: page)

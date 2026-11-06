@@ -184,8 +184,14 @@
     <string name="l_181">Close App</string>
     <string name="l_182">Later</string>
     <string name="l_183">The new language is used the next time AEros-NHT opens.</string>
-    <string name="l_184">Settings Backup</string>
-    <string name="l_185">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_186">Android\'s own backup also keeps these settings.</string>
-    <string name="l_187">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_184">Tab Bar Position</string>
+    <string name="l_185">Automatic</string>
+    <string name="l_186">Left</string>
+    <string name="l_187">Center</string>
+    <string name="l_188">Right</string>
+    <string name="l_189">Automatic moves the tab bar to the side you touch the screen on most.</string>
+    <string name="l_190">Settings Backup</string>
+    <string name="l_191">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_192">Android\'s own backup also keeps these settings.</string>
+    <string name="l_193">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
 </resources>

@@ -184,8 +184,14 @@
     <string name="l_181">Fermer l’app</string>
     <string name="l_182">Plus tard</string>
     <string name="l_183">La nouvelle langue sera utilisée à la prochaine ouverture d’AEros-NHT.</string>
-    <string name="l_184">Sauvegarde des réglages</string>
-    <string name="l_185">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_186">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_187">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_184">Position de la barre d’onglets</string>
+    <string name="l_185">Automatique</string>
+    <string name="l_186">À gauche</string>
+    <string name="l_187">Au centre</string>
+    <string name="l_188">À droite</string>
+    <string name="l_189">En mode automatique, la barre d’onglets se place du côté de l’écran que vous touchez le plus.</string>
+    <string name="l_190">Sauvegarde des réglages</string>
+    <string name="l_191">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_192">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_193">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
 </resources>

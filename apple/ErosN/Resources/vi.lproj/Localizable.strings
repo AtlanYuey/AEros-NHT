@@ -183,3 +183,9 @@
 "Close App" = "Đóng ứng dụng";
 "Later" = "Để sau";
 "The new language is used the next time AEros-NHT opens." = "Ngôn ngữ mới sẽ được dùng vào lần mở AEros-NHT tiếp theo.";
+"Tab Bar Position" = "Vị trí thanh tab";
+"Automatic" = "Tự động";
+"Left" = "Bên trái";
+"Center" = "Ở giữa";
+"Right" = "Bên phải";
+"Automatic moves the tab bar to the side you touch the screen on most." = "Khi chọn Tự động, thanh tab sẽ chuyển sang phía màn hình mà bạn chạm nhiều nhất.";

@@ -183,3 +183,9 @@
 "Close App" = "앱 닫기";
 "Later" = "나중에";
 "The new language is used the next time AEros-NHT opens." = "다음에 AEros-NHT를 열 때 새 언어가 적용됩니다.";
+"Tab Bar Position" = "탭 막대 위치";
+"Automatic" = "자동";
+"Left" = "왼쪽";
+"Center" = "가운데";
+"Right" = "오른쪽";
+"Automatic moves the tab bar to the side you touch the screen on most." = "‘자동’을 선택하면 화면을 가장 자주 터치하는 쪽으로 탭 막대가 이동합니다.";

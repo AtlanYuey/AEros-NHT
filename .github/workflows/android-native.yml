@@ -37,11 +37,14 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # The runner has an Android SDK; add the platform and build tools.
       - name: Install SDK packages
-        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0" > /dev/null
+        run: |
+          SDKMANAGER=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)
+          echo "Using $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" > /dev/null
+          echo "sdk.dir=$ANDROID_HOME" > android-native/local.properties
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4

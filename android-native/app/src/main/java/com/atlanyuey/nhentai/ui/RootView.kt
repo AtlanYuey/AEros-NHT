@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.atlanyuey.nhentai.core.AppSettings
+import com.atlanyuey.nhentai.core.HandTracker
+import com.atlanyuey.nhentai.core.TabBarPosition
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import com.atlanyuey.nhentai.core.tr
 import com.atlanyuey.nhentai.screens.FavoritesScreen
 import com.atlanyuey.nhentai.screens.GalleryScreen
@@ -90,6 +96,24 @@ fun RootView(
     val backdrop = rememberLayerBackdrop()
     val navigator = tabs.all[selected]
     val showTabBar = !navigator.top.hidesTabBar
+    // Large screens: the bar sits left, center or right (automatically on
+    // the side of the hand in use); phones keep it centered.
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val large = configuration.smallestScreenWidthDp >= 600
+    val position = when (AppSettings.tabBarPosition) {
+        TabBarPosition.Automatic -> when (HandTracker.side) {
+            HandTracker.Side.Leading -> TabBarPosition.Leading
+            HandTracker.Side.Center -> TabBarPosition.Center
+            HandTracker.Side.Trailing -> TabBarPosition.Trailing
+        }
+        else -> AppSettings.tabBarPosition
+    }
+    val barAlignment = when {
+        !large -> Alignment.BottomCenter
+        position == TabBarPosition.Leading -> Alignment.BottomStart
+        position == TabBarPosition.Trailing -> Alignment.BottomEnd
+        else -> Alignment.BottomCenter
+    }
 
     val items = listOf(
         TabInfo(tr("Home"), Icons.Home),
@@ -121,7 +145,22 @@ fun RootView(
         LocalOverlays provides overlays,
         LocalBottomBarHeight provides if (showTabBar) 86.dp else 0.dp,
     ) {
-        Box(Modifier.fillMaxSize().background(AppTheme.colors.background)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(AppTheme.colors.background)
+                .pointerInput(Unit) {
+                    // Which side the screen is touched on (tab bar position).
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.type == PointerEventType.Press && size.width > 0) {
+                                event.changes.firstOrNull()?.let { HandTracker.record(it.position.x / size.width) }
+                            }
+                        }
+                    }
+                },
+        ) {
             Box(Modifier.fillMaxSize().layerBackdrop(backdrop)) {
                 holder.SaveableStateProvider("tab$selected") {
                     NavHost(navigator)
@@ -129,7 +168,7 @@ fun RootView(
             }
             AnimatedVisibility(
                 visible = showTabBar,
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier.align(barAlignment),
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = fadeOut() + slideOutVertically { it / 2 },
             ) {
@@ -138,7 +177,7 @@ fun RootView(
                         .navigationBarsPadding()
                         .imePadding()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                        .widthIn(max = 560.dp),
+                        .then(if (large) Modifier.width(440.dp) else Modifier.widthIn(max = 560.dp)),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

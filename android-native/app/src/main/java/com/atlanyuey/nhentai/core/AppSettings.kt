@@ -8,6 +8,8 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 enum class ThemeMode(val raw: String, val title: String) {
     System("system", "System"), Light("light", "Light"), Dark("dark", "Dark");
@@ -34,6 +36,42 @@ enum class GalleryListStyle(val raw: String, val title: String, val preferredCar
 
     companion object {
         fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Waterfall
+    }
+}
+
+/** Where the tab bar sits on large screens. */
+enum class TabBarPosition(val raw: String, val title: String) {
+    Automatic("automatic", "Automatic"),
+    Leading("leading", "Left"),
+    Center("center", "Center"),
+    Trailing("trailing", "Right");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Automatic
+    }
+}
+
+/** Guesses the hand in use from where the screen is touched. */
+object HandTracker {
+    enum class Side { Leading, Center, Trailing }
+
+    var side by androidx.compose.runtime.mutableStateOf(Side.Center)
+        private set
+    private val samples = ArrayDeque<Float>()
+
+    /** A touch at [fraction] of the screen width (0 = left edge). */
+    fun record(fraction: Float) {
+        samples.addLast(fraction)
+        while (samples.size > 16) samples.removeFirst()
+        if (samples.size < 6) return
+        val right = samples.count { it > 0.6f }.toFloat() / samples.size
+        val left = samples.count { it < 0.4f }.toFloat() / samples.size
+        side = when {
+            right >= 0.65f -> Side.Trailing
+            left >= 0.65f -> Side.Leading
+            right < 0.45f && left < 0.45f -> Side.Center
+            else -> side
+        }
     }
 }
 
@@ -152,6 +190,7 @@ object AppSettings {
         pageGap = p.getFloat("pageGap", 6f).toDouble()
         keepScreenOn = p.getBoolean("keepScreenOn", true)
         detectClipboard = p.getBoolean("detectClipboard", false)
+        tabBarPosition = TabBarPosition.of(p.getString("tabBarPosition", null))
         loading = false
     }
 
@@ -193,6 +232,7 @@ object AppSettings {
     var pageGap by Pref(6.0) { save("pageGap", it) }
     var keepScreenOn by Pref(true) { save("keepScreenOn", it) }
     var detectClipboard by Pref(false) { save("detectClipboard", it) }
+    var tabBarPosition by Pref(TabBarPosition.Automatic) { save("tabBarPosition", it.raw) }
 
     fun cardSize(landscape: Boolean) = if (landscape) cardSizeLandscape else cardSizePortrait
 
@@ -218,6 +258,7 @@ object AppSettings {
         "pageGap" to pageGap,
         "keepScreenOn" to keepScreenOn,
         "detectClipboard" to detectClipboard,
+        "tabBarPosition" to tabBarPosition.raw,
     )
 
     /** Applies imported settings; unknown keys and invalid values are ignored. */
@@ -247,6 +288,7 @@ object AppSettings {
                 "pageGap" -> number?.let { pageGap = it.toDouble().coerceIn(2.0, 60.0) }
                 "keepScreenOn" -> bool?.let { keepScreenOn = it }
                 "detectClipboard" -> bool?.let { detectClipboard = it }
+                "tabBarPosition" -> string?.let { tabBarPosition = TabBarPosition.of(it) }
             }
         }
     }

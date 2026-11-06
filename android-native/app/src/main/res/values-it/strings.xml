@@ -184,8 +184,14 @@
     <string name="l_181">Chiudi l’app</string>
     <string name="l_182">Più tardi</string>
     <string name="l_183">La nuova lingua verrà usata alla prossima apertura di AEros-NHT.</string>
-    <string name="l_184">Backup impostazioni</string>
-    <string name="l_185">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_186">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_187">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_184">Posizione della barra dei pannelli</string>
+    <string name="l_185">Automatica</string>
+    <string name="l_186">Sinistra</string>
+    <string name="l_187">Centro</string>
+    <string name="l_188">Destra</string>
+    <string name="l_189">Con Automatica, la barra si sposta sul lato dello schermo che tocchi più spesso.</string>
+    <string name="l_190">Backup impostazioni</string>
+    <string name="l_191">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_192">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_193">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
 </resources>

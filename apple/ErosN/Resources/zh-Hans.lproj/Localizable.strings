@@ -211,3 +211,11 @@
 "Close App" = "关闭 App";
 "Later" = "稍后";
 "The new language is used the next time AEros-NHT opens." = "下次打开 AEros-NHT 时会使用新的语言。";
+
+/* iPad tab bar */
+"Tab Bar Position" = "标签栏位置";
+"Automatic" = "自动";
+"Left" = "靠左";
+"Center" = "居中";
+"Right" = "靠右";
+"Automatic moves the tab bar to the side you touch the screen on most." = "选择「自动」时，标签栏会移到你最常触摸屏幕的一侧。";

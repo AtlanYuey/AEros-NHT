@@ -183,3 +183,9 @@
 "Close App" = "Tutup App";
 "Later" = "Nanti";
 "The new language is used the next time AEros-NHT opens." = "Bahasa baru akan digunakan saat AEros-NHT dibuka berikutnya.";
+"Tab Bar Position" = "Posisi Bar Tab";
+"Automatic" = "Otomatis";
+"Left" = "Kiri";
+"Center" = "Tengah";
+"Right" = "Kanan";
+"Automatic moves the tab bar to the side you touch the screen on most." = "Jika Otomatis, bar tab pindah ke sisi layar yang paling sering Anda sentuh.";

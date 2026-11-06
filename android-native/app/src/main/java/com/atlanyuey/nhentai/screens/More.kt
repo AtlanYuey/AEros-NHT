@@ -384,6 +384,7 @@ class AppearanceScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
+        val large = LocalConfiguration.current.smallestScreenWidthDp >= 600
         GroupedListScreen(tr("Appearance")) {
             section(header = "Theme") {
                 Box(Modifier.padding(16.dp)) {
@@ -402,6 +403,18 @@ class AppearanceScreen : Screen() {
                     onClick = { navigator.push(CardSizeScreen()) },
                 )
                 ToggleRow(tr("Blur Covers"), AppSettings.blurCovers, { AppSettings.blurCovers = it }, last = true)
+            }
+            if (large) {
+                section(footer = { FooterText(tr("Automatic moves the tab bar to the side you touch the screen on most.")) }) {
+                    PickerRow(
+                        tr("Tab Bar Position"),
+                        com.atlanyuey.nhentai.core.TabBarPosition.entries,
+                        AppSettings.tabBarPosition,
+                        { tr(it.title) },
+                        { AppSettings.tabBarPosition = it },
+                        last = true,
+                    )
+                }
             }
             section(
                 header = "Tags",

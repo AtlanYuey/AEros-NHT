@@ -183,3 +183,9 @@
 "Close App" = "ปิดแอป";
 "Later" = "ภายหลัง";
 "The new language is used the next time AEros-NHT opens." = "จะใช้ภาษาใหม่เมื่อเปิด AEros-NHT ครั้งถัดไป";
+"Tab Bar Position" = "ตำแหน่งแถบแท็บ";
+"Automatic" = "อัตโนมัติ";
+"Left" = "ซ้าย";
+"Center" = "กึ่งกลาง";
+"Right" = "ขวา";
+"Automatic moves the tab bar to the side you touch the screen on most." = "เมื่อเลือกอัตโนมัติ แถบแท็บจะย้ายไปฝั่งที่คุณแตะหน้าจอบ่อยที่สุด";

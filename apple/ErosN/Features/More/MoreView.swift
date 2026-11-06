@@ -306,6 +306,15 @@ struct AppearanceSettingsView: View {
             } footer: {
                 Text("Card size applies to the grid and waterfall styles.")
             }
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                Section {
+                    Picker("Tab Bar Position", selection: $settings.tabBarPosition) {
+                        ForEach(TabBarPosition.allCases) { Text($0.title).tag($0) }
+                    }
+                } footer: {
+                    Text("Automatic moves the tab bar to the side you touch the screen on most.")
+                }
+            }
             TagSettingsSection(settings: settings)
         }
         .navigationTitle("Appearance")

@@ -147,6 +147,13 @@ class ScreenshotTest {
         shoot("13_gallery_zh_dark", tabs)
     }
 
+    @Config(qualifiers = "w834dp-h1194dp-xhdpi")
+    @Test fun tablet() {
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Trailing
+        shoot("14_tablet_right")
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Automatic
+    }
+
     @Test fun reading() {
         val tabs = Tabs()
         tabs.more.push(com.atlanyuey.nhentai.screens.ReadingScreen())

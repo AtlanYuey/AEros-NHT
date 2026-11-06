@@ -184,8 +184,14 @@
     <string name="l_181">アプリを閉じる</string>
     <string name="l_182">あとで</string>
     <string name="l_183">次に AEros-NHT を開いたときから新しい言語が使われます。</string>
-    <string name="l_184">設定のバックアップ</string>
-    <string name="l_185">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_186">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_187">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_184">タブバーの位置</string>
+    <string name="l_185">自動</string>
+    <string name="l_186">左</string>
+    <string name="l_187">中央</string>
+    <string name="l_188">右</string>
+    <string name="l_189">「自動」では、画面を最もよく触れる側にタブバーが移動します。</string>
+    <string name="l_190">設定のバックアップ</string>
+    <string name="l_191">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_192">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_193">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
 </resources>

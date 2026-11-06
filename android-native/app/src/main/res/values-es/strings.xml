@@ -184,8 +184,14 @@
     <string name="l_181">Cerrar la app</string>
     <string name="l_182">Más tarde</string>
     <string name="l_183">El nuevo idioma se usará la próxima vez que abras AEros-NHT.</string>
-    <string name="l_184">Copia de los ajustes</string>
-    <string name="l_185">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_186">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_187">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_184">Posición de la barra de pestañas</string>
+    <string name="l_185">Automática</string>
+    <string name="l_186">Izquierda</string>
+    <string name="l_187">Centro</string>
+    <string name="l_188">Derecha</string>
+    <string name="l_189">En Automática, la barra de pestañas se mueve al lado de la pantalla que más tocas.</string>
+    <string name="l_190">Copia de los ajustes</string>
+    <string name="l_191">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_192">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_193">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
 </resources>

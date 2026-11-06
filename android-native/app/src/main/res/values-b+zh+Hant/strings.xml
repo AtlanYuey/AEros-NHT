@@ -184,8 +184,14 @@
     <string name="l_181">關閉 App</string>
     <string name="l_182">稍後</string>
     <string name="l_183">下次開啟 AEros-NHT 時會使用新的語言。</string>
-    <string name="l_184">設定備份</string>
-    <string name="l_185">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_186">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_187">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_184">標籤列位置</string>
+    <string name="l_185">自動</string>
+    <string name="l_186">靠左</string>
+    <string name="l_187">置中</string>
+    <string name="l_188">靠右</string>
+    <string name="l_189">選擇「自動」時，標籤列會移到你最常觸碰螢幕的一側。</string>
+    <string name="l_190">設定備份</string>
+    <string name="l_191">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_192">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_193">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
 </resources>

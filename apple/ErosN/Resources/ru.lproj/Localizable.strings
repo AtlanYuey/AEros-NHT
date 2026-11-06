@@ -183,3 +183,9 @@
 "Close App" = "Закрыть приложение";
 "Later" = "Позже";
 "The new language is used the next time AEros-NHT opens." = "Новый язык будет использоваться при следующем открытии AEros-NHT.";
+"Tab Bar Position" = "Положение панели вкладок";
+"Automatic" = "Автоматически";
+"Left" = "Слева";
+"Center" = "По центру";
+"Right" = "Справа";
+"Automatic moves the tab bar to the side you touch the screen on most." = "В режиме «Автоматически» панель вкладок переходит на ту сторону экрана, которой вы касаетесь чаще.";

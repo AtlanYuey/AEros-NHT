@@ -183,3 +183,9 @@
 "Close App" = "Chiudi l’app";
 "Later" = "Più tardi";
 "The new language is used the next time AEros-NHT opens." = "La nuova lingua verrà usata alla prossima apertura di AEros-NHT.";
+"Tab Bar Position" = "Posizione della barra dei pannelli";
+"Automatic" = "Automatica";
+"Left" = "Sinistra";
+"Center" = "Centro";
+"Right" = "Destra";
+"Automatic moves the tab bar to the side you touch the screen on most." = "Con Automatica, la barra si sposta sul lato dello schermo che tocchi più spesso.";

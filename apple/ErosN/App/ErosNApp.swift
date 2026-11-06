@@ -35,8 +35,8 @@ enum AppTab: Hashable {
     case home, favorites, history, more, search
 }
 
-/// Tabs on iPhone; on iPad the same tabs adapt into a sidebar
-/// (`sidebarAdaptable`). Search is the system search tab.
+/// The system tab bar on iPhone; on iPad a floating glass tab bar at the
+/// bottom that follows the hand in use (PadRootView).
 struct RootView: View {
     @State private var selection: AppTab = .home
     @Environment(AppSettings.self) private var settings
@@ -45,34 +45,14 @@ struct RootView: View {
     @State private var openedFromClipboard: GalleryRoute?
 
     var body: some View {
-        TabView(selection: $selection) {
-            Tab("Home", systemImage: "house", value: AppTab.home) {
-                NavigationStack {
-                    HomeView().galleryDestinations()
-                }
-            }
-            Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
-                NavigationStack {
-                    FavoritesView().galleryDestinations()
-                }
-            }
-            Tab("History", systemImage: "clock", value: AppTab.history) {
-                NavigationStack {
-                    HistoryView().galleryDestinations()
-                }
-            }
-            Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) {
-                NavigationStack {
-                    MoreView().galleryDestinations()
-                }
-            }
-            Tab(value: AppTab.search, role: .search) {
-                NavigationStack {
-                    SearchView().galleryDestinations()
-                }
+        Group {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // iPad: tab bar at the bottom (see PadRootView).
+                PadRootView(selection: $selection)
+            } else {
+                phoneTabs
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { checkClipboard() }
         }
@@ -101,6 +81,37 @@ struct RootView: View {
                             Button("Close", systemImage: "xmark") { openedFromClipboard = nil }
                         }
                     }
+            }
+        }
+    }
+
+    /// iPhone: the system tab bar (Liquid Glass, search tab at the side).
+    private var phoneTabs: some View {
+        TabView(selection: $selection) {
+            Tab("Home", systemImage: "house", value: AppTab.home) {
+                NavigationStack {
+                    HomeView().galleryDestinations()
+                }
+            }
+            Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
+                NavigationStack {
+                    FavoritesView().galleryDestinations()
+                }
+            }
+            Tab("History", systemImage: "clock", value: AppTab.history) {
+                NavigationStack {
+                    HistoryView().galleryDestinations()
+                }
+            }
+            Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) {
+                NavigationStack {
+                    MoreView().galleryDestinations()
+                }
+            }
+            Tab(value: AppTab.search, role: .search) {
+                NavigationStack {
+                    SearchView().galleryDestinations()
+                }
             }
         }
     }

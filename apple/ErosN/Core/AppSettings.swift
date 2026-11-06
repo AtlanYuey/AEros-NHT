@@ -79,6 +79,23 @@ enum GalleryListStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// Where the iPad tab bar sits at the bottom of the screen.
+enum TabBarPosition: String, CaseIterable, Identifiable {
+    /// Follows the side the screen is touched on most.
+    case automatic, leading, center, trailing
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .automatic: String(localized: "Automatic")
+        case .leading: String(localized: "Left")
+        case .center: String(localized: "Center")
+        case .trailing: String(localized: "Right")
+        }
+    }
+}
+
 enum ReadMode: String, CaseIterable, Identifiable {
     case leftToRight, rightToLeft, verticalPaged
     /// Continuous vertical scroll (webtoon style).
@@ -144,6 +161,7 @@ final class AppSettings {
     var pageGap: Double { didSet { save(pageGap, "pageGap") } }
     var keepScreenOn: Bool { didSet { save(keepScreenOn, "keepScreenOn") } }
     var detectClipboard: Bool { didSet { save(detectClipboard, "detectClipboard") } }
+    var tabBarPosition: TabBarPosition { didSet { save(tabBarPosition.rawValue, "tabBarPosition") } }
 
     private init() {
         let d = UserDefaults.standard
@@ -169,6 +187,7 @@ final class AppSettings {
         keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false
+        tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .automatic
     }
 
     private func save(_ value: Any, _ key: String) {
@@ -202,6 +221,7 @@ final class AppSettings {
         values["pageGap"] = pageGap
         values["keepScreenOn"] = keepScreenOn
         values["detectClipboard"] = detectClipboard
+        values["tabBarPosition"] = tabBarPosition.rawValue
         return values
     }
 
@@ -245,6 +265,7 @@ final class AppSettings {
         case "pageGap": set(\.pageGap, number.map { min(max($0.doubleValue, 2), 60) })
         case "keepScreenOn": set(\.keepScreenOn, number?.boolValue)
         case "detectClipboard": set(\.detectClipboard, number?.boolValue)
+        case "tabBarPosition": set(\.tabBarPosition, string.flatMap(TabBarPosition.init(rawValue:)))
         default: break
         }
     }

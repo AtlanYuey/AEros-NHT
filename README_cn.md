@@ -3,7 +3,7 @@
 > AEros-NHT 是 [honjow/eros_n](https://github.com/honjow/eros_n) 的修改版，由 [AtlanYuey](https://github.com/AtlanYuey) 维护，并非原作者发布的版本。
 >
 > 主要修改：
-> - 新增原生 SwiftUI 编写的 iOS / iPadOS 版（`apple/` 目录，套装 ID `com.atlanyuey.nhentai`）：系统控件与 Liquid Glass、iPad 侧边栏、多种阅读模式、离线下载、标签翻译、iCloud 同步设置。
+> - 新增原生 SwiftUI 编写的 iOS / iPadOS 版（`apple/` 目录，套装 ID `com.atlanyuey.nhentai`）：系统控件与 Liquid Glass、iPad 底部标签栏（可跟随惯用手靠左或靠右）、多种阅读模式、离线下载、标签翻译、iCloud 同步设置。
 > - 新增原生 Android 版（`android-native/` 目录，Kotlin + Jetpack Compose），功能与 iOS 版一致，同样是 Apple 风格界面与 Liquid Glass 效果。
 > - Flutter 版：界面按 Apple 设计规范重做，数据层迁移到 nhentai API v2，以及其他修复。具体改动见 Git 提交记录。
 >

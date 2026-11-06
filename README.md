@@ -3,7 +3,7 @@
 > AEros-NHT is a modified version of [honjow/eros_n](https://github.com/honjow/eros_n), maintained by [AtlanYuey](https://github.com/AtlanYuey). It is not a release by the original author.
 >
 > Main changes:
-> - A native SwiftUI app for iOS / iPadOS (`apple/`, bundle ID `com.atlanyuey.nhentai`): system controls and Liquid Glass, iPad sidebar, several reading modes, offline downloads, tag translation, settings sync over iCloud.
+> - A native SwiftUI app for iOS / iPadOS (`apple/`, bundle ID `com.atlanyuey.nhentai`): system controls and Liquid Glass, an iPad bottom tab bar that moves to the hand you use, several reading modes, offline downloads, tag translation, settings sync over iCloud.
 > - A native Android app (`android-native/`, Kotlin and Jetpack Compose) with the features of the iOS app and the same Apple-style design with Liquid Glass.
 > - Flutter app: interface redone after Apple's design guidelines, data layer moved to nhentai API v2, and other fixes. See the Git history for the individual changes.
 >

@@ -190,8 +190,9 @@
     <string name="l_187">Mitte</string>
     <string name="l_188">Rechts</string>
     <string name="l_189">Bei „Automatisch“ wandert die Tableiste auf die Seite, auf der du den Bildschirm am häufigsten berührst.</string>
-    <string name="l_190">Einstellungen sichern</string>
-    <string name="l_191">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_192">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_193">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_190">Weniger anzeigen</string>
+    <string name="l_191">Einstellungen sichern</string>
+    <string name="l_192">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_193">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_194">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
 </resources>

@@ -190,8 +190,9 @@
     <string name="l_187">Au centre</string>
     <string name="l_188">À droite</string>
     <string name="l_189">En mode automatique, la barre d’onglets se place du côté de l’écran que vous touchez le plus.</string>
-    <string name="l_190">Sauvegarde des réglages</string>
-    <string name="l_191">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_192">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_193">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_190">Afficher moins</string>
+    <string name="l_191">Sauvegarde des réglages</string>
+    <string name="l_192">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_193">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_194">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
 </resources>

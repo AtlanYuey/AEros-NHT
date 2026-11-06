@@ -55,6 +55,9 @@ struct GalleryDetailView: View {
     @State private var confirmDeleteDownload = false
     /// Height of the Read button; the round buttons next to it match it.
     @State private var actionHeight: CGFloat = 44
+    /// Height of the cover; a collapsed title is cut to fit next to it.
+    @State private var coverHeight: CGFloat = 0
+    @State private var titleExpanded = false
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(UserSession.self) private var session
@@ -148,18 +151,29 @@ struct GalleryDetailView: View {
                 }
             }
             .frame(width: sizeClass == .regular ? 200 : 132)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { coverHeight = $0 }
             .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
 
+            // Collapsed, the text is no taller than the cover: the artists and
+            // two lines of the subtitle stay, and the title takes the rest and
+            // ends with "…". Tapping the title or subtitle shows all of it.
             VStack(alignment: .leading, spacing: 8) {
-                Text(model.detail?.displayTitle ?? model.preview?.title ?? "")
-                    .font(sizeClass == .regular ? .title2.weight(.semibold) : .title3.weight(.semibold))
-                    .textSelection(.enabled)
-                if let subtitle = model.detail?.subtitle {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .textSelection(.enabled)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(model.detail?.displayTitle ?? model.preview?.title ?? "")
+                        .font(sizeClass == .regular ? .title2.weight(.semibold) : .title3.weight(.semibold))
+                        .layoutPriority(0)
+                    if let subtitle = model.detail?.subtitle {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(titleExpanded ? nil : 2)
+                            .layoutPriority(1)
+                    }
+                }
+                .textSelection(.enabled)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.snappy) { titleExpanded.toggle() }
                 }
                 if let detail = model.detail {
                     let artists = detail.tags(in: .artist) + detail.tags(in: .group)
@@ -168,13 +182,17 @@ struct GalleryDetailView: View {
                             Text(artists.map(\.name).joined(separator: ", "))
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.tint)
-                                .lineLimit(2)
+                                .lineLimit(titleExpanded ? nil : 1)
                         }
                         .buttonStyle(.plain)
+                        .layoutPriority(2)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            // A fixed height (not maxHeight): the scroll view proposes no
+            // height, and the text has to be told how much room it has.
+            .frame(height: titleExpanded || coverHeight == 0 ? nil : coverHeight, alignment: .bottom)
         }
         .padding(.horizontal)
         .padding(.top, 60)
@@ -400,8 +418,6 @@ private struct InfoStrip: View {
 private struct TagsSection: View {
     let detail: GalleryDetail
 
-    @Environment(TagStore.self) private var tagStore
-
     /// Order used by the site.
     private let order: [TagGroup] = [.category, .language, .tag, .parody, .character, .artist, .group]
 
@@ -414,19 +430,93 @@ private struct TagsSection: View {
                         Text(group.title)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
-                        FlowLayout(spacing: 8, lineSpacing: 8) {
-                            ForEach(detail.tags(in: group)) { tag in
-                                NavigationLink(value: SearchRoute(query: tag.query, title: tag.name)) {
-                                    TagChip(name: tagStore.displayName(tag.name, type: tag.type), count: tag.count)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+                            .padding(.horizontal)
+                        TagRow(tags: detail.tags(in: group))
                     }
                 }
             }
-            .padding(.horizontal)
             .padding(.top, 18)
+        }
+    }
+}
+
+/// One line of tags that scrolls sideways. When they don't fit, a button at
+/// the end of the line shows them all, wrapped onto as many lines as needed.
+private struct TagRow: View {
+    let tags: [GalleryTag]
+
+    @State private var expanded = false
+    @State private var tagsWidth: CGFloat = 0
+    @State private var rowWidth: CGFloat = 0
+    @Namespace private var namespace
+    @Environment(TagStore.self) private var tagStore
+
+    private let margin: CGFloat = 16
+    private let buttonSize: CGFloat = 34
+    private let fade: CGFloat = 18
+
+    /// The tags are wider than the screen (measured without the button, so
+    /// showing it can't change the answer).
+    private var overflows: Bool { rowWidth > 0 && tagsWidth + margin * 2 > rowWidth + 0.5 }
+    /// Room the button takes at the trailing edge.
+    private var buttonSpace: CGFloat { margin + buttonSize + 8 }
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            if expanded {
+                FlowLayout(spacing: 8, lineSpacing: 8, firstLineTrailing: buttonSpace - margin) { chips }
+                    .padding(.horizontal, margin)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) { chips }
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { tagsWidth = $0 }
+                }
+                .scrollIndicators(.hidden)
+                .contentMargins(.leading, margin, for: .scrollContent)
+                .contentMargins(.trailing, overflows ? buttonSpace + fade : margin, for: .scrollContent)
+                .mask {
+                    // Tags fade out before they reach the button.
+                    if overflows {
+                        HStack(spacing: 0) {
+                            Color.black
+                            LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: fade)
+                            Color.clear.frame(width: buttonSpace)
+                        }
+                    } else {
+                        Color.black
+                    }
+                }
+            }
+            if overflows || expanded {
+                Button {
+                    withAnimation(.snappy) { expanded.toggle() }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.footnote.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(expanded ? 180 : 0))
+                        .frame(width: buttonSize, height: buttonSize)
+                        .background(.fill.tertiary, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(expanded ? Text("Show Less") : Text("See All"))
+                .padding(.trailing, margin)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { rowWidth = $0 }
+    }
+
+    private var chips: some View {
+        ForEach(Array(tags.enumerated()), id: \.offset) { index, tag in
+            NavigationLink(value: SearchRoute(query: tag.query, title: tag.name)) {
+                TagChip(name: tagStore.displayName(tag.name, type: tag.type), count: tag.count)
+            }
+            .buttonStyle(.plain)
+            .matchedGeometryEffect(id: index, in: namespace)
         }
     }
 }

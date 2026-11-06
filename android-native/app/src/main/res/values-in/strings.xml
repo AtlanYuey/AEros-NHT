@@ -190,8 +190,9 @@
     <string name="l_187">Tengah</string>
     <string name="l_188">Kanan</string>
     <string name="l_189">Jika Otomatis, bar tab pindah ke sisi layar yang paling sering Anda sentuh.</string>
-    <string name="l_190">Cadangan Pengaturan</string>
-    <string name="l_191">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_192">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_193">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_190">Tampilkan Lebih Sedikit</string>
+    <string name="l_191">Cadangan Pengaturan</string>
+    <string name="l_192">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_193">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_194">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
 </resources>

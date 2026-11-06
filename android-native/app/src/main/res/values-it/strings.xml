@@ -190,8 +190,9 @@
     <string name="l_187">Centro</string>
     <string name="l_188">Destra</string>
     <string name="l_189">Con Automatica, la barra si sposta sul lato dello schermo che tocchi più spesso.</string>
-    <string name="l_190">Backup impostazioni</string>
-    <string name="l_191">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_192">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_193">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_190">Mostra meno</string>
+    <string name="l_191">Backup impostazioni</string>
+    <string name="l_192">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_193">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_194">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
 </resources>

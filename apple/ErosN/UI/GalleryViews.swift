@@ -393,6 +393,8 @@ private struct Masonry: View {
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     var lineSpacing: CGFloat = 8
+    /// Room kept free at the end of the first line (for a button there).
+    var firstLineTrailing: CGFloat = 0
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
@@ -400,12 +402,15 @@ struct FlowLayout: Layout {
         var y: CGFloat = 0
         var lineHeight: CGFloat = 0
         var widest: CGFloat = 0
+        var firstLine = true
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > maxWidth {
+            let limit = firstLine ? maxWidth - firstLineTrailing : maxWidth
+            if x > 0, x + size.width > limit {
                 y += lineHeight + lineSpacing
                 x = 0
                 lineHeight = 0
+                firstLine = false
             }
             x += size.width + spacing
             widest = max(widest, x - spacing)
@@ -418,12 +423,15 @@ struct FlowLayout: Layout {
         var x = bounds.minX
         var y = bounds.minY
         var lineHeight: CGFloat = 0
+        var firstLine = true
         for subview in subviews {
             let size = subview.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX {
+            let limit = firstLine ? bounds.maxX - firstLineTrailing : bounds.maxX
+            if x > bounds.minX, x + size.width > limit {
                 y += lineHeight + lineSpacing
                 x = bounds.minX
                 lineHeight = 0
+                firstLine = false
             }
             subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
             x += size.width + spacing

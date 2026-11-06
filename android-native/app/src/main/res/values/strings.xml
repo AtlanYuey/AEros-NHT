@@ -190,8 +190,9 @@
     <string name="l_187">Center</string>
     <string name="l_188">Right</string>
     <string name="l_189">Automatic moves the tab bar to the side you touch the screen on most.</string>
-    <string name="l_190">Settings Backup</string>
-    <string name="l_191">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_192">Android\'s own backup also keeps these settings.</string>
-    <string name="l_193">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_190">Show Less</string>
+    <string name="l_191">Settings Backup</string>
+    <string name="l_192">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_193">Android\'s own backup also keeps these settings.</string>
+    <string name="l_194">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
 </resources>

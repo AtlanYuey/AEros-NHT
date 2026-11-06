@@ -7,7 +7,11 @@ import android.graphics.Paint
 import android.graphics.Shader
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
@@ -139,6 +143,21 @@ class ScreenshotTest {
         shoot("12_alert", overlays = overlays)
     }
 
+    @Test fun galleryExpanded() {
+        val tabs = Tabs()
+        tabs.home.push(GalleryScreen(500001, null))
+        shoot("15_gallery_tags", tabs)
+        compose.onNodeWithText("A Very Long", substring = true).performClick()
+        compose.onAllNodesWithContentDescription("See All")[0].performClick()
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/16_gallery_expanded.png")
+        compose.onNodeWithText("Parodies").performScrollTo()
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/17_gallery_tags_open.png")
+    }
+
     @Config(qualifiers = "+zh-rCN")
     @Test fun galleryChinese() {
         AppSettings.theme = ThemeMode.Dark
@@ -209,7 +228,7 @@ private object FakeApi : okhttp3.Interceptor {
 
     private fun list(count: Int, offset: Int = 0) = (0 until count).joinToString(",") { item(it + offset) }
 
-    private val detail = """{"id":500001,"media_id":"101","title":{"english":"[Sample Circle (Artist)] Summer Vacation Story [English]",""" +
+    private val detail = """{"id":500001,"media_id":"101","title":{"english":"[Sample Circle (Artist)] A Very Long Summer Vacation Story About a Gloomy Girl Who Became a Famous Idol with Over a Million Followers, Volume 2 [Digital] [English] [Sample Translations]",""" +
         """"japanese":"[サンプルサークル (アーティスト)] 夏休みの物語 [英訳]","pretty":"Summer Vacation Story"},""" +
         """"cover":{"path":"galleries/101/cover.jpg","width":350,"height":500},"thumbnail":{"path":"galleries/101/thumb.jpg","width":350,"height":500},""" +
         """"upload_date":1762300000,"num_pages":24,"num_favorites":1234,"is_favorited":false,"tags":[""" +
@@ -221,6 +240,20 @@ private object FakeApi : okhttp3.Interceptor {
         """{"id":3,"type":"tag","name":"comedy","url":"/tag/comedy/","count":12000},""" +
         """{"id":4,"type":"tag","name":"school uniform","url":"/tag/school-uniform/","count":61000},""" +
         """{"id":5,"type":"tag","name":"glasses","url":"/tag/glasses/","count":48000},""" +
+        """{"id":100,"type":"tag","name":"big breasts","url":"/tag/big-breasts/","count":240000},""" +
+        """{"id":101,"type":"tag","name":"sole male","url":"/tag/sole-male/","count":190000},""" +
+        """{"id":102,"type":"tag","name":"nakadashi","url":"/tag/nakadashi/","count":130000},""" +
+        """{"id":103,"type":"tag","name":"schoolgirl uniform","url":"/tag/schoolgirl-uniform/","count":94000},""" +
+        """{"id":104,"type":"tag","name":"ahegao","url":"/tag/ahegao/","count":65000},""" +
+        """{"id":105,"type":"tag","name":"series","url":"/tag/series/","count":59000},""" +
+        """{"id":106,"type":"tag","name":"x-ray","url":"/tag/x-ray/","count":56000},""" +
+        """{"id":107,"type":"tag","name":"paizuri","url":"/tag/paizuri/","count":47000},""" +
+        """{"id":108,"type":"tag","name":"netorare","url":"/tag/netorare/","count":44000},""" +
+        """{"id":109,"type":"tag","name":"twintails","url":"/tag/twintails/","count":39000},""" +
+        """{"id":110,"type":"tag","name":"ponytail","url":"/tag/ponytail/","count":36000},""" +
+        """{"id":111,"type":"tag","name":"swimsuit","url":"/tag/swimsuit/","count":36000},""" +
+        """{"id":112,"type":"tag","name":"kissing","url":"/tag/kissing/","count":31000},""" +
+        """{"id":113,"type":"tag","name":"bikini","url":"/tag/bikini/","count":25000},""" +
         """{"id":6,"type":"parody","name":"original","url":"/parody/original/","count":300000},""" +
         """{"id":7,"type":"artist","name":"artist","url":"/artist/artist/","count":120},""" +
         """{"id":8,"type":"group","name":"sample circle","url":"/group/sample-circle/","count":80}],""" +

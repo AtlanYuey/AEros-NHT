@@ -190,8 +190,9 @@
     <string name="l_187">Ở giữa</string>
     <string name="l_188">Bên phải</string>
     <string name="l_189">Khi chọn Tự động, thanh tab sẽ chuyển sang phía màn hình mà bạn chạm nhiều nhất.</string>
-    <string name="l_190">Sao lưu cài đặt</string>
-    <string name="l_191">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_192">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_193">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_190">Thu gọn</string>
+    <string name="l_191">Sao lưu cài đặt</string>
+    <string name="l_192">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_193">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_194">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
 </resources>

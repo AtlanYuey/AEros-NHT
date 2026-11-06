@@ -1,5 +1,29 @@
 package com.atlanyuey.nhentai.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.atlanyuey.nhentai.core.GalleryTag
 import android.text.format.DateUtils
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -8,8 +32,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,7 +57,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -158,6 +179,10 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
 
     private val item: GalleryItem? get() = preview ?: detail?.asItem
 
+    /** Height of the cover in pixels; a collapsed title is cut to fit next to it. */
+    private var coverHeight by mutableIntStateOf(0)
+    private var titleExpanded by mutableStateOf(false)
+
     private suspend fun load() {
         error = null
         try {
@@ -277,7 +302,12 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(18.dp),
             ) {
-                Box(Modifier.width(if (wide) 200.dp else 132.dp).shadow(14.dp, RoundedCornerShape(14.dp))) {
+                Box(
+                    Modifier
+                        .width(if (wide) 200.dp else 132.dp)
+                        .onSizeChanged { coverHeight = it.height }
+                        .shadow(14.dp, RoundedCornerShape(14.dp)),
+                ) {
                     val cover = item
                     if (cover != null) {
                         CoverView(cover, cornerRadius = 14.dp, targetWidth = 500.dp)
@@ -285,28 +315,74 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                         Box(Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(14.dp)).background(AppTheme.colors.quaternaryFill))
                     }
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SelectionContainer {
-                        Txt(
-                            detail?.displayTitle ?: preview?.title ?: "",
-                            style = if (wide) Type.title2.copy(fontWeight = FontWeight.SemiBold) else Type.title3,
-                        )
-                    }
-                    detail?.subtitle?.let {
-                        Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = 3)
-                    }
-                    detail?.let { d ->
-                        val artists = d.tags(TagGroup.Artist) + d.tags(TagGroup.Group)
-                        artists.firstOrNull()?.let { first ->
-                            Txt(
-                                artists.joinToString(", ") { it.name },
-                                Modifier.clickable { navigator.push(SearchResultsScreen(first.query, first.name)) },
-                                style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
-                                color = AppTheme.tint,
-                                maxLines = 2,
-                            )
+                TitleBlock(wide)
+            }
+        }
+    }
+
+    /**
+     * Title, subtitle and artists. Collapsed, they are no taller than the
+     * cover: the artists and two lines of the subtitle stay, and the title
+     * gets the lines that are left, ending with "…". Tapping the title shows
+     * all of it; a long press copies it.
+     */
+    @Composable
+    private fun androidx.compose.foundation.layout.RowScope.TitleBlock(wide: Boolean) {
+        val navigator = LocalNavigator.current
+        val context = LocalContext.current
+        val density = LocalDensity.current
+        val collapsed = !titleExpanded && coverHeight > 0
+        val title = detail?.displayTitle ?: preview?.title ?: ""
+        val titleStyle = if (wide) Type.title2.copy(fontWeight = FontWeight.SemiBold) else Type.title3
+        Column(
+            Modifier
+                .weight(1f)
+                .then(if (collapsed) Modifier.heightIn(max = with(density) { coverHeight.toDp() }) else Modifier),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Bottom),
+        ) {
+            Column(
+                Modifier
+                    .then(if (collapsed) Modifier.weight(1f, fill = false) else Modifier)
+                    .combinedClickable(
+                        interactionSource = null,
+                        indication = null,
+                        onClick = { titleExpanded = !titleExpanded },
+                        onLongClick = {
+                            val text = listOfNotNull(detail?.displayTitle ?: preview?.title, detail?.subtitle).joinToString("\n")
+                            context.getSystemService(ClipboardManager::class.java)
+                                ?.setPrimaryClip(ClipData.newPlainText("title", text))
+                        },
+                    ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (collapsed) {
+                    // As many whole lines as fit in the space left.
+                    BoxWithConstraints(Modifier.weight(1f, fill = false)) {
+                        val lineHeight = with(density) { titleStyle.lineHeight.toPx() }
+                        val lines = if (constraints.hasBoundedHeight && lineHeight > 0f) {
+                            (constraints.maxHeight / lineHeight).toInt().coerceAtLeast(1)
+                        } else {
+                            Int.MAX_VALUE
                         }
+                        Txt(title, style = titleStyle, maxLines = lines)
                     }
+                } else {
+                    Txt(title, style = titleStyle)
+                }
+                detail?.subtitle?.let {
+                    Txt(it, style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = if (titleExpanded) Int.MAX_VALUE else 2)
+                }
+            }
+            detail?.let { d ->
+                val artists = d.tags(TagGroup.Artist) + d.tags(TagGroup.Group)
+                artists.firstOrNull()?.let { first ->
+                    Txt(
+                        artists.joinToString(", ") { it.name },
+                        Modifier.clickable { navigator.push(SearchResultsScreen(first.query, first.name)) },
+                        style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                        color = AppTheme.tint,
+                        maxLines = if (titleExpanded) Int.MAX_VALUE else 1,
+                    )
                 }
             }
         }
@@ -419,23 +495,23 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
         Box(Modifier.width(0.5.dp).height(34.dp).background(AppTheme.colors.separator))
     }
 
-    @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun TagsSection(d: GalleryDetail) {
         val navigator = LocalNavigator.current
         val order = listOf(TagGroup.Category, TagGroup.Language, TagGroup.Tag, TagGroup.Parody, TagGroup.Character, TagGroup.Artist, TagGroup.Group)
         val groups = order.filter { d.tags(it).isNotEmpty() }
         if (groups.isEmpty()) return
-        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             groups.forEach { group ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Txt(tr(group.title), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.colors.secondaryLabel)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        d.tags(group).forEach { tag ->
-                            TagChip(TagStore.displayName(tag.name, tag.type), tag.count) {
-                                navigator.push(SearchResultsScreen(tag.query, tag.name))
-                            }
-                        }
+                    Txt(
+                        tr(group.title),
+                        Modifier.padding(horizontal = 16.dp),
+                        style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
+                        color = AppTheme.colors.secondaryLabel,
+                    )
+                    TagRow(d.tags(group).map { it to TagStore.displayName(it.name, it.type) }) { tag ->
+                        navigator.push(SearchResultsScreen(tag.query, tag.name))
                     }
                 }
             }
@@ -666,5 +742,112 @@ class CommentsScreen(private val galleryId: Int, initial: List<GalleryComment>) 
                 )
             }
         }
+    }
+}
+
+/**
+ * One line of tags that scrolls sideways. When they don't fit, a button at
+ * the end of the line shows them all, wrapped onto as many lines as needed.
+ */
+@Composable
+private fun TagRow(tags: List<Pair<GalleryTag, String>>, onTag: (GalleryTag) -> Unit) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    // Width of the tags on one line, measured without the button so that
+    // showing it can't change the answer.
+    var tagsWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    val margin = 16.dp
+    val buttonSize = 34.dp
+    val fade = 18.dp
+    val buttonSpace = margin + buttonSize + 8.dp
+    val chips: @Composable () -> Unit = {
+        tags.forEach { (tag, name) -> TagChip(name, tag.count) { onTag(tag) } }
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth().animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))) {
+        val overflows = tagsWidth > 0 && with(density) { tagsWidth.toDp() } + margin * 2 > maxWidth + 0.5.dp
+        if (expanded) {
+            TagFlow(
+                Modifier.fillMaxWidth().padding(horizontal = margin),
+                spacing = 8.dp,
+                firstLineEnd = buttonSpace - margin,
+                content = chips,
+            )
+        } else {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (overflows) Modifier.fadeBeforeButton(fade, buttonSpace) else Modifier)
+                    .horizontalScroll(rememberScrollState())
+                    .padding(start = margin, end = if (overflows) buttonSpace + fade else margin),
+            ) {
+                Row(Modifier.onSizeChanged { tagsWidth = it.width }, horizontalArrangement = Arrangement.spacedBy(8.dp)) { chips() }
+            }
+        }
+        if (overflows || expanded) {
+            val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
+            val label = tr(if (expanded) "Show Less" else "See All")
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(end = margin)
+                    .size(buttonSize)
+                    .clip(CircleShape)
+                    .background(AppTheme.colors.tertiaryFill)
+                    .clickable { expanded = !expanded }
+                    .semantics { contentDescription = label },
+                contentAlignment = Alignment.Center,
+            ) {
+                AppIcon(Icons.ChevronDown, null, Modifier.rotate(rotation), tint = AppTheme.colors.secondaryLabel, size = 14.dp)
+            }
+        }
+    }
+}
+
+/** Fades content out just before the button at the trailing edge. */
+private fun Modifier.fadeBeforeButton(fade: Dp, button: Dp) = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val width = size.width
+        if (width <= 0f) return@drawWithContent
+        val end = (width - button.toPx()).coerceAtLeast(0f)
+        val start = (end - fade.toPx()).coerceAtLeast(0f)
+        drawRect(
+            Brush.horizontalGradient(
+                0f to Color.Black,
+                start / width to Color.Black,
+                end / width to Color.Transparent,
+                1f to Color.Transparent,
+            ),
+            blendMode = BlendMode.DstIn,
+        )
+    }
+
+/** Wraps items onto lines, keeping [firstLineEnd] free at the end of the first line for a button. */
+@Composable
+private fun TagFlow(modifier: Modifier, spacing: Dp, firstLineEnd: Dp, content: @Composable () -> Unit) {
+    Layout(content, modifier) { measurables, constraints ->
+        val gap = spacing.roundToPx()
+        val reserve = firstLineEnd.roundToPx()
+        val width = constraints.maxWidth
+        val placeables = measurables.map { it.measure(Constraints(maxWidth = (width - reserve).coerceAtLeast(0))) }
+        val positions = ArrayList<IntOffset>(placeables.size)
+        var x = 0
+        var y = 0
+        var lineHeight = 0
+        var firstLine = true
+        placeables.forEach { p ->
+            val limit = if (firstLine) width - reserve else width
+            if (x > 0 && x + p.width > limit) {
+                y += lineHeight + gap
+                x = 0
+                lineHeight = 0
+                firstLine = false
+            }
+            positions += IntOffset(x, y)
+            x += p.width + gap
+            lineHeight = maxOf(lineHeight, p.height)
+        }
+        layout(width, y + lineHeight) { placeables.forEachIndexed { i, p -> p.place(positions[i]) } }
     }
 }

@@ -10,6 +10,11 @@ on:
       - 'apple/**'
       - '.github/workflows/ios-native.yml'
   workflow_dispatch:
+    inputs:
+      release:
+        description: Create a draft GitHub release with the IPA
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,6 +25,8 @@ jobs:
     name: Build unsigned IPA
     runs-on: macos-26
     timeout-minutes: 45
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,6 +83,8 @@ jobs:
           cp -R "$APP" build/ipa/Payload/
           (cd build/ipa && zip -qry "../AEros-NHT_${VERSION}_${BUILD}.ipa" Payload)
           ls -lh build/*.ipa
+          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "APP_BUILD=$BUILD" >> "$GITHUB_ENV"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -83,3 +92,19 @@ jobs:
           name: aeros-nht-ios
           path: apple/build/*.ipa
           if-no-files-found: error
+
+      # A commit message containing [release] (or a manual run with
+      # "release") drafts a GitHub release; publish it on GitHub.
+      - name: Draft GitHub release
+        if: contains(github.event.head_commit.message, '[release]') || inputs.release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ios-v${{ env.APP_VERSION }}
+          commit: ${{ github.sha }}
+          name: AEros-NHT ${{ env.APP_VERSION }} (${{ env.APP_BUILD }}) · iOS / iPadOS
+          bodyFile: apple/RELEASE_NOTES.md
+          artifacts: apple/build/*.ipa
+          draft: true
+          allowUpdates: true
+          replacesArtifacts: true
+          removeArtifacts: true

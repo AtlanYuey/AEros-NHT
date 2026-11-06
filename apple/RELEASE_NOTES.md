@@ -1,0 +1,32 @@
+原生 iOS / iPadOS 版，用 SwiftUI 重新编写，基于 [honjow/eros_n](https://github.com/honjow/eros_n) 修改。
+
+## 安装
+
+- 需要 iOS / iPadOS 18 或更高版本；在 iOS 26 上使用 Liquid Glass 效果。
+- 安装包未签名，请用 Feather、SideStore、AltStore、Sideloadly 等工具自行签名安装。
+- 套装 ID：`com.atlanyuey.nhentai`
+
+## 功能
+
+- 系统原生界面：iOS 26 Liquid Glass、底部标签栏与系统搜索；iPad 侧边栏，横屏、竖屏可分别设置卡片大小
+- 首页：热门与最新，按语言、排序筛选；瀑布流、瀑布流（紧凑）、网格、列表四种样式
+- 画廊页：模糊封面背景，阅读、收藏、下载按钮，分组标签（可显示中文翻译），横向页面预览，相似推荐，评论
+- 阅读器：从左到右、从右到左、上下翻页、上下连续（条漫）、上下连续（有间距，可调）；双击和双指缩放，点按两侧立即翻页，自动阅读，预加载，侧滑返回
+- 搜索：标签补全、最近搜索、输入画廊编号直接打开
+- 登录 nhentai 账号：收藏、发表评论
+- 离线下载：暂停、继续、离线阅读
+- 浏览记录，剪贴板画廊链接识别
+- 设置可通过 iCloud 同步（所有设备，或仅同类设备）；也可以导出、导入设置文件
+- 简体中文、English
+
+## iCloud 同步
+
+自动同步需要用带 iCloud 功能的描述文件签名：付费开发者账号，为 `com.atlanyuey.nhentai` 注册开启 iCloud 的 App ID 并生成描述文件。用通配符描述文件签名时其他功能都正常，设置可以用导出、导入代替。
+
+## 许可
+
+本项目是 [honjow/eros_n](https://github.com/honjow/eros_n)（Apache License 2.0）的修改版，与原作者及 nhentai 均无关联。第三方组件的许可见 App 内「关于 › 开源许可」。仅供 18 岁以上用户使用。
+
+---
+
+**English.** A native iOS / iPadOS app written in SwiftUI, based on [honjow/eros_n](https://github.com/honjow/eros_n). Requires iOS / iPadOS 18 or later (Liquid Glass on iOS 26). The IPA is unsigned: sign and install it with Feather, SideStore, AltStore, Sideloadly or similar. Bundle ID `com.atlanyuey.nhentai`. Settings sync over iCloud needs a provisioning profile with the iCloud capability; export / import works with any signing. This is a modified version of eros_n (Apache License 2.0) and is not affiliated with its author or with nhentai. For adults (18+) only.

@@ -4,6 +4,7 @@
 >
 > 主要修改：
 > - 新增原生 SwiftUI 编写的 iOS / iPadOS 版（`apple/` 目录，套装 ID `com.atlanyuey.nhentai`）：系统控件与 Liquid Glass、iPad 侧边栏、多种阅读模式、离线下载、标签翻译、iCloud 同步设置。
+> - 新增原生 Android 版（`android-native/` 目录，Kotlin + Jetpack Compose），功能与 iOS 版一致，同样是 Apple 风格界面与 Liquid Glass 效果。
 > - Flutter 版：界面按 Apple 设计规范重做，数据层迁移到 nhentai API v2，以及其他修复。具体改动见 Git 提交记录。
 >
 > 原项目采用 Apache License 2.0，原有版权与许可声明保留不变，见 [LICENSE](LICENSE)。第三方组件的许可见 App 内「关于 › 开源许可」。

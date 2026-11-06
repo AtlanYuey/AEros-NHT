@@ -4,6 +4,7 @@
 >
 > Main changes:
 > - A native SwiftUI app for iOS / iPadOS (`apple/`, bundle ID `com.atlanyuey.nhentai`): system controls and Liquid Glass, iPad sidebar, several reading modes, offline downloads, tag translation, settings sync over iCloud.
+> - A native Android app (`android-native/`, Kotlin and Jetpack Compose) with the features of the iOS app and the same Apple-style design with Liquid Glass.
 > - Flutter app: interface redone after Apple's design guidelines, data layer moved to nhentai API v2, and other fixes. See the Git history for the individual changes.
 >
 > The original project is licensed under the Apache License 2.0; its copyright and license notices are kept unchanged, see [LICENSE](LICENSE). Licenses of third-party components are listed in the app under About › Open Source Licenses.

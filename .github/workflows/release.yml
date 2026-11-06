@@ -10,6 +10,8 @@ on:
     # The native iOS app has its own workflow.
     paths-ignore:
       - 'apple/**'
+      - 'android-native/**'
+      - '.github/workflows/android-native.yml'
       - '.github/workflows/ios-native.yml'
       - '**.md'
   workflow_dispatch:

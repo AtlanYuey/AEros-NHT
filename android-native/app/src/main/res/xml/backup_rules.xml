@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Back up settings and history; never the login tokens or downloads. -->
+<full-backup-content>
+    <include domain="sharedpref" path="settings.xml" />
+    <include domain="file" path="history.json" />
+</full-backup-content>

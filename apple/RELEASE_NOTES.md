@@ -1,3 +1,8 @@
+## 2.1.0 更新内容
+
+- 新增 14 种界面语言：English、日本語、简体中文、繁體中文、한국어、Español、Français、Deutsch、Italiano、Português (Brasil)、Русский、Tiếng Việt、ไทย、Bahasa Indonesia
+- 「更多 › 语言」：默认跟随系统语言，也可以手动选择，重新打开 App 后生效
+
 原生 iOS / iPadOS 版，用 SwiftUI 重新编写，基于 [honjow/eros_n](https://github.com/honjow/eros_n) 修改。
 
 ## 安装

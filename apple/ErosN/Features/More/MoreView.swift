@@ -228,7 +228,7 @@ private struct CardSizeSection: View {
                 } minimumValueLabel: {
                     Image(systemName: "square.grid.4x3.fill").font(.footnote)
                 } maximumValueLabel: {
-                    Image(systemName: "square.grid.2x2.fill")
+                    Image(systemName: "square.grid.2x2.fill").font(.body)
                 }
                 .sensoryFeedback(.selection, trigger: size)
                 Text(size.title)

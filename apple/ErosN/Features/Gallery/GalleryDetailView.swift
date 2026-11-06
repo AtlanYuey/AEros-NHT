@@ -460,12 +460,13 @@ private struct PreviewSection: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
-        let limit = sizeClass == .regular ? 18 : 9
+        let source = ReaderSource(detail: detail)
+        let height: CGFloat = sizeClass == .regular ? 220 : 160
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
                 SectionTitle(title: "Pages")
                 Spacer()
-                if detail.pages.count > limit {
+                if detail.pages.count > 1 {
                     NavigationLink {
                         PagesView(detail: detail)
                     } label: {
@@ -474,8 +475,29 @@ private struct PreviewSection: View {
                     .padding(.trailing)
                 }
             }
-            PageGrid(detail: detail, limit: limit)
-                .padding(.horizontal)
+            // A row of every page, swiped sideways (like the previous version).
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 10) {
+                    ForEach(detail.pages) { page in
+                        NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
+                            VStack(spacing: 6) {
+                                RemoteImage(url: page.thumbURL, contentMode: .fill, targetWidth: 240)
+                                    .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
+                                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                Text("\(page.number)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
         }
         .padding(.top, 8)
     }

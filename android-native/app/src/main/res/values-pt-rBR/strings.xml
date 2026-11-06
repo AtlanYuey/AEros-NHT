@@ -191,8 +191,12 @@
     <string name="l_188">Direita</string>
     <string name="l_189">No modo Automática, a barra de abas vai para o lado da tela que você tocou por último.</string>
     <string name="l_190">Mostrar menos</string>
-    <string name="l_191">Backup dos ajustes</string>
-    <string name="l_192">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_193">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_194">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_191">Salvar histórico de busca</string>
+    <string name="l_192">As buscas recentes aparecem quando você começa uma busca e são sincronizadas pelo iCloud com seus ajustes. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_193">Galeria #%d</string>
+    <string name="l_194">Backup dos ajustes</string>
+    <string name="l_195">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_196">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_197">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_198">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

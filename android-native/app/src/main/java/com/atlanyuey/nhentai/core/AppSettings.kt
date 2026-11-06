@@ -2,7 +2,10 @@ package com.atlanyuey.nhentai.core
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -184,6 +187,11 @@ object AppSettings {
         keepScreenOn = p.getBoolean("keepScreenOn", true)
         detectClipboard = p.getBoolean("detectClipboard", false)
         tabBarPosition = TabBarPosition.of(p.getString("tabBarPosition", null))
+        saveSearchHistory = p.getBoolean("saveSearchHistory", true)
+        recentSearches.clear()
+        p.getString("recentSearches", null)?.let { text ->
+            runCatching { recentSearches.addAll(json.decodeFromString(ListSerializer(String.serializer()), text)) }
+        }
         loading = false
     }
 
@@ -226,6 +234,43 @@ object AppSettings {
     var keepScreenOn by Pref(true) { save("keepScreenOn", it) }
     var detectClipboard by Pref(false) { save("detectClipboard", it) }
     var tabBarPosition by Pref(TabBarPosition.Automatic) { save("tabBarPosition", it.raw) }
+    var saveSearchHistory by Pref(true) { save("saveSearchHistory", it) }
+
+    /** Recent search terms, newest first. */
+    val recentSearches = mutableStateListOf<String>()
+    private val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+
+    /** Puts [term] first in the search history (when history is on). */
+    fun addRecentSearch(term: String) {
+        if (!saveSearchHistory) return
+        recentSearches.remove(term)
+        recentSearches.add(0, term)
+        while (recentSearches.size > RECENT_SEARCH_LIMIT) recentSearches.removeAt(recentSearches.lastIndex)
+        saveRecentSearches()
+    }
+
+    fun removeRecentSearch(term: String) {
+        recentSearches.remove(term)
+        saveRecentSearches()
+    }
+
+    fun clearRecentSearches() {
+        recentSearches.clear()
+        saveRecentSearches()
+    }
+
+    private fun setRecentSearches(items: List<String>) {
+        recentSearches.clear()
+        recentSearches.addAll(items.take(RECENT_SEARCH_LIMIT))
+        saveRecentSearches()
+    }
+
+    private fun saveRecentSearches() {
+        if (!::prefs.isInitialized || loading) return
+        prefs.edit().putString("recentSearches", json.encodeToString(ListSerializer(String.serializer()), recentSearches.toList())).apply()
+    }
+
+    private const val RECENT_SEARCH_LIMIT = 20
 
     fun cardSize(landscape: Boolean) = if (landscape) cardSizeLandscape else cardSizePortrait
 
@@ -252,6 +297,8 @@ object AppSettings {
         "keepScreenOn" to keepScreenOn,
         "detectClipboard" to detectClipboard,
         "tabBarPosition" to tabBarPosition.raw,
+        "saveSearchHistory" to saveSearchHistory,
+        "recentSearches" to recentSearches.toList(),
     )
 
     /** Applies imported settings; unknown keys and invalid values are ignored. */
@@ -282,6 +329,8 @@ object AppSettings {
                 "keepScreenOn" -> bool?.let { keepScreenOn = it }
                 "detectClipboard" -> bool?.let { detectClipboard = it }
                 "tabBarPosition" -> string?.let { tabBarPosition = TabBarPosition.of(it) }
+                "saveSearchHistory" -> bool?.let { saveSearchHistory = it }
+                "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }
     }

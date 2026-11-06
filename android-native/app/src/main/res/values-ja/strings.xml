@@ -191,8 +191,12 @@
     <string name="l_188">右</string>
     <string name="l_189">「自動」では、最後に触れた画面の側にタブバーが移動します。</string>
     <string name="l_190">折りたたむ</string>
-    <string name="l_191">設定のバックアップ</string>
-    <string name="l_192">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_193">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_194">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_191">検索履歴を保存</string>
+    <string name="l_192">検索を始めると最近の検索が表示され、設定と一緒に iCloud で同期されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_193">作品 #%d</string>
+    <string name="l_194">設定のバックアップ</string>
+    <string name="l_195">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_196">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_197">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_198">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

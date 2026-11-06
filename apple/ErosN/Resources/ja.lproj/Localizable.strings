@@ -190,3 +190,6 @@
 "Right" = "右";
 "Automatic moves the tab bar to the side of the screen you touched last." = "「自動」では、最後に触れた画面の側にタブバーが移動します。";
 "Show Less" = "折りたたむ";
+"Save Search History" = "検索履歴を保存";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "検索を始めると最近の検索が表示され、設定と一緒に iCloud で同期されます。オフにすると新しい検索は保存されず、一覧も表示されません。";
+"Gallery #%lld" = "作品 #%lld";

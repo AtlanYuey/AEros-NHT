@@ -569,9 +569,13 @@ class GeneralScreen : Screen() {
                 PickerRow(tr("Language"), LanguageFilter.entries, AppSettings.homeLanguage, { tr(it.title) }, { AppSettings.homeLanguage = it })
                 PickerRow(tr("Sort"), SearchSort.entries, AppSettings.homeSort, { tr(it.title) }, { AppSettings.homeSort = it }, last = true)
             }
-            section(header = "Search") {
+            section(
+                header = "Search",
+                footer = { FooterText(tr("Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden.")) },
+            ) {
                 PickerRow(tr("Language"), LanguageFilter.entries, AppSettings.searchLanguage, { tr(it.title) }, { AppSettings.searchLanguage = it })
-                PickerRow(tr("Sort"), SearchSort.entries, AppSettings.searchSort, { tr(it.title) }, { AppSettings.searchSort = it }, last = true)
+                PickerRow(tr("Sort"), SearchSort.entries, AppSettings.searchSort, { tr(it.title) }, { AppSettings.searchSort = it })
+                ToggleRow(tr("Save Search History"), AppSettings.saveSearchHistory, { AppSettings.saveSearchHistory = it }, last = true)
             }
             section(footer = { FooterText(tr("When you return to the app, offer to open an nhentai link found on the clipboard.")) }) {
                 ToggleRow(tr("Detect Gallery Links"), AppSettings.detectClipboard, { AppSettings.detectClipboard = it }, last = true)
@@ -616,7 +620,15 @@ class BackupScreen : Screen() {
                 val result = runCatching {
                     val text = context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() } ?: ""
                     val o = Net.json.parseToJsonElement(text) as JsonObject
-                    AppSettings.apply(o.mapValues { (_, v) -> (v as? JsonPrimitive)?.let { p -> p.booleanOrNull ?: p.longOrNull ?: p.doubleOrNull ?: p.content } })
+                    AppSettings.apply(
+                        o.mapValues { (_, v) ->
+                            when (v) {
+                                is JsonPrimitive -> v.booleanOrNull ?: v.longOrNull ?: v.doubleOrNull ?: v.content
+                                is kotlinx.serialization.json.JsonArray -> v.mapNotNull { (it as? JsonPrimitive)?.content }
+                                else -> null
+                            }
+                        },
+                    )
                 }
                 overlays.alert(importTitle, if (result.isSuccess) imported else result.exceptionOrNull()?.localizedMessage)
             }
@@ -643,6 +655,7 @@ class BackupScreen : Screen() {
                 when (value) {
                     is Boolean -> put(key, JsonPrimitive(value))
                     is Number -> put(key, JsonPrimitive(value))
+                    is List<*> -> put(key, kotlinx.serialization.json.JsonArray(value.map { JsonPrimitive(it.toString()) }))
                     else -> put(key, JsonPrimitive(value.toString()))
                 }
             }

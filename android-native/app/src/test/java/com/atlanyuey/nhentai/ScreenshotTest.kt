@@ -11,7 +11,9 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import coil3.ImageLoader
@@ -110,6 +112,23 @@ class ScreenshotTest {
     @Test fun search() = shoot("07_search", tab = 4)
 
     @Test fun history() = shoot("08_history", tab = 2)
+
+    @Test fun searchNumber() {
+        com.atlanyuey.nhentai.screens.searchState.submit("500001")
+        shoot("20_search_number", tab = 4)
+        com.atlanyuey.nhentai.screens.searchState.reset()
+    }
+
+    @Test fun searchHistory() {
+        AppSettings.clearRecentSearches()
+        listOf("glasses", "artist:sample", "500001", "beach").forEach { AppSettings.addRecentSearch(it) }
+        shoot("21_search_history", tab = 4)
+        compose.onNodeWithText("artist:sample").performTouchInput { longClick() }
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/22_search_history_delete.png")
+        AppSettings.clearRecentSearches()
+    }
 
     @Test fun appearance() {
         val tabs = Tabs()

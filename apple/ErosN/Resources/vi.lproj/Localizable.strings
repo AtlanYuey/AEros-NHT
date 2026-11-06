@@ -190,3 +190,6 @@
 "Right" = "Bên phải";
 "Automatic moves the tab bar to the side of the screen you touched last." = "Khi chọn Tự động, thanh tab sẽ chuyển sang phía màn hình mà bạn chạm gần nhất.";
 "Show Less" = "Thu gọn";
+"Save Search History" = "Lưu lịch sử tìm kiếm";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm và được đồng bộ qua iCloud cùng cài đặt. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.";
+"Gallery #%lld" = "Truyện #%lld";

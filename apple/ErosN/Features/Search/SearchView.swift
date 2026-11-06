@@ -12,18 +12,20 @@ struct SearchView: View {
 /// Search field with tag suggestions, recent searches and results. Given
 /// [idle] content (the iPad Home page), that content shows until the search
 /// field is used, and the search shows over it, so it keeps its scroll
-/// position; the closure is told whether the search is showing.
+/// position; the closure is told whether results are showing (its toolbar
+/// menus then change the search's language and sort, so the toolbar keeps
+/// the same items and the search field keeps the keyboard).
 struct SearchHost<Idle: View>: View {
     private let placement: SearchFieldPlacement
     private let idle: ((Bool) -> Idle)?
 
+    @Environment(AppSettings.self) private var settings
     @State private var text = ""
     @State private var query = ""
     @State private var isPresented = false
     @State private var suggestions: [TagSuggestion] = []
-    @State private var recents = RecentSearches()
 
-    init(placement: SearchFieldPlacement = .automatic, @ViewBuilder idle: @escaping (_ searching: Bool) -> Idle) {
+    init(placement: SearchFieldPlacement = .automatic, @ViewBuilder idle: @escaping (_ showingResults: Bool) -> Idle) {
         self.placement = placement
         self.idle = idle
     }
@@ -53,11 +55,17 @@ struct SearchHost<Idle: View>: View {
                 if new.isEmpty { query = "" }
             }
             .task(id: text) { await loadSuggestions() }
+            .task {
+                // The search tab opens with the keyboard up.
+                guard idle == nil, query.isEmpty, !isPresented else { return }
+                try? await Task.sleep(for: .milliseconds(150))
+                isPresented = true
+            }
     }
 
     @ViewBuilder private var content: some View {
         if let idle {
-            idle(searching)
+            idle(!query.isEmpty)
                 .overlay {
                     if searching {
                         searchContent
@@ -73,14 +81,14 @@ struct SearchHost<Idle: View>: View {
         if query.isEmpty {
             recentList
         } else {
-            SearchResults(query: query)
+            SearchResults(query: query, showsMenus: idle == nil)
                 .id(query)
         }
     }
 
     private var recentList: some View {
         List {
-            if recents.items.isEmpty {
+            if !settings.saveSearchHistory || settings.recentSearches.isEmpty {
                 ContentUnavailableView(
                     "Search nhentai",
                     systemImage: "magnifyingglass",
@@ -89,7 +97,7 @@ struct SearchHost<Idle: View>: View {
                 .listRowBackground(Color.clear)
             } else {
                 Section {
-                    ForEach(recents.items, id: \.self) { item in
+                    ForEach(settings.recentSearches, id: \.self) { item in
                         Button {
                             text = item
                             submit(item)
@@ -97,13 +105,18 @@ struct SearchHost<Idle: View>: View {
                             Label(item, systemImage: "clock.arrow.circlepath")
                                 .foregroundStyle(.primary)
                         }
+                        .contextMenu {
+                            Button("Delete", systemImage: "trash", role: .destructive) {
+                                settings.removeRecentSearch(item)
+                            }
+                        }
                     }
-                    .onDelete { recents.remove(at: $0) }
+                    .onDelete { settings.removeRecentSearches(at: $0) }
                 } header: {
                     HStack {
                         Text("Recent Searches")
                         Spacer()
-                        Button("Clear") { recents.clear() }
+                        Button("Clear") { settings.clearRecentSearches() }
                             .font(.subheadline)
                     }
                 }
@@ -122,7 +135,7 @@ struct SearchHost<Idle: View>: View {
     private func submit(_ value: String) {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        recents.add(trimmed)
+        settings.addRecentSearch(trimmed)
         query = trimmed
     }
 
@@ -156,15 +169,20 @@ struct SearchResultsView: View {
     }
 }
 
+/// Results for a query. A gallery number shows that gallery first, above
+/// the results of searching for the number.
 struct SearchResults: View {
     let query: String
+    /// Language and sort menus in the toolbar (the iPad Home page has its own).
+    let showsMenus: Bool
 
     @Environment(AppSettings.self) private var settings
     @State private var feed: GalleryFeed
-    @State private var openGallery: GalleryRoute?
+    @State private var match: GalleryItem?
 
-    init(query: String) {
+    init(query: String, showsMenus: Bool = true) {
         self.query = query
+        self.showsMenus = showsMenus
         _feed = State(initialValue: GalleryFeed { page in
             let settings = AppSettings.shared
             let full = [query, settings.searchLanguage.queryTerm].compactMap { $0 }.joined(separator: " ")
@@ -172,10 +190,20 @@ struct SearchResults: View {
         })
     }
 
+    private var galleryID: Int? {
+        Int(query.trimmingCharacters(in: .whitespaces)).flatMap { $0 > 0 ? $0 : nil }
+    }
+
     var body: some View {
         @Bindable var settings = settings
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                if let match {
+                    SectionTitle(title: "Gallery #\(match.id)")
+                    GalleryRow(item: match)
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                }
                 if let total = feed.total, feed.hasLoaded {
                     Text("\(total) results")
                         .font(.subheadline)
@@ -186,71 +214,42 @@ struct SearchResults: View {
                 GalleryCollection(items: feed.items) { item in
                     Task { await feed.loadMoreIfNeeded(after: item) }
                 }
-                FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
+                if match == nil {
+                    FeedPlaceholder(feed: feed, emptyTitle: "No Results", emptyImage: "magnifyingglass")
+                }
                 FeedFooter(feed: feed)
             }
         }
         .refreshable { await feed.reload() }
         .task {
-            if let id = Int(query.trimmingCharacters(in: .whitespaces)), id > 0 {
-                openGallery = GalleryRoute(id: id)
-            }
             if !feed.hasLoaded { await feed.reload() }
         }
-        .navigationDestination(item: $openGallery) { route in
-            GalleryDetailView(route: route)
+        .task {
+            if let id = galleryID, match == nil {
+                match = try? await NHClient.shared.gallery(id).asItem
+            }
         }
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Language", selection: $settings.searchLanguage) {
-                        ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+            if showsMenus {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Language", selection: $settings.searchLanguage) {
+                            ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
                     }
-                } label: {
-                    Label("Language", systemImage: "globe")
-                }
-                Menu {
-                    Picker("Sort", selection: $settings.searchSort) {
-                        ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                    Menu {
+                        Picker("Sort", selection: $settings.searchSort) {
+                            ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }
             }
         }
         .onChange(of: settings.searchLanguage) { Task { await feed.reload() } }
         .onChange(of: settings.searchSort) { Task { await feed.reload() } }
-    }
-}
-
-/// Recent search terms (UserDefaults).
-@Observable
-final class RecentSearches {
-    private(set) var items: [String]
-    private let key = "recentSearches"
-
-    init() {
-        items = UserDefaults.standard.stringArray(forKey: "recentSearches") ?? []
-    }
-
-    func add(_ term: String) {
-        items.removeAll { $0 == term }
-        items.insert(term, at: 0)
-        items = Array(items.prefix(20))
-        save()
-    }
-
-    func remove(at offsets: IndexSet) {
-        items.remove(atOffsets: offsets)
-        save()
-    }
-
-    func clear() {
-        items = []
-        save()
-    }
-
-    private func save() {
-        UserDefaults.standard.set(items, forKey: key)
     }
 }

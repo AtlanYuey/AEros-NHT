@@ -222,3 +222,8 @@
 
 /* Tags */
 "Show Less" = "收起";
+
+/* Search history */
+"Save Search History" = "保存搜索历史";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "开始搜索时会显示最近的搜索，并随设置通过 iCloud 同步。关闭后不再保存新的搜索，列表也会隐藏。";
+"Gallery #%lld" = "作品 #%lld";

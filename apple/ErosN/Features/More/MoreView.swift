@@ -533,13 +533,18 @@ struct GeneralSettingsView: View {
                     ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
                 }
             }
-            Section("Search") {
+            Section {
                 Picker("Language", selection: $settings.searchLanguage) {
                     ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
                 }
                 Picker("Sort", selection: $settings.searchSort) {
                     ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle("Save Search History", isOn: $settings.saveSearchHistory)
+            } header: {
+                Text("Search")
+            } footer: {
+                Text("Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden.")
             }
             Section {
                 Toggle("Detect Gallery Links", isOn: $settings.detectClipboard)

@@ -190,3 +190,6 @@
 "Right" = "오른쪽";
 "Automatic moves the tab bar to the side of the screen you touched last." = "‘자동’을 선택하면 마지막으로 터치한 화면 쪽으로 탭 막대가 이동합니다.";
 "Show Less" = "접기";
+"Save Search History" = "검색 기록 저장";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "검색을 시작하면 최근 검색어가 표시되고 설정과 함께 iCloud로 동기화됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.";
+"Gallery #%lld" = "작품 #%lld";

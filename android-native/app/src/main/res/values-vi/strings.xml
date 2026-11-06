@@ -191,8 +191,12 @@
     <string name="l_188">Bên phải</string>
     <string name="l_189">Khi chọn Tự động, thanh tab sẽ chuyển sang phía màn hình mà bạn chạm gần nhất.</string>
     <string name="l_190">Thu gọn</string>
-    <string name="l_191">Sao lưu cài đặt</string>
-    <string name="l_192">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_193">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_194">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_191">Lưu lịch sử tìm kiếm</string>
+    <string name="l_192">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm và được đồng bộ qua iCloud cùng cài đặt. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_193">Truyện #%d</string>
+    <string name="l_194">Sao lưu cài đặt</string>
+    <string name="l_195">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_196">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_197">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_198">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

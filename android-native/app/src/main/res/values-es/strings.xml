@@ -191,8 +191,12 @@
     <string name="l_188">Derecha</string>
     <string name="l_189">En Automática, la barra de pestañas se mueve al lado de la pantalla que tocaste por última vez.</string>
     <string name="l_190">Mostrar menos</string>
-    <string name="l_191">Copia de los ajustes</string>
-    <string name="l_192">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_193">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_194">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_191">Guardar historial de búsqueda</string>
+    <string name="l_192">Las búsquedas recientes aparecen al empezar a buscar y se sincronizan por iCloud con tus ajustes. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_193">Galería #%d</string>
+    <string name="l_194">Copia de los ajustes</string>
+    <string name="l_195">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_196">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_197">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_198">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

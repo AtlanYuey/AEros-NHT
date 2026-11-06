@@ -191,8 +191,12 @@
     <string name="l_188">靠右</string>
     <string name="l_189">选择「自动」时，标签栏会移到你最后触摸的屏幕一侧。</string>
     <string name="l_190">收起</string>
-    <string name="l_191">设置备份</string>
-    <string name="l_192">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_193">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_194">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_191">保存搜索历史</string>
+    <string name="l_192">开始搜索时会显示最近的搜索，并随设置通过 iCloud 同步。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_193">作品 #%d</string>
+    <string name="l_194">设置备份</string>
+    <string name="l_195">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_196">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_197">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_198">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

@@ -190,3 +190,6 @@
 "Right" = "À droite";
 "Automatic moves the tab bar to the side of the screen you touched last." = "En mode automatique, la barre d’onglets se place du côté de l’écran que vous avez touché en dernier.";
 "Show Less" = "Afficher moins";
+"Save Search History" = "Enregistrer l’historique de recherche";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Les recherches récentes s’affichent quand vous lancez une recherche et se synchronisent via iCloud avec vos réglages. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.";
+"Gallery #%lld" = "Galerie #%lld";

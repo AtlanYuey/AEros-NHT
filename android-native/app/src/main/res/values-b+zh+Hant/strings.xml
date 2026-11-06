@@ -191,8 +191,12 @@
     <string name="l_188">靠右</string>
     <string name="l_189">選擇「自動」時，標籤列會移到你最後觸碰的螢幕一側。</string>
     <string name="l_190">收合</string>
-    <string name="l_191">設定備份</string>
-    <string name="l_192">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_193">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_194">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_191">儲存搜尋紀錄</string>
+    <string name="l_192">開始搜尋時會顯示最近的搜尋，並隨設定透過 iCloud 同步。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_193">作品 #%d</string>
+    <string name="l_194">設定備份</string>
+    <string name="l_195">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_196">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_197">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_198">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

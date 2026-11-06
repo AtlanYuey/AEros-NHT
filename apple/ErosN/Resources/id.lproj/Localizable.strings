@@ -190,3 +190,6 @@
 "Right" = "Kanan";
 "Automatic moves the tab bar to the side of the screen you touched last." = "Jika Otomatis, bar tab pindah ke sisi layar yang terakhir Anda sentuh.";
 "Show Less" = "Tampilkan Lebih Sedikit";
+"Save Search History" = "Simpan Riwayat Pencarian";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Pencarian terbaru muncul saat Anda mulai mencari dan disinkronkan melalui iCloud bersama pengaturan. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.";
+"Gallery #%lld" = "Galeri #%lld";

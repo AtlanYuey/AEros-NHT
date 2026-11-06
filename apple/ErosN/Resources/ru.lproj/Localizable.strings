@@ -190,3 +190,6 @@
 "Right" = "Справа";
 "Automatic moves the tab bar to the side of the screen you touched last." = "В режиме «Автоматически» панель вкладок переходит на ту сторону экрана, которой вы коснулись последней.";
 "Show Less" = "Свернуть";
+"Save Search History" = "Сохранять историю поиска";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Недавние запросы показываются в начале поиска и синхронизируются через iCloud вместе с настройками. Если выключить, новые запросы не сохраняются, а список скрыт.";
+"Gallery #%lld" = "Галерея #%lld";

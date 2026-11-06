@@ -196,9 +196,13 @@ object L10nKeys {
         "Right" to R.string.l_188,
         "Automatic moves the tab bar to the side of the screen you touched last." to R.string.l_189,
         "Show Less" to R.string.l_190,
-        "Settings Backup" to R.string.l_191,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_192,
-        "Android's own backup also keeps these settings." to R.string.l_193,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_194,
+        "Save Search History" to R.string.l_191,
+        "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." to R.string.l_192,
+        "Gallery #%lld" to R.string.l_193,
+        "Settings Backup" to R.string.l_194,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_195,
+        "Android's own backup also keeps these settings." to R.string.l_196,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_197,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_198,
     )
 }

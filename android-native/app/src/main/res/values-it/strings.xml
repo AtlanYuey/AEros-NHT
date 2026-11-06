@@ -191,8 +191,12 @@
     <string name="l_188">Destra</string>
     <string name="l_189">Con Automatica, la barra si sposta sul lato dello schermo che hai toccato per ultimo.</string>
     <string name="l_190">Mostra meno</string>
-    <string name="l_191">Backup impostazioni</string>
-    <string name="l_192">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_193">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_194">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_191">Salva cronologia ricerche</string>
+    <string name="l_192">Le ricerche recenti appaiono quando inizi una ricerca e si sincronizzano tramite iCloud con le impostazioni. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_193">Galleria #%d</string>
+    <string name="l_194">Backup impostazioni</string>
+    <string name="l_195">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_196">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_197">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_198">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

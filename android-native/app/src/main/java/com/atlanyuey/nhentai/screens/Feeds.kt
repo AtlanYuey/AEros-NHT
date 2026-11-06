@@ -1,5 +1,7 @@
 package com.atlanyuey.nhentai.screens
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.combinedClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalConfiguration
@@ -423,46 +425,6 @@ private fun Modifier.matchParentSize() = this.then(Modifier.fillMaxWidth().heigh
 
 // MARK: - Search
 
-/** Recent search terms. */
-object RecentSearches {
-    val items = mutableStateListOf<String>()
-    private var loaded = false
-
-    private fun prefs(context: Context) = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-
-    fun load(context: Context) {
-        if (loaded) return
-        loaded = true
-        val text = prefs(context).getString("recentSearches", null) ?: return
-        runCatching {
-            items.addAll(kotlinx.serialization.json.Json.decodeFromString(ListSerializer(String.serializer()), text))
-        }
-    }
-
-    fun add(context: Context, term: String) {
-        items.remove(term)
-        items.add(0, term)
-        while (items.size > 20) items.removeAt(items.lastIndex)
-        save(context)
-    }
-
-    fun remove(context: Context, term: String) {
-        items.remove(term)
-        save(context)
-    }
-
-    fun clear(context: Context) {
-        items.clear()
-        save(context)
-    }
-
-    private fun save(context: Context) {
-        prefs(context).edit()
-            .putString("recentSearches", kotlinx.serialization.json.Json.encodeToString(ListSerializer(String.serializer()), items.toList()))
-            .apply()
-    }
-}
-
 /** The search field's text, shared by the tab bar and the search screen. */
 class SearchState {
     var text by mutableStateOf("")
@@ -535,12 +497,9 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
         return results?.takeIf { it.query == query } ?: SearchResults(query, scope).also { results = it }
     }
 
-    /** Tag suggestions while typing; recent searches and gallery numbers on submit. */
+    /** Tag suggestions while typing; recent searches on submit. */
     @Composable
     fun Effects() {
-        val context = LocalContext.current
-        val navigator = LocalNavigator.current
-        LaunchedEffect(Unit) { RecentSearches.load(context) }
         LaunchedEffect(state.text) {
             val text = state.text
             val word = text.split(" ").lastOrNull() ?: ""
@@ -557,8 +516,7 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
         LaunchedEffect(state.submitCount) {
             val query = state.query
             if (query.isEmpty()) return@LaunchedEffect
-            RecentSearches.add(context, query)
-            query.trim().toIntOrNull()?.takeIf { it > 0 }?.let { navigator.push(GalleryScreen(it, null)) }
+            AppSettings.addRecentSearch(query)
         }
     }
 
@@ -594,10 +552,12 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
 
     @Composable
     private fun Recents(padding: PaddingValues, largeTitle: String?) {
-        val context = LocalContext.current
+        val overlays = LocalOverlays.current
+        val deleteLabel = tr("Delete")
+        val recents = AppSettings.recentSearches
         LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
             largeTitle?.let { item { LargeTitle(it) } }
-            if (RecentSearches.items.isEmpty()) {
+            if (!AppSettings.saveSearchHistory || recents.isEmpty()) {
                 item {
                     EmptyState(
                         Icons.Search,
@@ -608,16 +568,23 @@ class SearchPanel(private val state: SearchState, private val scope: kotlinx.cor
             } else {
                 item {
                     SectionTitle(tr("Recent Searches")) {
-                        TextButton(tr("Clear"), { RecentSearches.clear(context) })
+                        TextButton(tr("Clear"), { AppSettings.clearRecentSearches() })
                     }
                 }
-                items(RecentSearches.items.toList(), key = { it }) { term ->
-                    SwipeToDelete(onDelete = { RecentSearches.remove(context, term) }) {
+                items(recents.toList(), key = { it }) { term ->
+                    SwipeToDelete(onDelete = { AppSettings.removeRecentSearch(term) }) {
                         Row(
                             Modifier
                                 .fillMaxWidth()
                                 .background(AppTheme.colors.background)
-                                .clickable { state.submit(term) }
+                                .combinedClickable(
+                                    onClick = { state.submit(term) },
+                                    onLongClick = {
+                                        overlays.actionSheet(term, null, listOf(
+                                            DialogButton(deleteLabel, ButtonRole.Destructive) { AppSettings.removeRecentSearch(term) },
+                                        ))
+                                    },
+                                )
                                 .padding(horizontal = 20.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -641,6 +608,20 @@ class SearchResults(val query: String, scope: kotlinx.coroutines.CoroutineScope)
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 
+    /** A gallery number shows that gallery first, above the results of searching for the number. */
+    private val galleryId = query.trim().toIntOrNull()?.takeIf { it > 0 }
+    private var match by mutableStateOf<GalleryItem?>(null)
+    private var matchFailed by mutableStateOf(false)
+
+    init {
+        galleryId?.let { id ->
+            scope.launch {
+                match = runCatching { NHClient.gallery(id).asItem }.getOrNull()
+                matchFailed = match == null
+            }
+        }
+    }
+
     @Composable
     fun Content(padding: PaddingValues) {
         LaunchedEffect(Unit) {
@@ -653,15 +634,32 @@ class SearchResults(val query: String, scope: kotlinx.coroutines.CoroutineScope)
                 feed.items, grid, padding,
                 onItemShown = { feed.loadMoreIfNeeded(it) },
                 header = {
-                    val total = feed.total
-                    if (total != null && feed.hasLoaded) {
-                        fullLine("total") {
-                            Txt(
-                                tr("%lld results", total),
-                                Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
-                                style = Type.subheadline,
-                                color = AppTheme.colors.secondaryLabel,
-                            )
+                    // These lines are there from the start (the gallery with a
+                    // placeholder while it loads): a lazy grid keeps its first
+                    // visible item in place, so lines added above it later
+                    // would open the results scrolled down.
+                    if (galleryId != null && !matchFailed) {
+                        fullLine("matchTitle") { FeedTitle(tr("Gallery #%lld", galleryId), null) }
+                        fullLine("match") {
+                            val item = match
+                            if (item != null) {
+                                GalleryRow(item, Modifier.padding(horizontal = 4.dp))
+                            } else {
+                                Box(Modifier.fillMaxWidth().height(128.dp), contentAlignment = Alignment.Center) { ActivityIndicator() }
+                            }
+                        }
+                    }
+                    fullLine("total") {
+                        val total = feed.total
+                        Box(Modifier.fillMaxWidth().heightIn(min = 36.dp), contentAlignment = Alignment.CenterStart) {
+                            if (total != null && feed.hasLoaded) {
+                                Txt(
+                                    tr("%lld results", total),
+                                    Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                                    style = Type.subheadline,
+                                    color = AppTheme.colors.secondaryLabel,
+                                )
+                            }
                         }
                     }
                 },
@@ -690,11 +688,15 @@ class SearchResultsScreen(private val query: String, private val title: String?)
 @Composable
 fun SearchBar(modifier: Modifier = Modifier) {
     val state = searchState
+    val focus = remember { FocusRequester() }
+    // Opening the search tab puts the cursor in the field.
+    LaunchedEffect(Unit) { if (state.query.isEmpty()) focus.requestFocus() }
     SearchField(
         text = state.text,
         onTextChange = { state.text = it },
         placeholder = tr("Titles, tags, artists, IDs"),
         onSubmit = { state.submit(state.text) },
         modifier = modifier,
+        focusRequester = focus,
     )
 }

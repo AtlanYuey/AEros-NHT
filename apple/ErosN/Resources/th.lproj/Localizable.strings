@@ -190,3 +190,6 @@
 "Right" = "ขวา";
 "Automatic moves the tab bar to the side of the screen you touched last." = "เมื่อเลือกอัตโนมัติ แถบแท็บจะย้ายไปฝั่งของหน้าจอที่คุณแตะล่าสุด";
 "Show Less" = "แสดงน้อยลง";
+"Save Search History" = "บันทึกประวัติการค้นหา";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา และซิงค์ผ่าน iCloud พร้อมการตั้งค่า เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน";
+"Gallery #%lld" = "ผลงาน #%lld";

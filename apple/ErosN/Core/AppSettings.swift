@@ -162,6 +162,9 @@ final class AppSettings {
     var keepScreenOn: Bool { didSet { save(keepScreenOn, "keepScreenOn") } }
     var detectClipboard: Bool { didSet { save(detectClipboard, "detectClipboard") } }
     var tabBarPosition: TabBarPosition { didSet { save(tabBarPosition.rawValue, "tabBarPosition") } }
+    var saveSearchHistory: Bool { didSet { save(saveSearchHistory, "saveSearchHistory") } }
+    /// Recent search terms, newest first; synced with the settings.
+    var recentSearches: [String] { didSet { save(recentSearches, "recentSearches") } }
 
     private init() {
         let d = UserDefaults.standard
@@ -188,6 +191,8 @@ final class AppSettings {
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false
         tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .automatic
+        saveSearchHistory = d.object(forKey: "saveSearchHistory") as? Bool ?? true
+        recentSearches = d.stringArray(forKey: "recentSearches") ?? []
     }
 
     private func save(_ value: Any, _ key: String) {
@@ -222,6 +227,8 @@ final class AppSettings {
         values["keepScreenOn"] = keepScreenOn
         values["detectClipboard"] = detectClipboard
         values["tabBarPosition"] = tabBarPosition.rawValue
+        values["saveSearchHistory"] = saveSearchHistory
+        values["recentSearches"] = recentSearches
         return values
     }
 
@@ -266,12 +273,40 @@ final class AppSettings {
         case "keepScreenOn": set(\.keepScreenOn, number?.boolValue)
         case "detectClipboard": set(\.detectClipboard, number?.boolValue)
         case "tabBarPosition": set(\.tabBarPosition, string.flatMap(TabBarPosition.init(rawValue:)))
+        case "saveSearchHistory": set(\.saveSearchHistory, number?.boolValue)
+        case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break
         }
     }
 
     func cardSize(isLandscape: Bool) -> CardSize {
         isLandscape ? cardSizeLandscape : cardSizePortrait
+    }
+
+    // MARK: Search history
+
+    static let recentSearchLimit = 20
+
+    /// Puts [term] first in the search history (when history is on).
+    func addRecentSearch(_ term: String) {
+        guard saveSearchHistory else { return }
+        var items = recentSearches.filter { $0 != term }
+        items.insert(term, at: 0)
+        recentSearches = Array(items.prefix(Self.recentSearchLimit))
+    }
+
+    func removeRecentSearch(_ term: String) {
+        recentSearches = recentSearches.filter { $0 != term }
+    }
+
+    func removeRecentSearches(at offsets: IndexSet) {
+        var items = recentSearches
+        items.remove(atOffsets: offsets)
+        recentSearches = items
+    }
+
+    func clearRecentSearches() {
+        recentSearches = []
     }
 }
 

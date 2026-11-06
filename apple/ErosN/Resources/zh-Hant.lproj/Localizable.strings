@@ -190,3 +190,6 @@
 "Right" = "靠右";
 "Automatic moves the tab bar to the side of the screen you touched last." = "選擇「自動」時，標籤列會移到你最後觸碰的螢幕一側。";
 "Show Less" = "收合";
+"Save Search History" = "儲存搜尋紀錄";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "開始搜尋時會顯示最近的搜尋，並隨設定透過 iCloud 同步。關閉後不再儲存新的搜尋，列表也會隱藏。";
+"Gallery #%lld" = "作品 #%lld";

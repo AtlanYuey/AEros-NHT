@@ -190,3 +190,6 @@
 "Right" = "Rechts";
 "Automatic moves the tab bar to the side of the screen you touched last." = "Bei „Automatisch“ wandert die Tableiste auf die Seite, auf der du den Bildschirm zuletzt berührt hast.";
 "Show Less" = "Weniger anzeigen";
+"Save Search History" = "Suchverlauf sichern";
+"Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Letzte Suchen werden beim Starten einer Suche angezeigt und mit deinen Einstellungen über iCloud synchronisiert. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.";
+"Gallery #%lld" = "Galerie #%lld";

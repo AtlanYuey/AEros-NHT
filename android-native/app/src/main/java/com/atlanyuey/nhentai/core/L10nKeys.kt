@@ -194,7 +194,7 @@ object L10nKeys {
         "Left" to R.string.l_186,
         "Center" to R.string.l_187,
         "Right" to R.string.l_188,
-        "Automatic moves the tab bar to the side you touch the screen on most." to R.string.l_189,
+        "Automatic moves the tab bar to the side of the screen you touched last." to R.string.l_189,
         "Show Less" to R.string.l_190,
         "Settings Backup" to R.string.l_191,
         "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_192,

@@ -1,5 +1,9 @@
 package com.atlanyuey.nhentai.screens
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
 import android.content.Context
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -156,6 +160,12 @@ class HomeScreen : Screen() {
     private val grid = LazyStaggeredGridState()
     private var pulling by mutableStateOf(false)
 
+    // Large screens: the search field opens in the navigation bar and the
+    // search shows in place of the feed (no separate search tab).
+    private val search = SearchState()
+    private val searchPanel = SearchPanel(search, scope)
+    private var searching by mutableStateOf(false)
+
     private fun reload() {
         val job = feed.reload()
         scope.launch {
@@ -173,13 +183,46 @@ class HomeScreen : Screen() {
         }
         val language = AppSettings.homeLanguage
         val sort = AppSettings.homeSort
+        val large = LocalConfiguration.current.smallestScreenWidthDp >= 600
+        val focusManager = LocalFocusManager.current
+        val endSearch = {
+            focusManager.clearFocus()
+            search.reset()
+            searching = false
+        }
+        if (searching) {
+            searchPanel.Effects()
+            BackHandler { endSearch() }
+        }
         ScreenScaffold(
             title = tr("Home"),
-            showTitle = { grid.pastTitle() },
+            showTitle = { !searching && grid.pastTitle() },
             trailing = {
-                FeedMenus(language, sort, { AppSettings.homeLanguage = it }, { AppSettings.homeSort = it })
+                if (searching) {
+                    if (searchPanel.results() != null) {
+                        FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
+                    }
+                    val focus = remember { FocusRequester() }
+                    SearchField(
+                        text = search.text,
+                        onTextChange = { search.text = it },
+                        placeholder = tr("Titles, tags, artists, IDs"),
+                        onSubmit = { search.submit(search.text) },
+                        modifier = Modifier.width(340.dp).height(44.dp),
+                        focusRequester = focus,
+                    )
+                    LaunchedEffect(Unit) { focus.requestFocus() }
+                    GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
+                } else {
+                    FeedMenus(language, sort, { AppSettings.homeLanguage = it }, { AppSettings.homeSort = it })
+                    if (large) GlassCircleButton(Icons.Search, tr("Search"), { searching = true })
+                }
             },
         ) { padding ->
+            if (searching) {
+                searchPanel.Body(padding, largeTitle = null)
+                return@ScreenScaffold
+            }
             PullToRefresh(pulling, { pulling = true; reload() }, topInset = padding.calculateTopPadding()) {
                 GalleryGrid(
                     feed.items, grid, padding,
@@ -427,6 +470,23 @@ class SearchState {
     val suggestions = mutableStateListOf<TagSuggestion>()
     var submitCount by mutableStateOf(0)
 
+    /** Searches for [term] (typed and submitted, or a recent search). */
+    fun submit(term: String) {
+        val trimmed = term.trim()
+        if (trimmed.isEmpty()) return
+        text = term
+        suggestions.clear()
+        query = trimmed
+        submitCount++
+    }
+
+    /** Ends the search and clears the field. */
+    fun reset() {
+        text = ""
+        query = ""
+        suggestions.clear()
+    }
+
     /** Replaces the word being typed with the tag. */
     fun complete(tag: TagSuggestion) {
         val parts = text.split(" ").toMutableList()
@@ -441,13 +501,45 @@ val searchState = SearchState()
 
 /** The search tab: recent searches, tag suggestions and results. */
 class SearchScreen : Screen() {
-    private var results: SearchResults? = null
+    private val panel = SearchPanel(searchState, scope)
 
     @Composable
     override fun Content() {
+        panel.Effects()
+        val query = searchState.query
+        val current = panel.results()
+        ScreenScaffold(
+            title = if (query.isEmpty()) tr("Search") else query,
+            showTitle = { query.isNotEmpty() },
+            trailing = {
+                if (current != null) {
+                    FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
+                }
+            },
+        ) { padding -> panel.Body(padding, largeTitle = tr("Search")) }
+    }
+}
+
+/**
+ * Recent searches, tag suggestions and results for a [SearchState]: the
+ * search tab, and the Home page on large screens (which searches in place).
+ */
+class SearchPanel(private val state: SearchState, private val scope: kotlinx.coroutines.CoroutineScope) {
+    private var results: SearchResults? = null
+
+    /** Results of the submitted query, if there is one. */
+    @Composable
+    fun results(): SearchResults? {
+        val query = state.query
+        if (query.isEmpty()) return null
+        return results?.takeIf { it.query == query } ?: SearchResults(query, scope).also { results = it }
+    }
+
+    /** Tag suggestions while typing; recent searches and gallery numbers on submit. */
+    @Composable
+    fun Effects() {
         val context = LocalContext.current
         val navigator = LocalNavigator.current
-        val state = searchState
         LaunchedEffect(Unit) { RecentSearches.load(context) }
         LaunchedEffect(state.text) {
             val text = state.text
@@ -468,28 +560,20 @@ class SearchScreen : Screen() {
             RecentSearches.add(context, query)
             query.trim().toIntOrNull()?.takeIf { it > 0 }?.let { navigator.push(GalleryScreen(it, null)) }
         }
-        val query = state.query
-        val current = results?.takeIf { it.query == query } ?: if (query.isNotEmpty()) SearchResults(query, scope).also { results = it } else null
+    }
 
-        ScreenScaffold(
-            title = if (query.isEmpty()) tr("Search") else query,
-            showTitle = { query.isNotEmpty() },
-            trailing = {
-                if (current != null) {
-                    FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
-                }
-            },
-        ) { padding ->
-            when {
-                state.suggestions.isNotEmpty() -> Suggestions(state, padding)
-                current != null -> current.Content(padding)
-                else -> Recents(state, padding)
-            }
+    @Composable
+    fun Body(padding: PaddingValues, largeTitle: String?) {
+        val current = results()
+        when {
+            state.suggestions.isNotEmpty() -> Suggestions(padding)
+            current != null -> current.Content(padding)
+            else -> Recents(padding, largeTitle)
         }
     }
 
     @Composable
-    private fun Suggestions(state: SearchState, padding: PaddingValues) {
+    private fun Suggestions(padding: PaddingValues) {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
             items(state.suggestions, key = { it.id }) { tag ->
                 Row(
@@ -509,10 +593,10 @@ class SearchScreen : Screen() {
     }
 
     @Composable
-    private fun Recents(state: SearchState, padding: PaddingValues) {
+    private fun Recents(padding: PaddingValues, largeTitle: String?) {
         val context = LocalContext.current
         LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
-            item { LargeTitle(tr("Search")) }
+            largeTitle?.let { item { LargeTitle(it) } }
             if (RecentSearches.items.isEmpty()) {
                 item {
                     EmptyState(
@@ -533,11 +617,7 @@ class SearchScreen : Screen() {
                             Modifier
                                 .fillMaxWidth()
                                 .background(AppTheme.colors.background)
-                                .clickable {
-                                    state.text = term
-                                    state.query = term
-                                    state.submitCount++
-                                }
+                                .clickable { state.submit(term) }
                                 .padding(horizontal = 20.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -614,14 +694,7 @@ fun SearchBar(modifier: Modifier = Modifier) {
         text = state.text,
         onTextChange = { state.text = it },
         placeholder = tr("Titles, tags, artists, IDs"),
-        onSubmit = {
-            val trimmed = state.text.trim()
-            if (trimmed.isNotEmpty()) {
-                state.suggestions.clear()
-                state.query = trimmed
-                state.submitCount++
-            }
-        },
+        onSubmit = { state.submit(state.text) },
         modifier = modifier,
     )
 }

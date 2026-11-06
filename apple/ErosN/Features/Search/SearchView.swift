@@ -3,43 +3,79 @@ import SwiftUI
 /// The system Search tab: search field with tag suggestions, recent
 /// searches, and results.
 struct SearchView: View {
-    @Environment(AppSettings.self) private var settings
+    var body: some View {
+        SearchHost()
+            .navigationTitle("Search")
+    }
+}
+
+/// Search field with tag suggestions, recent searches and results. Given
+/// [idle] content (the iPad Home page), that content shows until the search
+/// field is used, and the search shows over it, so it keeps its scroll
+/// position; the closure is told whether the search is showing.
+struct SearchHost<Idle: View>: View {
+    private let placement: SearchFieldPlacement
+    private let idle: ((Bool) -> Idle)?
+
     @State private var text = ""
     @State private var query = ""
+    @State private var isPresented = false
     @State private var suggestions: [TagSuggestion] = []
     @State private var recents = RecentSearches()
 
+    init(placement: SearchFieldPlacement = .automatic, @ViewBuilder idle: @escaping (_ searching: Bool) -> Idle) {
+        self.placement = placement
+        self.idle = idle
+    }
+
+    private var searching: Bool { isPresented || !query.isEmpty }
+
     var body: some View {
-        Group {
-            if query.isEmpty {
-                recentList
-            } else {
-                SearchResults(query: query)
-                    .id(query)
-            }
-        }
-        .navigationTitle("Search")
-        .searchable(text: $text, prompt: "Titles, tags, artists, IDs")
-        .searchSuggestions {
-            ForEach(suggestions) { tag in
-                Label {
-                    HStack {
-                        Text(tag.name)
-                        Spacer()
-                        Text(tag.type.capitalized)
-                            .foregroundStyle(.secondary)
+        content
+            .searchable(text: $text, isPresented: $isPresented, placement: placement, prompt: "Titles, tags, artists, IDs")
+            .searchSuggestions {
+                ForEach(suggestions) { tag in
+                    Label {
+                        HStack {
+                            Text(tag.name)
+                            Spacer()
+                            Text(tag.type.capitalized)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "tag")
                     }
-                } icon: {
-                    Image(systemName: "tag")
+                    .searchCompletion(completion(for: tag))
                 }
-                .searchCompletion(completion(for: tag))
             }
+            .onSubmit(of: .search) { submit(text) }
+            .onChange(of: text) { _, new in
+                if new.isEmpty { query = "" }
+            }
+            .task(id: text) { await loadSuggestions() }
+    }
+
+    @ViewBuilder private var content: some View {
+        if let idle {
+            idle(searching)
+                .overlay {
+                    if searching {
+                        searchContent
+                            .background(.background)
+                    }
+                }
+        } else {
+            searchContent
         }
-        .onSubmit(of: .search) { submit(text) }
-        .onChange(of: text) { _, new in
-            if new.isEmpty { query = "" }
+    }
+
+    @ViewBuilder private var searchContent: some View {
+        if query.isEmpty {
+            recentList
+        } else {
+            SearchResults(query: query)
+                .id(query)
         }
-        .task(id: text) { await loadSuggestions() }
     }
 
     private var recentList: some View {
@@ -99,6 +135,13 @@ struct SearchView: View {
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         suggestions = (try? await NHClient.shared.suggestTags(word)) ?? []
+    }
+}
+
+extension SearchHost where Idle == EmptyView {
+    init(placement: SearchFieldPlacement = .automatic) {
+        self.placement = placement
+        self.idle = nil
     }
 }
 

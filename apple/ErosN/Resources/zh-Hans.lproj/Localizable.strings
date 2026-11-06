@@ -218,7 +218,7 @@
 "Left" = "靠左";
 "Center" = "居中";
 "Right" = "靠右";
-"Automatic moves the tab bar to the side you touch the screen on most." = "选择「自动」时，标签栏会移到你最常触摸屏幕的一侧。";
+"Automatic moves the tab bar to the side of the screen you touched last." = "选择「自动」时，标签栏会移到你最后触摸的屏幕一侧。";
 
 /* Tags */
 "Show Less" = "收起";

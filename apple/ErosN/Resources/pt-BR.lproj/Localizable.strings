@@ -188,5 +188,5 @@
 "Left" = "Esquerda";
 "Center" = "Centro";
 "Right" = "Direita";
-"Automatic moves the tab bar to the side you touch the screen on most." = "No modo Automática, a barra de abas vai para o lado da tela que você mais toca.";
+"Automatic moves the tab bar to the side of the screen you touched last." = "No modo Automática, a barra de abas vai para o lado da tela que você tocou por último.";
 "Show Less" = "Mostrar menos";

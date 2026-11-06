@@ -189,7 +189,7 @@
     <string name="l_186">À gauche</string>
     <string name="l_187">Au centre</string>
     <string name="l_188">À droite</string>
-    <string name="l_189">En mode automatique, la barre d’onglets se place du côté de l’écran que vous touchez le plus.</string>
+    <string name="l_189">En mode automatique, la barre d’onglets se place du côté de l’écran que vous avez touché en dernier.</string>
     <string name="l_190">Afficher moins</string>
     <string name="l_191">Sauvegarde des réglages</string>
     <string name="l_192">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>

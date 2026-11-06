@@ -189,7 +189,7 @@
     <string name="l_186">Esquerda</string>
     <string name="l_187">Centro</string>
     <string name="l_188">Direita</string>
-    <string name="l_189">No modo Automática, a barra de abas vai para o lado da tela que você mais toca.</string>
+    <string name="l_189">No modo Automática, a barra de abas vai para o lado da tela que você tocou por último.</string>
     <string name="l_190">Mostrar menos</string>
     <string name="l_191">Backup dos ajustes</string>
     <string name="l_192">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>

@@ -8,6 +8,7 @@ import android.graphics.Shader
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -164,6 +165,17 @@ class ScreenshotTest {
         val tabs = Tabs()
         tabs.home.push(GalleryScreen(500001, null))
         shoot("13_gallery_zh_dark", tabs)
+    }
+
+    @Config(qualifiers = "w834dp-h1194dp-xhdpi")
+    @Test fun tabletSearch() {
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Leading
+        shoot("18_tablet_left")
+        compose.onNodeWithContentDescription("Search").performClick()
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/19_tablet_search.png")
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Automatic
     }
 
     @Config(qualifiers = "w834dp-h1194dp-xhdpi")

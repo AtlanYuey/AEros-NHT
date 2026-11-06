@@ -51,26 +51,19 @@ enum class TabBarPosition(val raw: String, val title: String) {
     }
 }
 
-/** Guesses the hand in use from where the screen is touched. */
+/** Follows the hand in use: the side of the screen touched last. */
 object HandTracker {
     enum class Side { Leading, Center, Trailing }
 
-    var side by androidx.compose.runtime.mutableStateOf(Side.Center)
+    var side by androidx.compose.runtime.mutableStateOf(Side.Trailing)
         private set
-    private val samples = ArrayDeque<Float>()
 
-    /** A touch at [fraction] of the screen width (0 = left edge). */
+    /** A touch at [fraction] of the screen width (0 = left edge); touches near the middle keep the side. */
     fun record(fraction: Float) {
-        samples.addLast(fraction)
-        while (samples.size > 16) samples.removeFirst()
-        if (samples.size < 6) return
-        val right = samples.count { it > 0.6f }.toFloat() / samples.size
-        val left = samples.count { it < 0.4f }.toFloat() / samples.size
         side = when {
-            right >= 0.65f -> Side.Trailing
-            left >= 0.65f -> Side.Leading
-            right < 0.45f && left < 0.45f -> Side.Center
-            else -> side
+            fraction > 0.6f -> Side.Trailing
+            fraction < 0.4f -> Side.Leading
+            else -> return
         }
     }
 }

@@ -405,7 +405,7 @@ class AppearanceScreen : Screen() {
                 ToggleRow(tr("Blur Covers"), AppSettings.blurCovers, { AppSettings.blurCovers = it }, last = true)
             }
             if (large) {
-                section(footer = { FooterText(tr("Automatic moves the tab bar to the side you touch the screen on most.")) }) {
+                section(footer = { FooterText(tr("Automatic moves the tab bar to the side of the screen you touched last.")) }) {
                     PickerRow(
                         tr("Tab Bar Position"),
                         com.atlanyuey.nhentai.core.TabBarPosition.entries,

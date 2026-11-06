@@ -16,8 +16,8 @@ android {
         applicationId = "com.atlanyuey.nhentai"
         minSdk = 26
         targetSdk = 37
-        versionCode = 3
-        versionName = "2.1.2"
+        versionCode = 4
+        versionName = "2.1.3"
     }
     androidResources {
         localeFilters += listOf(

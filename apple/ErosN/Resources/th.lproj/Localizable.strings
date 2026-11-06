@@ -188,5 +188,5 @@
 "Left" = "ซ้าย";
 "Center" = "กึ่งกลาง";
 "Right" = "ขวา";
-"Automatic moves the tab bar to the side you touch the screen on most." = "เมื่อเลือกอัตโนมัติ แถบแท็บจะย้ายไปฝั่งที่คุณแตะหน้าจอบ่อยที่สุด";
+"Automatic moves the tab bar to the side of the screen you touched last." = "เมื่อเลือกอัตโนมัติ แถบแท็บจะย้ายไปฝั่งของหน้าจอที่คุณแตะล่าสุด";
 "Show Less" = "แสดงน้อยลง";

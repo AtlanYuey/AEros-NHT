@@ -189,7 +189,7 @@
     <string name="l_186">左</string>
     <string name="l_187">中央</string>
     <string name="l_188">右</string>
-    <string name="l_189">「自動」では、画面を最もよく触れる側にタブバーが移動します。</string>
+    <string name="l_189">「自動」では、最後に触れた画面の側にタブバーが移動します。</string>
     <string name="l_190">折りたたむ</string>
     <string name="l_191">設定のバックアップ</string>
     <string name="l_192">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>

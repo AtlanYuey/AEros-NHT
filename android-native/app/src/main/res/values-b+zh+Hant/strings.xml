@@ -189,7 +189,7 @@
     <string name="l_186">靠左</string>
     <string name="l_187">置中</string>
     <string name="l_188">靠右</string>
-    <string name="l_189">選擇「自動」時，標籤列會移到你最常觸碰螢幕的一側。</string>
+    <string name="l_189">選擇「自動」時，標籤列會移到你最後觸碰的螢幕一側。</string>
     <string name="l_190">收合</string>
     <string name="l_191">設定備份</string>
     <string name="l_192">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>

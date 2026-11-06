@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
@@ -13,8 +14,20 @@ struct HomeView: View {
     }
 
     var body: some View {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // iPad: the search field sits in the toolbar next to the menus and
+            // searches in place, over the feed.
+            SearchHost(placement: .toolbar) { searching in
+                feedView(showsMenus: !searching)
+            }
+        } else {
+            feedView(showsMenus: true)
+        }
+    }
+
+    private func feedView(showsMenus: Bool) -> some View {
         @Bindable var settings = settings
-        ScrollView {
+        return ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if !popular.isEmpty {
                     SectionTitle(title: "Popular Now")
@@ -31,20 +44,22 @@ struct HomeView: View {
         }
         .navigationTitle("Home")
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Language", selection: $settings.homeLanguage) {
-                        ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+            if showsMenus {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Language", selection: $settings.homeLanguage) {
+                            ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
                     }
-                } label: {
-                    Label("Language", systemImage: "globe")
-                }
-                Menu {
-                    Picker("Sort", selection: $settings.homeSort) {
-                        ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                    Menu {
+                        Picker("Sort", selection: $settings.homeSort) {
+                            ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }
             }
         }

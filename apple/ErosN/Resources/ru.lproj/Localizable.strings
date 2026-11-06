@@ -188,5 +188,5 @@
 "Left" = "Слева";
 "Center" = "По центру";
 "Right" = "Справа";
-"Automatic moves the tab bar to the side you touch the screen on most." = "В режиме «Автоматически» панель вкладок переходит на ту сторону экрана, которой вы касаетесь чаще.";
+"Automatic moves the tab bar to the side of the screen you touched last." = "В режиме «Автоматически» панель вкладок переходит на ту сторону экрана, которой вы коснулись последней.";
 "Show Less" = "Свернуть";

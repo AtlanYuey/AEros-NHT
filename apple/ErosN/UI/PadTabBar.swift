@@ -13,8 +13,8 @@ final class AppChrome {
     var hidesTabBar: Bool { readersOpen > 0 }
 }
 
-/// Guesses which hand holds the device from where the screen is touched:
-/// mostly on the right, mostly on the left, or both.
+/// Follows the hand in use: the side of the screen touched last. Touches
+/// near the middle keep the current side.
 @MainActor
 @Observable
 final class HandTracker {
@@ -25,40 +25,30 @@ final class HandTracker {
     }
 
     private(set) var side: Side
-    @ObservationIgnored private var samples: [CGFloat] = []
 
     private init() {
-        side = Side(rawValue: UserDefaults.standard.string(forKey: "handSide") ?? "") ?? .center
+        side = Side(rawValue: UserDefaults.standard.string(forKey: "handSide") ?? "") ?? .trailing
     }
 
     /// A touch at [fraction] of the screen width (0 = left edge).
     func record(_ fraction: CGFloat) {
-        samples.append(fraction)
-        if samples.count > 16 { samples.removeFirst(samples.count - 16) }
-        guard samples.count >= 6 else { return }
-        let count = CGFloat(samples.count)
-        let right = CGFloat(samples.filter { $0 > 0.6 }.count) / count
-        let left = CGFloat(samples.filter { $0 < 0.4 }.count) / count
         let next: Side
-        if right >= 0.65 {
+        if fraction > 0.6 {
             next = .trailing
-        } else if left >= 0.65 {
+        } else if fraction < 0.4 {
             next = .leading
-        } else if right < 0.45 && left < 0.45 {
-            next = .center
         } else {
-            next = side
+            return
         }
-        if next != side {
-            side = next
-            UserDefaults.standard.set(next.rawValue, forKey: "handSide")
-        }
+        guard next != side else { return }
+        side = next
+        UserDefaults.standard.set(next.rawValue, forKey: "handSide")
     }
 }
 
 /// Watches touches anywhere in the window without taking part in them.
 private final class TouchRecorder: UIGestureRecognizer {
-    var onTouch: (@MainActor (CGFloat) -> Void)?
+    var onTouch: (@MainActor (CGPoint, CGFloat) -> Void)?
 
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
@@ -69,7 +59,7 @@ private final class TouchRecorder: UIGestureRecognizer {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         if let touch = touches.first, let view, view.bounds.width > 0 {
-            onTouch?(touch.location(in: view).x / view.bounds.width)
+            onTouch?(touch.location(in: view), view.bounds.width)
         }
         state = .failed
     }
@@ -77,7 +67,7 @@ private final class TouchRecorder: UIGestureRecognizer {
 
 /// Installs a [TouchRecorder] on the window that hosts it.
 private struct TouchObserver: UIViewRepresentable {
-    let onTouch: @MainActor (CGFloat) -> Void
+    let onTouch: @MainActor (CGPoint, CGFloat) -> Void
 
     func makeUIView(context: Context) -> ObserverView {
         let view = ObserverView()
@@ -91,14 +81,14 @@ private struct TouchObserver: UIViewRepresentable {
     }
 
     final class ObserverView: UIView {
-        var onTouch: (@MainActor (CGFloat) -> Void)?
+        var onTouch: (@MainActor (CGPoint, CGFloat) -> Void)?
         private weak var recorder: TouchRecorder?
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
             guard let window, recorder == nil else { return }
             let recorder = TouchRecorder(target: nil, action: nil)
-            recorder.onTouch = { [weak self] fraction in self?.onTouch?(fraction) }
+            recorder.onTouch = { [weak self] point, width in self?.onTouch?(point, width) }
             window.addGestureRecognizer(recorder)
             self.recorder = recorder
         }
@@ -106,14 +96,16 @@ private struct TouchObserver: UIViewRepresentable {
 }
 
 /// iPad: the tabs with a floating glass tab bar at the bottom (left,
-/// center or right; automatically on the side of the hand in use) and a
-/// separate round search button, instead of the tab bar at the top.
+/// center or right; automatically on the side of the hand in use) instead
+/// of the tab bar at the top. Search is on the Home page.
 struct PadRootView: View {
     @Binding var selection: AppTab
 
     @Environment(AppSettings.self) private var settings
     @State private var chrome = AppChrome.shared
     @State private var hand = HandTracker.shared
+    /// Where the bar is (window coordinates); touches on it don't move it.
+    @State private var barFrame: CGRect = .zero
 
     var body: some View {
         ZStack {
@@ -121,15 +113,18 @@ struct PadRootView: View {
             tab(.favorites) { FavoritesView() }
             tab(.history) { HistoryView() }
             tab(.more) { MoreView() }
-            tab(.search) { SearchView() }
         }
         .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar) {
             PadTabBar(selection: $selection)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { barFrame = $0 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 6)
         })
-        .background(TouchObserver { hand.record($0) })
-        .animation(.spring(duration: 0.45, bounce: 0.2), value: alignment)
+        .background(TouchObserver { point, width in
+            guard !chrome.hidesTabBar, width > 0, !barFrame.insetBy(dx: -10, dy: -10).contains(point) else { return }
+            hand.record(point.x / width)
+        })
+        .animation(.spring(duration: 0.3, bounce: 0.15), value: alignment)
         .animation(.smooth(duration: 0.25), value: chrome.hidesTabBar)
     }
 
@@ -153,7 +148,8 @@ struct PadRootView: View {
 
     /// Every tab keeps its own navigation stack; only the selected one shows.
     private func tab<Content: View>(_ value: AppTab, @ViewBuilder content: () -> Content) -> some View {
-        let selected = selection == value
+        // There is no search tab on iPad: Home has the search field.
+        let selected = selection == value || (value == .home && selection == .search)
         return NavigationStack {
             content().galleryDestinations()
         }
@@ -184,8 +180,7 @@ private struct BottomBar<Bar: View>: ViewModifier {
     }
 }
 
-/// Floating tab bar: a glass capsule with the tabs and a glass circle for
-/// search (like the iPhone tab bar in iOS 26).
+/// Floating tab bar: a glass capsule with the tabs.
 struct PadTabBar: View {
     @Binding var selection: AppTab
     @Namespace private var namespace
@@ -205,34 +200,19 @@ struct PadTabBar: View {
 
     var body: some View {
         GlassGroup {
-            HStack(spacing: 12) {
-                HStack(spacing: 2) {
-                    ForEach(items, id: \.tab) { item in
-                        tabButton(item)
-                    }
+            HStack(spacing: 2) {
+                ForEach(items, id: \.tab) { item in
+                    tabButton(item)
                 }
-                .padding(4)
-                .modifier(GlassBackground(shape: Capsule()))
-
-                Button {
-                    select(.search)
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 21, weight: .medium))
-                        .foregroundStyle(selection == .search ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
-                        .frame(width: 62, height: 62)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Search"))
-                .modifier(GlassBackground(shape: Circle()))
             }
+            .padding(4)
+            .modifier(GlassBackground(shape: Capsule()))
         }
         .sensoryFeedback(.selection, trigger: selection)
     }
 
     private func tabButton(_ item: Item) -> some View {
-        let selected = selection == item.tab
+        let selected = selection == item.tab || (item.tab == .home && selection == .search)
         return Button {
             select(item.tab)
         } label: {

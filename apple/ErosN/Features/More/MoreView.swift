@@ -312,7 +312,7 @@ struct AppearanceSettingsView: View {
                         ForEach(TabBarPosition.allCases) { Text($0.title).tag($0) }
                     }
                 } footer: {
-                    Text("Automatic moves the tab bar to the side you touch the screen on most.")
+                    Text("Automatic moves the tab bar to the side of the screen you touched last.")
                 }
             }
             TagSettingsSection(settings: settings)

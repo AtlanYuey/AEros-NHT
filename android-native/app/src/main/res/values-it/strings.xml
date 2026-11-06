@@ -189,7 +189,7 @@
     <string name="l_186">Sinistra</string>
     <string name="l_187">Centro</string>
     <string name="l_188">Destra</string>
-    <string name="l_189">Con Automatica, la barra si sposta sul lato dello schermo che tocchi più spesso.</string>
+    <string name="l_189">Con Automatica, la barra si sposta sul lato dello schermo che hai toccato per ultimo.</string>
     <string name="l_190">Mostra meno</string>
     <string name="l_191">Backup impostazioni</string>
     <string name="l_192">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>

@@ -188,5 +188,5 @@
 "Left" = "Kiri";
 "Center" = "Tengah";
 "Right" = "Kanan";
-"Automatic moves the tab bar to the side you touch the screen on most." = "Jika Otomatis, bar tab pindah ke sisi layar yang paling sering Anda sentuh.";
+"Automatic moves the tab bar to the side of the screen you touched last." = "Jika Otomatis, bar tab pindah ke sisi layar yang terakhir Anda sentuh.";
 "Show Less" = "Tampilkan Lebih Sedikit";

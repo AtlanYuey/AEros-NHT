@@ -1,5 +1,10 @@
 package com.atlanyuey.nhentai.ui
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import android.content.ClipboardManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -82,7 +87,10 @@ class Tabs {
 
 private const val SEARCH = 4
 
-/** Tabs with the iOS 26 floating glass tab bar and the separate search button. */
+/**
+ * Tabs with the iOS 26 floating glass tab bar and the separate search
+ * button. Large screens have no search button: Home searches in place.
+ */
 @Composable
 fun RootView(
     linkedGallery: androidx.compose.runtime.MutableState<Int?>,
@@ -100,6 +108,10 @@ fun RootView(
     // the side of the hand in use); phones keep it centered.
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val large = configuration.smallestScreenWidthDp >= 600
+    LaunchedEffect(large) { if (large && selected == SEARCH) selected = lastTab }
+    // Where the bar is; touches on it don't move it.
+    var barBounds by remember { mutableStateOf(Rect.Zero) }
+    val tracksHand by rememberUpdatedState(large && showTabBar)
     val position = when (AppSettings.tabBarPosition) {
         TabBarPosition.Automatic -> when (HandTracker.side) {
             HandTracker.Side.Leading -> TabBarPosition.Leading
@@ -154,8 +166,10 @@ fun RootView(
                     awaitPointerEventScope {
                         while (true) {
                             val event = awaitPointerEvent(PointerEventPass.Initial)
-                            if (event.type == PointerEventType.Press && size.width > 0) {
-                                event.changes.firstOrNull()?.let { HandTracker.record(it.position.x / size.width) }
+                            if (event.type == PointerEventType.Press && size.width > 0 && tracksHand) {
+                                event.changes.firstOrNull()
+                                    ?.takeUnless { barBounds.inflate(10.dp.toPx()).contains(it.position) }
+                                    ?.let { HandTracker.record(it.position.x / size.width) }
                             }
                         }
                     }
@@ -177,7 +191,8 @@ fun RootView(
                         .navigationBarsPadding()
                         .imePadding()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                        .then(if (large) Modifier.width(440.dp) else Modifier.widthIn(max = 560.dp)),
+                        .then(if (large) Modifier.width(366.dp) else Modifier.widthIn(max = 560.dp))
+                        .onGloballyPositioned { barBounds = it.boundsInRoot() },
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -210,14 +225,16 @@ fun RootView(
                                 }
                             }
                         }
-                        GlassCircleButton(
-                            icon = Icons.Search,
-                            contentDescription = tr("Search"),
-                            onClick = { select(SEARCH) },
-                            size = 64.dp,
-                            iconSize = 24.dp,
-                            backdrop = backdrop,
-                        )
+                        if (!large) {
+                            GlassCircleButton(
+                                icon = Icons.Search,
+                                contentDescription = tr("Search"),
+                                onClick = { select(SEARCH) },
+                                size = 64.dp,
+                                iconSize = 24.dp,
+                                backdrop = backdrop,
+                            )
+                        }
                     }
                 }
             }

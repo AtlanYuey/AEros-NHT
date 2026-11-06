@@ -193,3 +193,12 @@
 "Save Search History" = "검색 기록 저장";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "검색을 시작하면 최근 검색어가 표시되고 설정과 함께 iCloud로 동기화됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.";
 "Gallery #%lld" = "작품 #%lld";
+"Hide Bars When Scrolling" = "스크롤 시 막대 숨기기";
+"Hide Search Too" = "검색도 숨기기";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "목록을 아래로 스크롤하면 위아래 막대가 숨겨지고, 위로 스크롤하면 다시 나타납니다. ‘검색도 숨기기’를 끄면 둥근 검색 버튼이 남습니다.";
+"Tab Bar Follows Your Hand" = "탭 막대가 손을 따라가기";
+"Follow Speed" = "따라가는 속도";
+"Fast" = "빠름";
+"Medium" = "보통";
+"Slow" = "느림";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "탭 막대가 터치한 화면 쪽으로 이동합니다. ‘빠름’은 첫 터치에, ‘보통’은 같은 쪽을 두 번 연속 터치하면, ‘느림’은 네 번 터치하면 이동합니다.";

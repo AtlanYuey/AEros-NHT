@@ -306,13 +306,27 @@ struct AppearanceSettingsView: View {
             } footer: {
                 Text("Card size applies to the grid and waterfall styles.")
             }
+            Section {
+                Toggle("Hide Bars When Scrolling", isOn: $settings.hideBarsOnScroll)
+                Toggle("Hide Search Too", isOn: $settings.hideSearchOnScroll)
+                    .disabled(!settings.hideBarsOnScroll)
+            } footer: {
+                Text("Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays.")
+            }
             if UIDevice.current.userInterfaceIdiom == .pad {
                 Section {
-                    Picker("Tab Bar Position", selection: $settings.tabBarPosition) {
-                        ForEach(TabBarPosition.allCases) { Text($0.title).tag($0) }
+                    Toggle("Tab Bar Follows Your Hand", isOn: $settings.followHand)
+                    if settings.followHand {
+                        Picker("Follow Speed", selection: $settings.followSpeed) {
+                            ForEach(FollowSpeed.allCases) { Text($0.title).tag($0) }
+                        }
+                    } else {
+                        Picker("Tab Bar Position", selection: $settings.tabBarPosition) {
+                            ForEach(TabBarPosition.allCases) { Text($0.title).tag($0) }
+                        }
                     }
                 } footer: {
-                    Text("Automatic moves the tab bar to the side of the screen you touched last.")
+                    Text("The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four.")
                 }
             }
             TagSettingsSection(settings: settings)
@@ -594,10 +608,7 @@ struct AboutView: View {
         List {
             Section {
                 VStack(spacing: 10) {
-                    Image("AboutIcon")
-                        .resizable()
-                        .frame(width: 88, height: 88)
-                        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    AboutIcon()
                     Text(verbatim: "AEros-NHT").font(.title2.bold())
                     Text("Version \(version)")
                         .font(.subheadline)

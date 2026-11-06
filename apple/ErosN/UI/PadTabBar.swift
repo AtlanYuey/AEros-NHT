@@ -3,7 +3,8 @@ import SwiftUI
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
-/// App-wide chrome state (the reader hides the iPad tab bar).
+/// App-wide chrome state: the reader hides the iPad tab bar, and scrolling
+/// a list down can hide the bars (Appearance › Hide Bars When Scrolling).
 @MainActor
 @Observable
 final class AppChrome {
@@ -11,10 +12,17 @@ final class AppChrome {
 
     var readersOpen = 0
     var hidesTabBar: Bool { readersOpen > 0 }
+
+    /// A list was scrolled down: its navigation bar and the tab bar hide.
+    var barsHidden = false
+    /// Bumped to put the cursor in the search field (the floating search
+    /// button while the bars are hidden).
+    var searchRequest = 0
 }
 
-/// Follows the hand in use: the side of the screen touched last. Touches
-/// near the middle keep the current side.
+/// Follows the hand in use: the side of the screen touched last ([record]'s
+/// `touches` in a row on the other side move it). Touches near the middle
+/// keep the current side.
 @MainActor
 @Observable
 final class HandTracker {
@@ -25,13 +33,15 @@ final class HandTracker {
     }
 
     private(set) var side: Side
+    @ObservationIgnored private var pending: Side?
+    @ObservationIgnored private var streak = 0
 
     private init() {
         side = Side(rawValue: UserDefaults.standard.string(forKey: "handSide") ?? "") ?? .trailing
     }
 
     /// A touch at [fraction] of the screen width (0 = left edge).
-    func record(_ fraction: CGFloat) {
+    func record(_ fraction: CGFloat, touches: Int) {
         let next: Side
         if fraction > 0.6 {
             next = .trailing
@@ -40,15 +50,36 @@ final class HandTracker {
         } else {
             return
         }
-        guard next != side else { return }
+        guard next != side else {
+            pending = nil
+            streak = 0
+            return
+        }
+        if pending == next {
+            streak += 1
+        } else {
+            pending = next
+            streak = 1
+        }
+        guard streak >= touches else { return }
+        pending = nil
+        streak = 0
         side = next
         UserDefaults.standard.set(next.rawValue, forKey: "handSide")
     }
 }
 
+/// A touch seen by [TouchObserver].
+struct TouchInfo {
+    /// In window coordinates.
+    let location: CGPoint
+    let windowSize: CGSize
+    let safeArea: UIEdgeInsets
+}
+
 /// Watches touches anywhere in the window without taking part in them.
 private final class TouchRecorder: UIGestureRecognizer {
-    var onTouch: (@MainActor (CGPoint, CGFloat) -> Void)?
+    var onTouch: (@MainActor (TouchInfo) -> Void)?
 
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
@@ -59,15 +90,17 @@ private final class TouchRecorder: UIGestureRecognizer {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
         if let touch = touches.first, let view, view.bounds.width > 0 {
-            onTouch?(touch.location(in: view), view.bounds.width)
+            onTouch?(TouchInfo(location: touch.location(in: view), windowSize: view.bounds.size,
+                               safeArea: view.safeAreaInsets))
         }
         state = .failed
     }
 }
 
-/// Installs a [TouchRecorder] on the window that hosts it.
-private struct TouchObserver: UIViewRepresentable {
-    let onTouch: @MainActor (CGPoint, CGFloat) -> Void
+/// Installs a [TouchRecorder] on the window that hosts it, and removes it
+/// when the view leaves the window.
+struct TouchObserver: UIViewRepresentable {
+    let onTouch: @MainActor (TouchInfo) -> Void
 
     func makeUIView(context: Context) -> ObserverView {
         let view = ObserverView()
@@ -81,23 +114,27 @@ private struct TouchObserver: UIViewRepresentable {
     }
 
     final class ObserverView: UIView {
-        var onTouch: (@MainActor (CGPoint, CGFloat) -> Void)?
-        private weak var recorder: TouchRecorder?
+        var onTouch: (@MainActor (TouchInfo) -> Void)?
+        private var recorder: TouchRecorder?
 
         override func didMoveToWindow() {
             super.didMoveToWindow()
+            if let recorder, recorder.view !== window {
+                recorder.view?.removeGestureRecognizer(recorder)
+                self.recorder = nil
+            }
             guard let window, recorder == nil else { return }
             let recorder = TouchRecorder(target: nil, action: nil)
-            recorder.onTouch = { [weak self] point, width in self?.onTouch?(point, width) }
+            recorder.onTouch = { [weak self] touch in self?.onTouch?(touch) }
             window.addGestureRecognizer(recorder)
             self.recorder = recorder
         }
     }
 }
 
-/// iPad: the tabs with a floating glass tab bar at the bottom (left,
-/// center or right; automatically on the side of the hand in use) instead
-/// of the tab bar at the top. Search is on the Home page.
+/// iPad: the tabs with a floating glass tab bar at the bottom (left, center
+/// or right, or following the hand in use) instead of the tab bar at the
+/// top. Search is on the Home page.
 struct PadRootView: View {
     @Binding var selection: AppTab
 
@@ -114,23 +151,40 @@ struct PadRootView: View {
             tab(.history) { HistoryView() }
             tab(.more) { MoreView() }
         }
-        .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar) {
+        .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar && !barsHidden) {
             PadTabBar(selection: $selection)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { barFrame = $0 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 6)
         })
-        .background(TouchObserver { point, width in
-            guard !chrome.hidesTabBar, width > 0, !barFrame.insetBy(dx: -10, dy: -10).contains(point) else { return }
-            hand.record(point.x / width)
+        .background(TouchObserver { touch in
+            guard settings.followHand, !chrome.hidesTabBar, !chrome.barsHidden,
+                  !barFrame.insetBy(dx: -10, dy: -10).contains(touch.location) else { return }
+            hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })
-        .animation(.spring(duration: 0.3, bounce: 0.15), value: alignment)
+        .overlay(alignment: .topTrailing) {
+            // Search lives in the Home page's bar; it stays reachable while
+            // the bars are hidden unless Hide Search Too is on.
+            if barsHidden, !settings.hideSearchOnScroll, !chrome.hidesTabBar {
+                FloatingSearchButton {
+                    withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
+                    selection = .home
+                    chrome.searchRequest += 1
+                }
+                .padding(.trailing, 20)
+                .padding(.top, 4)
+            }
+        }
+        .onChange(of: selection) { chrome.barsHidden = false }
+        .animation(.spring(duration: settings.followSpeed.duration, bounce: 0.15), value: alignment)
         .animation(.smooth(duration: 0.25), value: chrome.hidesTabBar)
     }
 
+    private var barsHidden: Bool { settings.hideBarsOnScroll && chrome.barsHidden }
+
     private var alignment: HorizontalAlignment {
         let position: TabBarPosition
-        if settings.tabBarPosition == .automatic {
+        if settings.followHand {
             switch hand.side {
             case .leading: position = .leading
             case .center: position = .center

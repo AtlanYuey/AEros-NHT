@@ -194,9 +194,18 @@
     <string name="l_191">Salvar histórico de busca</string>
     <string name="l_192">As buscas recentes aparecem quando você começa uma busca e são sincronizadas pelo iCloud com seus ajustes. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
     <string name="l_193">Galeria #%d</string>
-    <string name="l_194">Backup dos ajustes</string>
-    <string name="l_195">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_196">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_197">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_198">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_194">Ocultar barras ao rolar</string>
+    <string name="l_195">Ocultar também a busca</string>
+    <string name="l_196">Rolar uma lista para baixo oculta as barras de cima e de baixo; rolar para cima as mostra de novo. Com “Ocultar também a busca” desativado, um botão de busca redondo continua visível.</string>
+    <string name="l_197">A barra segue sua mão</string>
+    <string name="l_198">Velocidade</string>
+    <string name="l_199">Rápida</string>
+    <string name="l_200">Média</string>
+    <string name="l_201">Lenta</string>
+    <string name="l_202">A barra de abas vai para o lado da tela que você toca: Rápida no primeiro toque, Média após dois toques nesse lado e Lenta após quatro.</string>
+    <string name="l_203">Backup dos ajustes</string>
+    <string name="l_204">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_205">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_206">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_207">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

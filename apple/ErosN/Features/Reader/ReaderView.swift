@@ -70,6 +70,13 @@ struct ReaderView: View {
     @State private var autoRead = false
     @State private var showSettings = false
     @State private var sliderValue: Double
+    /// Bumped by every touch while the controls show: they hide 1 s after the last one.
+    @State private var chromeActivity = 0
+    @State private var sliderEditing = false
+    /// A touch in the top bar (its menu may be open): the controls stay until the next touch elsewhere.
+    @State private var topBarTouched = false
+    /// The page was changed with the controls, which then stay.
+    @State private var turnFromPanel = false
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var modelContext
@@ -141,10 +148,29 @@ struct ReaderView: View {
             .persistentSystemOverlays(chromeVisible ? .automatic : .hidden)
             .environment(\.colorScheme, .dark)
             .animation(.smooth(duration: 0.25), value: chromeVisible)
+            .background(TouchObserver { touch in
+                guard chromeVisible else { return }
+                topBarTouched = touch.location.y < touch.safeArea.top + 64
+                chromeActivity += 1
+            })
+            .task(id: ChromeTimer(visible: chromeVisible, activity: chromeActivity,
+                                  held: sliderEditing || showSettings || topBarTouched)) {
+                // The controls hide on their own 1 s after they were last touched.
+                guard chromeVisible, !sliderEditing, !showSettings, !topBarTouched else { return }
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                chromeVisible = false
+            }
             .onChange(of: page) { _, new in
                 sliderValue = Double(new)
                 if position != new { position = new }
                 prefetch(around: new)
+                // Turning or scrolling pages hides the controls.
+                if turnFromPanel {
+                    turnFromPanel = false
+                } else if !sliderEditing {
+                    chromeVisible = false
+                }
             }
             .task(id: page) {
                 // Saved once the page settles, not on every turn (saving
@@ -201,6 +227,9 @@ struct ReaderView: View {
             }
             .scrollPosition(id: $position, anchor: .top)
             .scrollIndicators(.hidden)
+            .onScrollPhaseChange { _, phase in
+                if phase == .interacting, chromeVisible { chromeVisible = false }
+            }
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
         }
@@ -232,6 +261,13 @@ struct ReaderView: View {
         } else {
             position = target
         }
+    }
+
+    /// A page turn from the controls, which stay on screen.
+    private func goFromPanel(_ target: Int) {
+        guard (0..<pageCount).contains(target), target != page else { return }
+        turnFromPanel = true
+        go(target)
     }
 
     private func prefetch(around index: Int) {
@@ -269,7 +305,8 @@ struct ReaderView: View {
                     in: 0...Double(max(1, pageCount - 1)),
                     step: 1,
                     onEditingChanged: { editing in
-                        if !editing { go(Int(sliderValue)) }
+                        sliderEditing = editing
+                        if !editing { goFromPanel(Int(sliderValue)) }
                     }
                 )
                 .environment(\.layoutDirection, isRTL ? .rightToLeft : .leftToRight)
@@ -279,7 +316,7 @@ struct ReaderView: View {
             }
             HStack {
                 Button {
-                    go(isRTL ? page + 1 : page - 1)
+                    goFromPanel(isRTL ? page + 1 : page - 1)
                 } label: {
                     Image(systemName: "chevron.left")
                 }
@@ -298,7 +335,7 @@ struct ReaderView: View {
                 }
                 Spacer()
                 Button {
-                    go(isRTL ? page - 1 : page + 1)
+                    goFromPanel(isRTL ? page - 1 : page + 1)
                 } label: {
                     Image(systemName: "chevron.right")
                 }
@@ -313,6 +350,13 @@ struct ReaderView: View {
         .padding(.bottom, 8)
         .frame(maxWidth: 640)
     }
+}
+
+/// What restarts the timer that hides the reader controls.
+private struct ChromeTimer: Hashable {
+    let visible: Bool
+    let activity: Int
+    let held: Bool
 }
 
 /// A floating panel: Liquid Glass on iOS 26, material before.

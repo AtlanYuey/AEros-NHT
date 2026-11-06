@@ -193,3 +193,12 @@
 "Save Search History" = "Suchverlauf sichern";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Letzte Suchen werden beim Starten einer Suche angezeigt und mit deinen Einstellungen über iCloud synchronisiert. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.";
 "Gallery #%lld" = "Galerie #%lld";
+"Hide Bars When Scrolling" = "Leisten beim Scrollen ausblenden";
+"Hide Search Too" = "Suche auch ausblenden";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "Beim Scrollen nach unten werden die Leisten oben und unten ausgeblendet, beim Scrollen nach oben wieder eingeblendet. Ist „Suche auch ausblenden“ aus, bleibt eine runde Suchtaste sichtbar.";
+"Tab Bar Follows Your Hand" = "Tableiste folgt deiner Hand";
+"Follow Speed" = "Geschwindigkeit";
+"Fast" = "Schnell";
+"Medium" = "Mittel";
+"Slow" = "Langsam";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Die Tableiste wandert auf die Seite, die du berührst: Schnell bei der ersten Berührung, Mittel nach zwei Berührungen auf dieser Seite, Langsam nach vier.";

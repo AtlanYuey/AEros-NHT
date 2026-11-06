@@ -45,6 +45,7 @@ struct HomeView: View {
                 FeedFooter(feed: feed)
             }
         }
+        .hidesBarsOnScroll()
         .navigationTitle("Home")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {

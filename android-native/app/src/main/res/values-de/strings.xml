@@ -194,9 +194,18 @@
     <string name="l_191">Suchverlauf sichern</string>
     <string name="l_192">Letzte Suchen werden beim Starten einer Suche angezeigt und mit deinen Einstellungen über iCloud synchronisiert. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
     <string name="l_193">Galerie #%d</string>
-    <string name="l_194">Einstellungen sichern</string>
-    <string name="l_195">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_196">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_197">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_198">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_194">Leisten beim Scrollen ausblenden</string>
+    <string name="l_195">Suche auch ausblenden</string>
+    <string name="l_196">Beim Scrollen nach unten werden die Leisten oben und unten ausgeblendet, beim Scrollen nach oben wieder eingeblendet. Ist „Suche auch ausblenden“ aus, bleibt eine runde Suchtaste sichtbar.</string>
+    <string name="l_197">Tableiste folgt deiner Hand</string>
+    <string name="l_198">Geschwindigkeit</string>
+    <string name="l_199">Schnell</string>
+    <string name="l_200">Mittel</string>
+    <string name="l_201">Langsam</string>
+    <string name="l_202">Die Tableiste wandert auf die Seite, die du berührst: Schnell bei der ersten Berührung, Mittel nach zwei Berührungen auf dieser Seite, Langsam nach vier.</string>
+    <string name="l_203">Einstellungen sichern</string>
+    <string name="l_204">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_205">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_206">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_207">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

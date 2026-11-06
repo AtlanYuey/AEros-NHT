@@ -193,3 +193,12 @@
 "Save Search History" = "บันทึกประวัติการค้นหา";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "การค้นหาล่าสุดจะแสดงเมื่อคุณเริ่มค้นหา และซิงค์ผ่าน iCloud พร้อมการตั้งค่า เมื่อปิด การค้นหาใหม่จะไม่ถูกบันทึกและรายการจะถูกซ่อน";
 "Gallery #%lld" = "ผลงาน #%lld";
+"Hide Bars When Scrolling" = "ซ่อนแถบเมื่อเลื่อน";
+"Hide Search Too" = "ซ่อนการค้นหาด้วย";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "เมื่อเลื่อนรายการลง แถบด้านบนและด้านล่างจะถูกซ่อน และจะแสดงอีกครั้งเมื่อเลื่อนขึ้น หากปิด “ซ่อนการค้นหาด้วย” ปุ่มค้นหาทรงกลมจะยังคงแสดงอยู่";
+"Tab Bar Follows Your Hand" = "แถบแท็บตามมือของคุณ";
+"Follow Speed" = "ความเร็ว";
+"Fast" = "เร็ว";
+"Medium" = "ปานกลาง";
+"Slow" = "ช้า";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "แถบแท็บจะย้ายไปฝั่งที่คุณแตะ: เร็ว ย้ายเมื่อแตะครั้งแรก, ปานกลาง หลังแตะฝั่งนั้นสองครั้ง, ช้า หลังแตะสี่ครั้ง";

@@ -193,3 +193,12 @@
 "Save Search History" = "Сохранять историю поиска";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Недавние запросы показываются в начале поиска и синхронизируются через iCloud вместе с настройками. Если выключить, новые запросы не сохраняются, а список скрыт.";
 "Gallery #%lld" = "Галерея #%lld";
+"Hide Bars When Scrolling" = "Скрывать панели при прокрутке";
+"Hide Search Too" = "Скрывать и поиск";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "При прокрутке списка вниз верхняя и нижняя панели скрываются, при прокрутке вверх — появляются снова. Если «Скрывать и поиск» выключено, остаётся круглая кнопка поиска.";
+"Tab Bar Follows Your Hand" = "Панель следует за рукой";
+"Follow Speed" = "Скорость";
+"Fast" = "Быстро";
+"Medium" = "Средне";
+"Slow" = "Медленно";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Панель вкладок переходит на ту сторону экрана, которой вы касаетесь: «Быстро» — с первого касания, «Средне» — после двух касаний этой стороны, «Медленно» — после четырёх.";

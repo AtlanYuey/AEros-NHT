@@ -404,16 +404,35 @@ class AppearanceScreen : Screen() {
                 )
                 ToggleRow(tr("Blur Covers"), AppSettings.blurCovers, { AppSettings.blurCovers = it }, last = true)
             }
+            section(footer = { FooterText(tr("Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays.")) }) {
+                val hideBars = AppSettings.hideBarsOnScroll
+                ToggleRow(tr("Hide Bars When Scrolling"), hideBars, { AppSettings.hideBarsOnScroll = it }, last = !hideBars)
+                if (hideBars) {
+                    ToggleRow(tr("Hide Search Too"), AppSettings.hideSearchOnScroll, { AppSettings.hideSearchOnScroll = it }, last = true)
+                }
+            }
             if (large) {
-                section(footer = { FooterText(tr("Automatic moves the tab bar to the side of the screen you touched last.")) }) {
-                    PickerRow(
-                        tr("Tab Bar Position"),
-                        com.atlanyuey.nhentai.core.TabBarPosition.entries,
-                        AppSettings.tabBarPosition,
-                        { tr(it.title) },
-                        { AppSettings.tabBarPosition = it },
-                        last = true,
-                    )
+                section(footer = { FooterText(tr("The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four.")) }) {
+                    ToggleRow(tr("Tab Bar Follows Your Hand"), AppSettings.followHand, { AppSettings.followHand = it })
+                    if (AppSettings.followHand) {
+                        PickerRow(
+                            tr("Follow Speed"),
+                            com.atlanyuey.nhentai.core.FollowSpeed.entries,
+                            AppSettings.followSpeed,
+                            { tr(it.title) },
+                            { AppSettings.followSpeed = it },
+                            last = true,
+                        )
+                    } else {
+                        PickerRow(
+                            tr("Tab Bar Position"),
+                            com.atlanyuey.nhentai.core.TabBarPosition.entries,
+                            AppSettings.tabBarPosition,
+                            { tr(it.title) },
+                            { AppSettings.tabBarPosition = it },
+                            last = true,
+                        )
+                    }
                 }
             }
             section(
@@ -711,11 +730,7 @@ class AboutScreen : Screen() {
         GroupedListScreen(tr("About")) {
             item {
                 Column(Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(R.drawable.about_icon),
-                        contentDescription = null,
-                        modifier = Modifier.size(88.dp).clip(RoundedCornerShape(20.dp)),
-                    )
+                    AboutIcon()
                     Txt("AEros-NHT", style = Type.title2)
                     Txt(tr("Version %@", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
                     Txt(tr("A modified version of eros_n by honjow."), style = Type.footnote, color = AppTheme.colors.secondaryLabel, align = TextAlign.Center)

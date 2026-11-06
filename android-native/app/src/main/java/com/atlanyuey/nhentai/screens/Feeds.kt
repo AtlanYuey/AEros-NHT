@@ -1,5 +1,7 @@
 package com.atlanyuey.nhentai.screens
 
+import com.atlanyuey.nhentai.ui.components.hidesBarsOnScroll
+import com.atlanyuey.nhentai.ui.components.BarsState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.combinedClickable
 import androidx.activity.compose.BackHandler
@@ -196,8 +198,13 @@ class HomeScreen : Screen() {
             searchPanel.Effects()
             BackHandler { endSearch() }
         }
+        // The floating search button (bars hidden) opens the search here.
+        LaunchedEffect(large) {
+            snapshotFlow { BarsState.searchRequest }.drop(1).collect { if (large) searching = true }
+        }
         ScreenScaffold(
             title = tr("Home"),
+            hidesBarsOnScroll = true,
             showTitle = { !searching && grid.pastTitle() },
             trailing = {
                 if (searching) {
@@ -259,7 +266,7 @@ class FavoritesScreen : Screen() {
             if (loggedIn) feed.reload()
         }
         LaunchedEffect(feed.isLoading) { if (!feed.isLoading) pulling = false }
-        ScreenScaffold(title = tr("Favorites"), showTitle = { !loggedIn || grid.pastTitle() }) { padding ->
+        ScreenScaffold(title = tr("Favorites"), showTitle = { !loggedIn || grid.pastTitle() }, hidesBarsOnScroll = true) { padding ->
             if (!loggedIn) {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     EmptyState(
@@ -302,6 +309,7 @@ class HistoryScreen : Screen() {
         val clearLabel = tr("Clear History")
         ScreenScaffold(
             title = tr("History"),
+            hidesBarsOnScroll = true,
             showTitle = { list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60 },
             trailing = {
                 GlassCircleButton(
@@ -313,8 +321,11 @@ class HistoryScreen : Screen() {
                 )
             },
         ) { padding ->
+            val topSlack = with(LocalDensity.current) { 60.dp.roundToPx() }
             LazyColumn(
-                Modifier.fillMaxSize(),
+                Modifier
+                    .fillMaxSize()
+                    .hidesBarsOnScroll { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < topSlack },
                 state = list,
                 contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
             ) {
@@ -472,6 +483,7 @@ class SearchScreen : Screen() {
         val current = panel.results()
         ScreenScaffold(
             title = if (query.isEmpty()) tr("Search") else query,
+            hidesBarsOnScroll = true,
             showTitle = { query.isNotEmpty() },
             trailing = {
                 if (current != null) {
@@ -677,6 +689,7 @@ class SearchResultsScreen(private val query: String, private val title: String?)
     override fun Content() {
         ScreenScaffold(
             title = title ?: query,
+            hidesBarsOnScroll = true,
             trailing = {
                 FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
             },

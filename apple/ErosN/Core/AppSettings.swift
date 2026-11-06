@@ -80,18 +80,50 @@ enum GalleryListStyle: String, CaseIterable, Identifiable {
 }
 
 /// Where the iPad tab bar sits at the bottom of the screen.
+/// Where the iPad tab bar sits when it doesn't follow the hand.
 enum TabBarPosition: String, CaseIterable, Identifiable {
-    /// Follows the side the screen is touched on most.
-    case automatic, leading, center, trailing
+    case leading, center, trailing
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .automatic: String(localized: "Automatic")
         case .leading: String(localized: "Left")
         case .center: String(localized: "Center")
         case .trailing: String(localized: "Right")
+        }
+    }
+}
+
+/// How quickly the iPad tab bar follows the hand.
+enum FollowSpeed: String, CaseIterable, Identifiable {
+    case fast, medium, slow
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fast: String(localized: "Fast")
+        case .medium: String(localized: "Medium")
+        case .slow: String(localized: "Slow")
+        }
+    }
+
+    /// Touches in a row on the other side before the bar moves there.
+    var touches: Int {
+        switch self {
+        case .fast: 1
+        case .medium: 2
+        case .slow: 4
+        }
+    }
+
+    /// How long the bar takes to slide across.
+    var duration: Double {
+        switch self {
+        case .fast: 0.3
+        case .medium: 0.45
+        case .slow: 0.65
         }
     }
 }
@@ -162,7 +194,14 @@ final class AppSettings {
     var keepScreenOn: Bool { didSet { save(keepScreenOn, "keepScreenOn") } }
     var detectClipboard: Bool { didSet { save(detectClipboard, "detectClipboard") } }
     var tabBarPosition: TabBarPosition { didSet { save(tabBarPosition.rawValue, "tabBarPosition") } }
+    /// iPad: the tab bar moves to the side of the hand in use.
+    var followHand: Bool { didSet { save(followHand, "followHand") } }
+    var followSpeed: FollowSpeed { didSet { save(followSpeed.rawValue, "followSpeed") } }
     var saveSearchHistory: Bool { didSet { save(saveSearchHistory, "saveSearchHistory") } }
+    /// Scrolling a list down hides the bars at the top and bottom.
+    var hideBarsOnScroll: Bool { didSet { save(hideBarsOnScroll, "hideBarsOnScroll") } }
+    /// …the search button too (otherwise a round search button stays).
+    var hideSearchOnScroll: Bool { didSet { save(hideSearchOnScroll, "hideSearchOnScroll") } }
     /// Recent search terms, newest first; synced with the settings.
     var recentSearches: [String] { didSet { save(recentSearches, "recentSearches") } }
 
@@ -190,8 +229,12 @@ final class AppSettings {
         keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false
-        tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .automatic
+        tabBarPosition = TabBarPosition(rawValue: d.string(forKey: "tabBarPosition") ?? "") ?? .center
+        followHand = d.object(forKey: "followHand") as? Bool ?? false
+        followSpeed = FollowSpeed(rawValue: d.string(forKey: "followSpeed") ?? "") ?? .fast
         saveSearchHistory = d.object(forKey: "saveSearchHistory") as? Bool ?? true
+        hideBarsOnScroll = d.object(forKey: "hideBarsOnScroll") as? Bool ?? true
+        hideSearchOnScroll = d.object(forKey: "hideSearchOnScroll") as? Bool ?? true
         recentSearches = d.stringArray(forKey: "recentSearches") ?? []
     }
 
@@ -227,7 +270,11 @@ final class AppSettings {
         values["keepScreenOn"] = keepScreenOn
         values["detectClipboard"] = detectClipboard
         values["tabBarPosition"] = tabBarPosition.rawValue
+        values["followHand"] = followHand
+        values["followSpeed"] = followSpeed.rawValue
         values["saveSearchHistory"] = saveSearchHistory
+        values["hideBarsOnScroll"] = hideBarsOnScroll
+        values["hideSearchOnScroll"] = hideSearchOnScroll
         values["recentSearches"] = recentSearches
         return values
     }
@@ -273,7 +320,11 @@ final class AppSettings {
         case "keepScreenOn": set(\.keepScreenOn, number?.boolValue)
         case "detectClipboard": set(\.detectClipboard, number?.boolValue)
         case "tabBarPosition": set(\.tabBarPosition, string.flatMap(TabBarPosition.init(rawValue:)))
+        case "followHand": set(\.followHand, number?.boolValue)
+        case "followSpeed": set(\.followSpeed, string.flatMap(FollowSpeed.init(rawValue:)))
         case "saveSearchHistory": set(\.saveSearchHistory, number?.boolValue)
+        case "hideBarsOnScroll": set(\.hideBarsOnScroll, number?.boolValue)
+        case "hideSearchOnScroll": set(\.hideSearchOnScroll, number?.boolValue)
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break
         }

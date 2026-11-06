@@ -43,31 +43,61 @@ enum class GalleryListStyle(val raw: String, val title: String, val preferredCar
 }
 
 /** Where the tab bar sits on large screens. */
+/** Where the tablet tab bar sits when it doesn't follow the hand. */
 enum class TabBarPosition(val raw: String, val title: String) {
-    Automatic("automatic", "Automatic"),
     Leading("leading", "Left"),
     Center("center", "Center"),
     Trailing("trailing", "Right");
 
     companion object {
-        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Automatic
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Center
     }
 }
 
-/** Follows the hand in use: the side of the screen touched last. */
+/** How quickly the tablet tab bar follows the hand. */
+enum class FollowSpeed(val raw: String, val title: String, val touches: Int, val durationMillis: Int) {
+    Fast("fast", "Fast", 1, 300),
+    Medium("medium", "Medium", 2, 450),
+    Slow("slow", "Slow", 4, 650);
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Fast
+    }
+}
+
+/**
+ * Follows the hand in use: the side of the screen touched last ([record]'s
+ * `touches` in a row on the other side move it). Touches near the middle
+ * keep the side.
+ */
 object HandTracker {
     enum class Side { Leading, Center, Trailing }
 
     var side by androidx.compose.runtime.mutableStateOf(Side.Trailing)
         private set
+    private var pending: Side? = null
+    private var streak = 0
 
-    /** A touch at [fraction] of the screen width (0 = left edge); touches near the middle keep the side. */
-    fun record(fraction: Float) {
-        side = when {
+    /** A touch at [fraction] of the screen width (0 = left edge). */
+    fun record(fraction: Float, touches: Int) {
+        val next = when {
             fraction > 0.6f -> Side.Trailing
             fraction < 0.4f -> Side.Leading
             else -> return
         }
+        if (next == side) {
+            pending = null
+            streak = 0
+            return
+        }
+        if (pending == next) streak++ else {
+            pending = next
+            streak = 1
+        }
+        if (streak < touches) return
+        pending = null
+        streak = 0
+        side = next
     }
 }
 
@@ -187,7 +217,11 @@ object AppSettings {
         keepScreenOn = p.getBoolean("keepScreenOn", true)
         detectClipboard = p.getBoolean("detectClipboard", false)
         tabBarPosition = TabBarPosition.of(p.getString("tabBarPosition", null))
+        followHand = p.getBoolean("followHand", false)
+        followSpeed = FollowSpeed.of(p.getString("followSpeed", null))
         saveSearchHistory = p.getBoolean("saveSearchHistory", true)
+        hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", true)
+        hideSearchOnScroll = p.getBoolean("hideSearchOnScroll", true)
         recentSearches.clear()
         p.getString("recentSearches", null)?.let { text ->
             runCatching { recentSearches.addAll(json.decodeFromString(ListSerializer(String.serializer()), text)) }
@@ -233,8 +267,15 @@ object AppSettings {
     var pageGap by Pref(6.0) { save("pageGap", it) }
     var keepScreenOn by Pref(true) { save("keepScreenOn", it) }
     var detectClipboard by Pref(false) { save("detectClipboard", it) }
-    var tabBarPosition by Pref(TabBarPosition.Automatic) { save("tabBarPosition", it.raw) }
+    var tabBarPosition by Pref(TabBarPosition.Center) { save("tabBarPosition", it.raw) }
+    /** Tablets: the tab bar moves to the side of the hand in use. */
+    var followHand by Pref(false) { save("followHand", it) }
+    var followSpeed by Pref(FollowSpeed.Fast) { save("followSpeed", it.raw) }
     var saveSearchHistory by Pref(true) { save("saveSearchHistory", it) }
+    /** Scrolling a list down hides the bars at the top and bottom. */
+    var hideBarsOnScroll by Pref(true) { save("hideBarsOnScroll", it) }
+    /** …the search button too (otherwise a round search button stays). */
+    var hideSearchOnScroll by Pref(true) { save("hideSearchOnScroll", it) }
 
     /** Recent search terms, newest first. */
     val recentSearches = mutableStateListOf<String>()
@@ -297,7 +338,11 @@ object AppSettings {
         "keepScreenOn" to keepScreenOn,
         "detectClipboard" to detectClipboard,
         "tabBarPosition" to tabBarPosition.raw,
+        "followHand" to followHand,
+        "followSpeed" to followSpeed.raw,
         "saveSearchHistory" to saveSearchHistory,
+        "hideBarsOnScroll" to hideBarsOnScroll,
+        "hideSearchOnScroll" to hideSearchOnScroll,
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -329,7 +374,11 @@ object AppSettings {
                 "keepScreenOn" -> bool?.let { keepScreenOn = it }
                 "detectClipboard" -> bool?.let { detectClipboard = it }
                 "tabBarPosition" -> string?.let { tabBarPosition = TabBarPosition.of(it) }
+                "followHand" -> bool?.let { followHand = it }
+                "followSpeed" -> string?.let { followSpeed = FollowSpeed.of(it) }
                 "saveSearchHistory" -> bool?.let { saveSearchHistory = it }
+                "hideBarsOnScroll" -> bool?.let { hideBarsOnScroll = it }
+                "hideSearchOnScroll" -> bool?.let { hideSearchOnScroll = it }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }

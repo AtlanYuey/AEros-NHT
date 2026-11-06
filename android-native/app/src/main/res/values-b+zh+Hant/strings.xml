@@ -194,9 +194,18 @@
     <string name="l_191">儲存搜尋紀錄</string>
     <string name="l_192">開始搜尋時會顯示最近的搜尋，並隨設定透過 iCloud 同步。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
     <string name="l_193">作品 #%d</string>
-    <string name="l_194">設定備份</string>
-    <string name="l_195">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
-    <string name="l_196">Android 系統內建的備份也會保存這些設定。</string>
-    <string name="l_197">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
-    <string name="l_198">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
+    <string name="l_194">捲動時隱藏列</string>
+    <string name="l_195">同時隱藏搜尋</string>
+    <string name="l_196">向下捲動列表時隱藏頂部和底部的列，向上捲動時重新顯示。關閉「同時隱藏搜尋」時，會保留一個圓形搜尋按鈕。</string>
+    <string name="l_197">標籤列跟隨手的位置</string>
+    <string name="l_198">跟隨速度</string>
+    <string name="l_199">快</string>
+    <string name="l_200">中</string>
+    <string name="l_201">慢</string>
+    <string name="l_202">標籤列會移到你觸碰的螢幕一側：「快」在第一次觸碰時移動，「中」在同一側連續觸碰兩次後移動，「慢」在四次後移動。</string>
+    <string name="l_203">設定備份</string>
+    <string name="l_204">將設定存成檔案，再在其他裝置上匯入。這個檔案也可以匯入 iOS 版。</string>
+    <string name="l_205">Android 系統內建的備份也會保存這些設定。</string>
+    <string name="l_206">回到 App 時，如果剪貼簿裡有 nhentai 連結，會詢問是否開啟。</string>
+    <string name="l_207">開始搜尋時會顯示最近的搜尋。關閉後不再儲存新的搜尋，列表也會隱藏。</string>
 </resources>

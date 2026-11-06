@@ -67,6 +67,7 @@ class Navigator(root: Screen) {
     val canPop: Boolean get() = stack.size > 1
 
     fun push(screen: Screen) {
+        BarsState.show()
         stack.add(screen)
         val scope = uiScope ?: return
         scope.launch {
@@ -77,6 +78,7 @@ class Navigator(root: Screen) {
 
     fun pop() {
         if (!canPop) return
+        BarsState.show()
         val scope = uiScope
         if (scope == null) {
             stack.removeAt(stack.lastIndex).also { pendingRemoval = it }.onRemoved()

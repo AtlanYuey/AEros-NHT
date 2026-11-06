@@ -310,6 +310,7 @@ fun GalleryGrid(
     footer: LazyStaggeredGridScope.() -> Unit = {},
 ) {
     val style = AppSettings.listStyle
+    val topSlack = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
     BoxWithConstraints(modifier.fillMaxSize()) {
         val columns = galleryColumns(maxWidth, style)
         LazyVerticalStaggeredGrid(
@@ -322,7 +323,9 @@ fun GalleryGrid(
             ),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalItemSpacing = if (style == GalleryListStyle.Compact) 12.dp else 16.dp,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hidesBarsOnScroll { state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset < topSlack },
         ) {
             header()
             itemsIndexed(items, key = { _, item -> item.id }) { index, item ->

@@ -194,9 +194,18 @@
     <string name="l_191">Guardar historial de búsqueda</string>
     <string name="l_192">Las búsquedas recientes aparecen al empezar a buscar y se sincronizan por iCloud con tus ajustes. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
     <string name="l_193">Galería #%d</string>
-    <string name="l_194">Copia de los ajustes</string>
-    <string name="l_195">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_196">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_197">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_198">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_194">Ocultar barras al desplazarse</string>
+    <string name="l_195">Ocultar también la búsqueda</string>
+    <string name="l_196">Al desplazarte hacia abajo en una lista se ocultan las barras superior e inferior, y al subir vuelven a aparecer. Con «Ocultar también la búsqueda» desactivado, queda un botón de búsqueda redondo.</string>
+    <string name="l_197">La barra sigue tu mano</string>
+    <string name="l_198">Velocidad</string>
+    <string name="l_199">Rápida</string>
+    <string name="l_200">Media</string>
+    <string name="l_201">Lenta</string>
+    <string name="l_202">La barra de pestañas se mueve al lado de la pantalla que tocas: Rápida al primer toque, Media tras dos toques en ese lado y Lenta tras cuatro.</string>
+    <string name="l_203">Copia de los ajustes</string>
+    <string name="l_204">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_205">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_206">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_207">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

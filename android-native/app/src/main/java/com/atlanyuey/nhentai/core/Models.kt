@@ -65,7 +65,7 @@ internal fun JsonObject.bool(key: String): Boolean? {
 
 /** Language shown as a badge, derived from well-known language tag ids. */
 enum class GalleryLanguage(val badge: String) {
-    Japanese("JA"), Chinese("ZH"), English("EN");
+    Japanese("JP"), Chinese("ZH"), English("EN");
 
     companion object {
         fun from(tagIds: Collection<Int>): GalleryLanguage? = when {

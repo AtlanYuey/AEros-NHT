@@ -21,6 +21,7 @@ struct FavoritesView: View {
                     }
                 }
                 .refreshable { await feed.reload() }
+                .hidesBarsOnScroll()
             } else {
                 ContentUnavailableView {
                     Label("Favorites", systemImage: "heart")

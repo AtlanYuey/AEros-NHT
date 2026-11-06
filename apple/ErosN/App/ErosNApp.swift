@@ -40,6 +40,7 @@ enum AppTab: Hashable {
 struct RootView: View {
     @State private var selection: AppTab = .home
     @Environment(AppSettings.self) private var settings
+    @State private var chrome = AppChrome.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var clipboardGallery: Int?
     @State private var openedFromClipboard: GalleryRoute?
@@ -87,6 +88,28 @@ struct RootView: View {
 
     /// iPhone: the system tab bar (Liquid Glass, search tab at the side).
     private var phoneTabs: some View {
+        tabView
+            .overlay(alignment: .bottomTrailing) {
+                // Where the system search button is: it stays while the bars
+                // are hidden unless Hide Search Too is on.
+                if settings.hideBarsOnScroll, chrome.barsHidden, !settings.hideSearchOnScroll, !chrome.hidesTabBar {
+                    FloatingSearchButton {
+                        withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
+                        if selection == .search {
+                            chrome.searchRequest += 1
+                        } else {
+                            selection = .search
+                        }
+                    }
+                    .padding(.trailing, 19)
+                    .padding(.bottom, 18)
+                    .ignoresSafeArea(edges: .bottom)
+                }
+            }
+            .onChange(of: selection) { chrome.barsHidden = false }
+    }
+
+    private var tabView: some View {
         TabView(selection: $selection) {
             Tab("Home", systemImage: "house", value: AppTab.home) {
                 NavigationStack {

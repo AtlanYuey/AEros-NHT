@@ -227,3 +227,16 @@
 "Save Search History" = "保存搜索历史";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "开始搜索时会显示最近的搜索，并随设置通过 iCloud 同步。关闭后不再保存新的搜索，列表也会隐藏。";
 "Gallery #%lld" = "作品 #%lld";
+
+/* Hide bars when scrolling */
+"Hide Bars When Scrolling" = "滚动时隐藏栏";
+"Hide Search Too" = "同时隐藏搜索";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "向下滚动列表时隐藏顶部和底部的栏，向上滚动时重新显示。关闭「同时隐藏搜索」时，会保留一个圆形搜索按钮。";
+
+/* Tab bar follows the hand */
+"Tab Bar Follows Your Hand" = "标签栏跟随手的位置";
+"Follow Speed" = "跟随速度";
+"Fast" = "快";
+"Medium" = "中";
+"Slow" = "慢";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "标签栏会移到你触摸的屏幕一侧：「快」在第一次触摸时移动，「中」在同一侧连续触摸两次后移动，「慢」在四次后移动。";

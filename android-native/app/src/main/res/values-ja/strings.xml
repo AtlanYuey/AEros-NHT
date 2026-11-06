@@ -194,9 +194,18 @@
     <string name="l_191">検索履歴を保存</string>
     <string name="l_192">検索を始めると最近の検索が表示され、設定と一緒に iCloud で同期されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
     <string name="l_193">作品 #%d</string>
-    <string name="l_194">設定のバックアップ</string>
-    <string name="l_195">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_196">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_197">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_198">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_194">スクロール時にバーを隠す</string>
+    <string name="l_195">検索も隠す</string>
+    <string name="l_196">リストを下にスクロールすると上下のバーが隠れ、上にスクロールすると再び表示されます。「検索も隠す」をオフにすると、丸い検索ボタンが残ります。</string>
+    <string name="l_197">タブバーを手の位置に合わせる</string>
+    <string name="l_198">追従の速さ</string>
+    <string name="l_199">速い</string>
+    <string name="l_200">普通</string>
+    <string name="l_201">遅い</string>
+    <string name="l_202">タブバーは触れた側に移動します。「速い」は最初のタッチで、「普通」は同じ側を2回続けてタッチすると、「遅い」は4回で移動します。</string>
+    <string name="l_203">設定のバックアップ</string>
+    <string name="l_204">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_205">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_206">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_207">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

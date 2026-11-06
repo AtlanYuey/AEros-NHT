@@ -193,3 +193,12 @@
 "Save Search History" = "Lưu lịch sử tìm kiếm";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm và được đồng bộ qua iCloud cùng cài đặt. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.";
 "Gallery #%lld" = "Truyện #%lld";
+"Hide Bars When Scrolling" = "Ẩn thanh khi cuộn";
+"Hide Search Too" = "Ẩn cả tìm kiếm";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "Cuộn danh sách xuống sẽ ẩn thanh trên và dưới, cuộn lên sẽ hiện lại. Khi tắt “Ẩn cả tìm kiếm”, một nút tìm kiếm tròn vẫn được giữ lại.";
+"Tab Bar Follows Your Hand" = "Thanh tab theo tay bạn";
+"Follow Speed" = "Tốc độ";
+"Fast" = "Nhanh";
+"Medium" = "Vừa";
+"Slow" = "Chậm";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Thanh tab chuyển sang phía màn hình bạn chạm: Nhanh ngay lần chạm đầu, Vừa sau hai lần chạm phía đó, Chậm sau bốn lần.";

@@ -1,5 +1,14 @@
 package com.atlanyuey.nhentai.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.BiasAlignment
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.statusBarsPadding
+import com.atlanyuey.nhentai.ui.components.BarsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.geometry.Rect
@@ -111,21 +120,35 @@ fun RootView(
     LaunchedEffect(large) { if (large && selected == SEARCH) selected = lastTab }
     // Where the bar is; touches on it don't move it.
     var barBounds by remember { mutableStateOf(Rect.Zero) }
-    val tracksHand by rememberUpdatedState(large && showTabBar)
-    val position = when (AppSettings.tabBarPosition) {
-        TabBarPosition.Automatic -> when (HandTracker.side) {
+    // Scrolling a list down hides the bars (the search button stays unless
+    // Hide Search Too is on).
+    val barsHidden = BarsState.hiding
+    val searchHidden = barsHidden && AppSettings.hideSearchOnScroll
+    val tabsAway by animateFloatAsState(if (barsHidden) 1f else 0f, label = "tabsAway")
+    val searchAway by animateFloatAsState(if (searchHidden) 1f else 0f, label = "searchAway")
+    LaunchedEffect(selected) { BarsState.show() }
+    val tracksHand by rememberUpdatedState(large && showTabBar && !barsHidden && AppSettings.followHand)
+    val position = if (AppSettings.followHand) {
+        when (HandTracker.side) {
             HandTracker.Side.Leading -> TabBarPosition.Leading
             HandTracker.Side.Center -> TabBarPosition.Center
             HandTracker.Side.Trailing -> TabBarPosition.Trailing
         }
-        else -> AppSettings.tabBarPosition
+    } else {
+        AppSettings.tabBarPosition
     }
-    val barAlignment = when {
-        !large -> Alignment.BottomCenter
-        position == TabBarPosition.Leading -> Alignment.BottomStart
-        position == TabBarPosition.Trailing -> Alignment.BottomEnd
-        else -> Alignment.BottomCenter
-    }
+    // The bar slides across at the follow speed.
+    val bias by animateFloatAsState(
+        when {
+            !large -> 0f
+            position == TabBarPosition.Leading -> -1f
+            position == TabBarPosition.Trailing -> 1f
+            else -> 0f
+        },
+        tween(AppSettings.followSpeed.durationMillis, easing = FastOutSlowInEasing),
+        label = "barPosition",
+    )
+    val barAlignment = BiasAlignment(bias, 1f)
 
     val items = listOf(
         TabInfo(tr("Home"), Icons.Home),
@@ -169,7 +192,7 @@ fun RootView(
                             if (event.type == PointerEventType.Press && size.width > 0 && tracksHand) {
                                 event.changes.firstOrNull()
                                     ?.takeUnless { barBounds.inflate(10.dp.toPx()).contains(it.position) }
-                                    ?.let { HandTracker.record(it.position.x / size.width) }
+                                    ?.let { HandTracker.record(it.position.x / size.width, AppSettings.followSpeed.touches) }
                             }
                         }
                     }
@@ -203,12 +226,13 @@ fun RootView(
                             icon = items[lastTab].icon,
                             contentDescription = items[lastTab].title,
                             onClick = { select(lastTab) },
+                            modifier = Modifier.away(tabsAway),
                             size = 52.dp,
                             iconSize = 22.dp,
                             backdrop = backdrop,
                         )
                         CompositionLocalProvider(LocalBackdrop provides backdrop) {
-                            SearchBar(Modifier.weight(1f).height(52.dp))
+                            SearchBar(Modifier.weight(1f).height(52.dp).away(searchAway))
                         }
                     } else {
                         LiquidBottomTabs(
@@ -216,7 +240,7 @@ fun RootView(
                             onTabSelected = { select(it) },
                             backdrop = backdrop,
                             tabsCount = items.size,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).away(tabsAway),
                         ) {
                             items.forEachIndexed { index, item ->
                                 LiquidBottomTab({ select(index) }) {
@@ -229,7 +253,11 @@ fun RootView(
                             GlassCircleButton(
                                 icon = Icons.Search,
                                 contentDescription = tr("Search"),
-                                onClick = { select(SEARCH) },
+                                onClick = {
+                                    BarsState.show()
+                                    select(SEARCH)
+                                },
+                                modifier = Modifier.away(searchAway),
                                 size = 64.dp,
                                 iconSize = 24.dp,
                                 backdrop = backdrop,
@@ -237,6 +265,27 @@ fun RootView(
                         }
                     }
                 }
+            }
+            // Large screens: search is in the Home page's bar, so a round
+            // search button stays at the top while the bars are hidden.
+            AnimatedVisibility(
+                visible = large && showTabBar && barsHidden && !AppSettings.hideSearchOnScroll,
+                modifier = Modifier.align(Alignment.TopEnd),
+                enter = fadeIn() + scaleIn(),
+                exit = fadeOut() + scaleOut(),
+            ) {
+                GlassCircleButton(
+                    icon = Icons.Search,
+                    contentDescription = tr("Search"),
+                    onClick = {
+                        BarsState.show()
+                        select(0)
+                        BarsState.searchRequest++
+                    },
+                    modifier = Modifier.statusBarsPadding().padding(top = 4.dp, end = 16.dp),
+                    size = 52.dp,
+                    backdrop = backdrop,
+                )
             }
             OverlayHost(overlays, backdrop)
         }
@@ -267,4 +316,10 @@ private fun ClipboardLinks(overlays: OverlayController, open: (Int) -> Unit) {
             listOf(DialogButton(cancel, ButtonRole.Cancel), DialogButton(openLabel, ButtonRole.Preferred) { open(id) }),
         )
     }
+}
+
+/** Slides a bar part down and out of sight ([fraction] 1 = gone). */
+private fun Modifier.away(fraction: Float) = graphicsLayer {
+    alpha = 1f - fraction
+    translationY = fraction * (size.height + 40.dp.toPx())
 }

@@ -193,3 +193,12 @@
 "Save Search History" = "Guardar historial de búsqueda";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Las búsquedas recientes aparecen al empezar a buscar y se sincronizan por iCloud con tus ajustes. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.";
 "Gallery #%lld" = "Galería #%lld";
+"Hide Bars When Scrolling" = "Ocultar barras al desplazarse";
+"Hide Search Too" = "Ocultar también la búsqueda";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "Al desplazarte hacia abajo en una lista se ocultan las barras superior e inferior, y al subir vuelven a aparecer. Con «Ocultar también la búsqueda» desactivado, queda un botón de búsqueda redondo.";
+"Tab Bar Follows Your Hand" = "La barra sigue tu mano";
+"Follow Speed" = "Velocidad";
+"Fast" = "Rápida";
+"Medium" = "Media";
+"Slow" = "Lenta";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "La barra de pestañas se mueve al lado de la pantalla que tocas: Rápida al primer toque, Media tras dos toques en ese lado y Lenta tras cuatro.";

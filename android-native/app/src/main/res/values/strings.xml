@@ -194,9 +194,18 @@
     <string name="l_191">Save Search History</string>
     <string name="l_192">Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren\'t saved and the list is hidden.</string>
     <string name="l_193">Gallery #%d</string>
-    <string name="l_194">Settings Backup</string>
-    <string name="l_195">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_196">Android\'s own backup also keeps these settings.</string>
-    <string name="l_197">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_198">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_194">Hide Bars When Scrolling</string>
+    <string name="l_195">Hide Search Too</string>
+    <string name="l_196">Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays.</string>
+    <string name="l_197">Tab Bar Follows Your Hand</string>
+    <string name="l_198">Follow Speed</string>
+    <string name="l_199">Fast</string>
+    <string name="l_200">Medium</string>
+    <string name="l_201">Slow</string>
+    <string name="l_202">The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four.</string>
+    <string name="l_203">Settings Backup</string>
+    <string name="l_204">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_205">Android\'s own backup also keeps these settings.</string>
+    <string name="l_206">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_207">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

@@ -193,3 +193,12 @@
 "Save Search History" = "Simpan Riwayat Pencarian";
 "Recent searches show when you start a search and sync through iCloud with your settings. When this is off, new searches aren't saved and the list is hidden." = "Pencarian terbaru muncul saat Anda mulai mencari dan disinkronkan melalui iCloud bersama pengaturan. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.";
 "Gallery #%lld" = "Galeri #%lld";
+"Hide Bars When Scrolling" = "Sembunyikan Bar Saat Menggulir";
+"Hide Search Too" = "Sembunyikan Pencarian Juga";
+"Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays." = "Menggulir daftar ke bawah menyembunyikan bar di atas dan bawah, dan menggulir ke atas menampilkannya lagi. Jika “Sembunyikan Pencarian Juga” nonaktif, tombol pencarian bundar tetap ada.";
+"Tab Bar Follows Your Hand" = "Bar Tab Mengikuti Tangan";
+"Follow Speed" = "Kecepatan";
+"Fast" = "Cepat";
+"Medium" = "Sedang";
+"Slow" = "Lambat";
+"The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Bar tab pindah ke sisi layar yang Anda sentuh: Cepat pada sentuhan pertama, Sedang setelah dua sentuhan di sisi itu, Lambat setelah empat.";

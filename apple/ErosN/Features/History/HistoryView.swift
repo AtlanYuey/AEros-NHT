@@ -46,6 +46,7 @@ struct HistoryView: View {
             }
         }
         .listStyle(.plain)
+        .hidesBarsOnScroll()
         .overlay {
             if entries.isEmpty {
                 ContentUnavailableView("No History", systemImage: "clock",

@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import coil3.ImageLoader
@@ -104,7 +106,40 @@ class ScreenshotTest {
             "https://nhentai.net/g/500001/", com.atlanyuey.nhentai.core.GalleryItem(500001), 24,
         )
         tabs.home.push(ReaderScreen(source, 3))
-        shoot("05_reader", tabs)
+        shoot("05_reader", tabs, settle = 500)
+        // Left alone for a second, the controls hide.
+        compose.mainClock.advanceTimeBy(1200)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/23_reader_idle.png")
+    }
+
+    @Test fun homeScrolled() {
+        AppSettings.hideBarsOnScroll = true
+        AppSettings.hideSearchOnScroll = false
+        shoot("24_home_bars_hidden_search")
+        compose.onRoot().performTouchInput { swipeUp(startY = centerY + 300f, endY = centerY - 300f) }
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/24_home_bars_hidden_search.png")
+        AppSettings.hideSearchOnScroll = true
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/25_home_bars_hidden.png")
+    }
+
+    @Test fun aboutEgg() {
+        val tabs = Tabs()
+        tabs.more.push(com.atlanyuey.nhentai.screens.AboutScreen())
+        shoot("26_about", tabs, tab = 3)
+        // Step the clock by hand to catch the animation half way.
+        compose.mainClock.autoAdvance = false
+        val icon = compose.onNodeWithContentDescription("AEros-NHT")
+        icon.performTouchInput { down(center) }
+        compose.mainClock.advanceTimeBy(700)
+        icon.performTouchInput { up() }
+        compose.mainClock.advanceTimeBy(350)
+        compose.onRoot().captureRoboImage("build/screens/27_about_egg.png")
+        compose.mainClock.autoAdvance = true
     }
 
     @Test fun more() = shoot("06_more", tab = 3)
@@ -194,14 +229,14 @@ class ScreenshotTest {
         compose.mainClock.advanceTimeBy(1000)
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/19_tablet_search.png")
-        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Automatic
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Center
     }
 
     @Config(qualifiers = "w834dp-h1194dp-xhdpi")
     @Test fun tablet() {
         AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Trailing
         shoot("14_tablet_right")
-        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Automatic
+        AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Center
     }
 
     @Test fun reading() {

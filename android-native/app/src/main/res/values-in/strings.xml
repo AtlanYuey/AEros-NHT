@@ -194,9 +194,18 @@
     <string name="l_191">Simpan Riwayat Pencarian</string>
     <string name="l_192">Pencarian terbaru muncul saat Anda mulai mencari dan disinkronkan melalui iCloud bersama pengaturan. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
     <string name="l_193">Galeri #%d</string>
-    <string name="l_194">Cadangan Pengaturan</string>
-    <string name="l_195">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_196">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_197">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_198">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_194">Sembunyikan Bar Saat Menggulir</string>
+    <string name="l_195">Sembunyikan Pencarian Juga</string>
+    <string name="l_196">Menggulir daftar ke bawah menyembunyikan bar di atas dan bawah, dan menggulir ke atas menampilkannya lagi. Jika “Sembunyikan Pencarian Juga” nonaktif, tombol pencarian bundar tetap ada.</string>
+    <string name="l_197">Bar Tab Mengikuti Tangan</string>
+    <string name="l_198">Kecepatan</string>
+    <string name="l_199">Cepat</string>
+    <string name="l_200">Sedang</string>
+    <string name="l_201">Lambat</string>
+    <string name="l_202">Bar tab pindah ke sisi layar yang Anda sentuh: Cepat pada sentuhan pertama, Sedang setelah dua sentuhan di sisi itu, Lambat setelah empat.</string>
+    <string name="l_203">Cadangan Pengaturan</string>
+    <string name="l_204">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_205">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_206">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_207">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

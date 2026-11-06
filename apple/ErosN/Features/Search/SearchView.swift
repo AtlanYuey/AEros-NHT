@@ -20,6 +20,7 @@ struct SearchHost<Idle: View>: View {
     private let idle: ((Bool) -> Idle)?
 
     @Environment(AppSettings.self) private var settings
+    @State private var chrome = AppChrome.shared
     @State private var text = ""
     @State private var query = ""
     @State private var isPresented = false
@@ -55,6 +56,7 @@ struct SearchHost<Idle: View>: View {
                 if new.isEmpty { query = "" }
             }
             .task(id: text) { await loadSuggestions() }
+            .onChange(of: chrome.searchRequest) { isPresented = true }
             .task {
                 // The search tab opens with the keyboard up.
                 guard idle == nil, query.isEmpty, !isPresented else { return }
@@ -221,6 +223,7 @@ struct SearchResults: View {
             }
         }
         .refreshable { await feed.reload() }
+        .hidesBarsOnScroll()
         .task {
             if !feed.hasLoaded { await feed.reload() }
         }

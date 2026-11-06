@@ -69,7 +69,7 @@ enum GalleryLanguage: String, Codable, CaseIterable, Identifiable {
 
     var badge: String {
         switch self {
-        case .japanese: "JA"
+        case .japanese: "JP"
         case .chinese: "ZH"
         case .english: "EN"
         }

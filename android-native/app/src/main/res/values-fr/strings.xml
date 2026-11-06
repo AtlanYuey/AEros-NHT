@@ -194,9 +194,18 @@
     <string name="l_191">Enregistrer l’historique de recherche</string>
     <string name="l_192">Les recherches récentes s’affichent quand vous lancez une recherche et se synchronisent via iCloud avec vos réglages. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
     <string name="l_193">Galerie #%d</string>
-    <string name="l_194">Sauvegarde des réglages</string>
-    <string name="l_195">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_196">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_197">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_198">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_194">Masquer les barres au défilement</string>
+    <string name="l_195">Masquer aussi la recherche</string>
+    <string name="l_196">Faire défiler une liste vers le bas masque les barres du haut et du bas ; remonter les affiche à nouveau. Si « Masquer aussi la recherche » est désactivé, un bouton de recherche rond reste visible.</string>
+    <string name="l_197">La barre suit votre main</string>
+    <string name="l_198">Vitesse</string>
+    <string name="l_199">Rapide</string>
+    <string name="l_200">Moyenne</string>
+    <string name="l_201">Lente</string>
+    <string name="l_202">La barre d’onglets se place du côté de l’écran que vous touchez : Rapide dès le premier toucher, Moyenne après deux touchers de ce côté, Lente après quatre.</string>
+    <string name="l_203">Sauvegarde des réglages</string>
+    <string name="l_204">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_205">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_206">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_207">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

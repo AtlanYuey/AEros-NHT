@@ -1,5 +1,7 @@
 package com.atlanyuey.nhentai.screens
 
+import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.ui.input.pointer.PointerEventType
 import android.app.Activity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -125,6 +127,10 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private var page by mutableIntStateOf(start.coerceIn(0, maxOf(0, source.pages.size - 1)))
     private var chromeVisible by mutableStateOf(true)
     private var autoRead by mutableStateOf(false)
+    /** Bumped by every touch: the controls hide 1 s after the last one. */
+    private var chromeActivity by mutableIntStateOf(0)
+    /** A finger is on the screen (dragging the slider, holding a button…). */
+    private var touching by mutableStateOf(false)
     private val pager = PagerState(currentPage = page) { source.pages.size }
     private val list = LazyListState(firstVisibleItemIndex = page)
     private val count get() = source.pages.size
@@ -156,6 +162,8 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     private val turnBase: Int get() = if (pager.isScrollInProgress) pager.targetPage else pager.currentPage
 
     private fun turn(fraction: Float) {
+        // Turning pages from the edges hides the controls.
+        chromeVisible = false
         val forward = if (fraction < 0.5f) isRtl else !isRtl
         val base = if (AppSettings.readMode.isPaged) turnBase else page
         go(if (forward) base + 1 else base - 1)
@@ -215,6 +223,19 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
         LaunchedEffect(page) { prefetch(context, page) }
+        // Dragging the pages hides the controls…
+        LaunchedEffect(mode) {
+            val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
+            interactions.interactions.collect { if (it is DragInteraction.Start) chromeVisible = false }
+        }
+        // …and so does leaving them alone for 1 s (not while a finger is
+        // down or a menu or sheet is open).
+        val overlays = LocalOverlays.current
+        LaunchedEffect(chromeVisible, chromeActivity, touching, overlays.items.size) {
+            if (!chromeVisible || touching || overlays.items.isNotEmpty()) return@LaunchedEffect
+            delay(1000)
+            chromeVisible = false
+        }
         LaunchedEffect(autoRead) {
             if (!autoRead) return@LaunchedEffect
             chromeVisible = false
@@ -228,7 +249,20 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             }
         }
 
-        Box(Modifier.fillMaxSize().background(Color.Black)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            touching = event.changes.any { it.pressed }
+                            if (event.type == PointerEventType.Press) chromeActivity++
+                        }
+                    }
+                },
+        ) {
             Box(Modifier.fillMaxSize().layerBackdrop(backdrop).background(Color.Black)) {
                 if (mode.isPaged) Paged(mode) else Continuous(mode)
             }

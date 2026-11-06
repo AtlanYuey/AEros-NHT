@@ -203,3 +203,11 @@
 "Original Project" = "原项目";
 "Open Source Licenses" = "开源许可";
 "Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "标签翻译来自 EhTagTranslation 数据库，采用 CC BY-NC-SA 3.0 协议（署名、非商业性使用、相同方式共享），在 App 更新标签库时下载。";
+
+/* App language */
+"System Language" = "系统语言";
+"The language can also be chosen for this app in the Settings app." = "也可以在系统「设置」App 中为本 App 单独选择语言。";
+"Restart to Apply" = "重新打开后生效";
+"Close App" = "关闭 App";
+"Later" = "稍后";
+"The new language is used the next time AEros-NHT opens." = "下次打开 AEros-NHT 时会使用新的语言。";

@@ -17,7 +17,7 @@
 - 离线下载：暂停、继续、离线阅读
 - 浏览记录，剪贴板画廊链接识别
 - 设置可通过 iCloud 同步（所有设备，或仅同类设备）；也可以导出、导入设置文件
-- 简体中文、English
+- 界面语言：English、日本語、简体中文、繁體中文、한국어、Español、Français、Deutsch、Italiano、Português (Brasil)、Русский、Tiếng Việt、ไทย、Bahasa Indonesia；默认跟随系统，可在「更多 › 语言」中切换
 
 ## iCloud 同步
 

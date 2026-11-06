@@ -68,6 +68,9 @@ struct MoreView: View {
             }
 
             Section {
+                NavigationLink { LanguageSettingsView() } label: {
+                    SettingsLabel("Language", systemImage: "globe", color: .teal)
+                }
                 NavigationLink { AboutView() } label: {
                     SettingsLabel("About", systemImage: "info", color: .indigo)
                 }

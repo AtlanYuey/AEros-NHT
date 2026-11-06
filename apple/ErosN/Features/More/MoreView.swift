@@ -62,6 +62,9 @@ struct MoreView: View {
                 NavigationLink { GeneralSettingsView() } label: {
                     SettingsLabel("General", systemImage: "gearshape.fill", color: .gray)
                 }
+                NavigationLink { SyncSettingsView() } label: {
+                    SettingsLabel("iCloud Sync", systemImage: "icloud.fill", color: .cyan)
+                }
             }
 
             Section {

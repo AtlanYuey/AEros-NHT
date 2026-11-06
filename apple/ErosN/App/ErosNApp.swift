@@ -11,6 +11,7 @@ struct ErosNApp: App {
 
     init() {
         ImageSetup.configure()
+        SettingsSync.shared.start(isPad: UIDevice.current.userInterfaceIdiom == .pad)
     }
 
     var body: some Scene {

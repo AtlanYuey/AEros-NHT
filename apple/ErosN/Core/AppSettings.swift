@@ -118,6 +118,8 @@ final class AppSettings {
     static let shared = AppSettings()
 
     @ObservationIgnored private let defaults = UserDefaults.standard
+    /// Set while values from iCloud are applied, so they are not sent back.
+    @ObservationIgnored private var isApplyingSynced = false
 
     var theme: ThemeMode { didSet { save(theme.rawValue, "theme") } }
     var accent: AccentChoice { didSet { save(accent.rawValue, "accent") } }
@@ -163,7 +165,7 @@ final class AppSettings {
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
         animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
-        pageGap = d.object(forKey: "pageGap") as? Double ?? 12
+        pageGap = d.object(forKey: "pageGap") as? Double ?? 6
         keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false
@@ -171,6 +173,80 @@ final class AppSettings {
 
     private func save(_ value: Any, _ key: String) {
         defaults.set(value, forKey: key)
+        if !isApplyingSynced {
+            SettingsSync.shared.settingChanged(key, value)
+        }
+    }
+
+    /// Every setting, keyed as in UserDefaults (used by iCloud sync and
+    /// export).
+    func snapshot() -> [String: Any] {
+        var values: [String: Any] = [:]
+        values["theme"] = theme.rawValue
+        values["accent"] = accent.rawValue
+        values["listStyle"] = listStyle.rawValue
+        values["cardSizePortrait"] = cardSizePortrait.rawValue
+        values["cardSizeLandscape"] = cardSizeLandscape.rawValue
+        values["blurCovers"] = blurCovers
+        values["showTags"] = showTags
+        values["translateTags"] = translateTags
+        values["homeLanguage"] = homeLanguage.rawValue
+        values["homeSort"] = homeSort.rawValue
+        values["searchLanguage"] = searchLanguage.rawValue
+        values["searchSort"] = searchSort.rawValue
+        values["readMode"] = readMode.rawValue
+        values["autoReadInterval"] = autoReadInterval
+        values["preloadPages"] = preloadPages
+        values["tapToTurnPages"] = tapToTurnPages
+        values["animatePageTurns"] = animatePageTurns
+        values["pageGap"] = pageGap
+        values["keepScreenOn"] = keepScreenOn
+        values["detectClipboard"] = detectClipboard
+        return values
+    }
+
+    /// Applies settings from iCloud (`fromSync`, not sent back) or from an
+    /// imported file (sent on to iCloud like any other change). Unknown keys
+    /// and invalid values are ignored.
+    func apply(_ values: [String: Any], fromSync: Bool) {
+        isApplyingSynced = fromSync
+        defer { isApplyingSynced = false }
+        for (key, value) in values {
+            apply(value, forKey: key)
+        }
+    }
+
+    private func apply(_ value: Any, forKey key: String) {
+        func set<T: Equatable>(_ path: ReferenceWritableKeyPath<AppSettings, T>, _ new: T?) {
+            if let new, self[keyPath: path] != new {
+                self[keyPath: path] = new
+            }
+        }
+        let string = value as? String
+        let number = value as? NSNumber
+        switch key {
+        case "theme": set(\.theme, string.flatMap(ThemeMode.init(rawValue:)))
+        case "accent": set(\.accent, string.flatMap(AccentChoice.init(rawValue:)))
+        case "listStyle": set(\.listStyle, string.flatMap(GalleryListStyle.init(rawValue:)))
+        case "cardSizePortrait": set(\.cardSizePortrait, number.flatMap { CardSize(rawValue: $0.intValue) })
+        case "cardSizeLandscape": set(\.cardSizeLandscape, number.flatMap { CardSize(rawValue: $0.intValue) })
+        case "blurCovers": set(\.blurCovers, number?.boolValue)
+        case "showTags": set(\.showTags, number?.boolValue)
+        case "translateTags": set(\.translateTags, number?.boolValue)
+        case "homeLanguage": set(\.homeLanguage, string.flatMap(LanguageFilter.init(rawValue:)))
+        case "homeSort": set(\.homeSort, string.flatMap(SearchSort.init(rawValue:)))
+        case "searchLanguage": set(\.searchLanguage, string.flatMap(LanguageFilter.init(rawValue:)))
+        case "searchSort": set(\.searchSort, string.flatMap(SearchSort.init(rawValue:)))
+        case "readMode": set(\.readMode, string.flatMap(ReadMode.init(rawValue:)))
+        case "autoReadInterval": set(\.autoReadInterval, number.map { min(max($0.doubleValue, 1), 10) })
+        case "preloadPages": set(\.preloadPages, number.map { min(max($0.intValue, 1), 10) })
+        case "tapToTurnPages": set(\.tapToTurnPages, number?.boolValue)
+        case "animatePageTurns": set(\.animatePageTurns, number?.boolValue)
+        case "pageGap": set(\.pageGap, number.map { min(max($0.doubleValue, 2), 60) })
+        case "keepScreenOn": set(\.keepScreenOn, number?.boolValue)
+        case "detectClipboard": set(\.detectClipboard, number?.boolValue)
+        default: break
+        }
     }
 
     func cardSize(isLandscape: Bool) -> CardSize {

@@ -180,3 +180,20 @@
 "Page Gap" = "页面间距";
 "Page Turn Animation" = "翻页动画";
 "Without the animation, tapping an edge shows the next page at once." = "关闭动画后，点按屏幕边缘会立即显示下一页。";
+
+/* iCloud sync */
+"iCloud Sync" = "iCloud 同步";
+"Sync Settings with iCloud" = "通过 iCloud 同步设置";
+"Sync With" = "同步范围";
+"All Devices" = "所有设备";
+"Other iPads Only" = "仅与其他 iPad 同步";
+"Other iPhones Only" = "仅与其他 iPhone 同步";
+"iCloud isn't available to this copy of the app: the certificate it was signed with doesn't include iCloud, so the settings stay on this device. Export and import them below instead." = "这份 App 无法使用 iCloud：签名所用的证书没有 iCloud 权限，设置只会保存在本机。可以用下方的导出和导入代替。";
+"Settings follow your Apple Account to your other devices. Choose whether this iPad shares them with your iPhone, or only with your other iPads." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPad 与 iPhone 共用设置，还是只与其他 iPad 同步。";
+"Settings follow your Apple Account to your other devices. Choose whether this iPhone shares them with your iPad, or only with your other iPhones." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPhone 与 iPad 共用设置，还是只与其他 iPhone 同步。";
+"Last synced: %@" = "上次同步：%@";
+"Eros-N Settings" = "Eros-N 设置";
+"Export Settings" = "导出设置";
+"Import Settings" = "导入设置";
+"Save the settings as a file, for example in iCloud Drive, and import it on another device." = "把设置存成文件（例如存到 iCloud 云盘），再在其他设备上导入。";
+"The settings were imported." = "设置已导入。";

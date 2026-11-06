@@ -53,6 +53,8 @@ struct GalleryDetailView: View {
     @State private var model: GalleryModel
     @State private var showLogin = false
     @State private var confirmDeleteDownload = false
+    /// Height of the Read button; the round buttons next to it match it.
+    @State private var actionHeight: CGFloat = 44
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(UserSession.self) private var session
@@ -96,9 +98,9 @@ struct GalleryDetailView: View {
                 }
             }
             .padding(.bottom, 32)
-        }
-        .background(alignment: .top) {
-            Backdrop(url: item?.thumbURL)
+            .background(alignment: .top) {
+                Backdrop(url: item?.thumbURL, height: sizeClass == .regular ? 420 : 320)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -189,14 +191,15 @@ struct GalleryDetailView: View {
                       systemImage: lastPage > 0 ? "play.fill" : "book.fill")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
             }
             .modifier(ProminentButtonStyle())
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { actionHeight = $0 }
 
             CircleButton(
                 systemImage: model.isFavorited ? "heart.fill" : "heart",
                 label: model.isFavorited ? "Unfavorite" : "Favorite",
-                tint: model.isFavorited ? .pink : nil
+                tint: model.isFavorited ? .pink : nil,
+                size: actionHeight
             ) {
                 if session.isLoggedIn {
                     Task { await model.toggleFavorite() }
@@ -218,21 +221,21 @@ struct GalleryDetailView: View {
         let record = downloads.record(detail.id)
         switch record?.state {
         case .finished:
-            CircleButton(systemImage: "checkmark.circle", label: "Downloaded", tint: .green) {
+            CircleButton(systemImage: "checkmark.circle", label: "Downloaded", tint: .green, size: actionHeight) {
                 confirmDeleteDownload = true
             }
         case .downloading, .queued:
             CircleButton(systemImage: "pause.fill", label: "Pause Download",
-                         progress: record?.progress) {
+                         progress: record?.progress, size: actionHeight) {
                 downloads.pause(detail.id)
             }
         case .paused, .failed:
             CircleButton(systemImage: "arrow.clockwise", label: "Resume Download",
-                         progress: record?.progress) {
+                         progress: record?.progress, size: actionHeight) {
                 downloads.resume(detail.id)
             }
         case nil:
-            CircleButton(systemImage: "arrow.down", label: "Download") {
+            CircleButton(systemImage: "arrow.down", label: "Download", size: actionHeight) {
                 downloads.start(detail)
             }
         }
@@ -245,38 +248,42 @@ struct CircleButton: View {
     let label: LocalizedStringKey
     var tint: Color? = nil
     var progress: Double? = nil
+    var size: CGFloat = 44
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.system(size: 19, weight: .semibold))
-                .foregroundStyle(tint ?? Color.accentColor)
-                .frame(width: 30, height: 30)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.tint))
                 .contentTransition(.symbolEffect(.replace))
+                .frame(width: size, height: size)
                 .overlay {
                     if let progress {
                         Circle()
                             .trim(from: 0, to: progress)
-                            .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .stroke(.tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                             .rotationEffect(.degrees(-90))
-                            .frame(width: 40, height: 40)
+                            .padding(3)
                             .animation(.smooth, value: progress)
                     }
                 }
-                .padding(.vertical, 6)
+                .contentShape(Circle())
         }
         .accessibilityLabel(Text(label))
         .modifier(CircleGlassStyle())
     }
 }
 
+/// Exactly sized round glass (the system glass button style sizes the
+/// circle from its own padding, which would not line up with the Read
+/// button next to it).
 struct CircleGlassStyle: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.buttonStyle(.glass).buttonBorderShape(.circle).controlSize(.large)
+            content.buttonStyle(.plain).glassEffect(.regular.interactive(), in: Circle())
         } else {
-            content.buttonStyle(.bordered).buttonBorderShape(.circle).controlSize(.large)
+            content.buttonStyle(.plain).background(.regularMaterial, in: Circle())
         }
     }
 }
@@ -303,25 +310,34 @@ struct SecondaryButtonStyle: ViewModifier {
     }
 }
 
-/// The blurred cover behind the top of the gallery page.
+/// The blurred cover behind the top of the gallery page. It belongs to the
+/// page, so it scrolls away with the header; its top edge stays on the top
+/// of the screen (under the bars, and when pulling down) by growing upwards.
 private struct Backdrop: View {
     let url: URL?
+    /// Height below the top of the page content.
+    let height: CGFloat
 
     var body: some View {
-        RemoteImage(url: url, targetWidth: 200)
-            .blur(radius: 40, opaque: true)
-            .overlay(Color.black.opacity(0.18))
-            .frame(height: 420)
-            .clipped()
-            .mask {
-                LinearGradient(stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.55),
-                    .init(color: .clear, location: 1),
-                ], startPoint: .top, endPoint: .bottom)
-            }
-            .ignoresSafeArea(edges: .top)
-            .accessibilityHidden(true)
+        GeometryReader { proxy in
+            // How far the top of the page is below the top of the window.
+            let extra = max(0, proxy.frame(in: .global).minY)
+            RemoteImage(url: url, targetWidth: 200)
+                .blur(radius: 40, opaque: true)
+                .overlay(Color.black.opacity(0.18))
+                .frame(width: proxy.size.width, height: height + extra)
+                .clipped()
+                .mask {
+                    LinearGradient(stops: [
+                        .init(color: .black, location: 0),
+                        .init(color: .black, location: 0.55),
+                        .init(color: .clear, location: 1),
+                    ], startPoint: .top, endPoint: .bottom)
+                }
+                .offset(y: -extra)
+        }
+        .frame(height: height)
+        .accessibilityHidden(true)
     }
 }
 

@@ -83,9 +83,11 @@ enum ReadMode: String, CaseIterable, Identifiable {
     case leftToRight, rightToLeft, verticalPaged
     /// Continuous vertical scroll (webtoon style).
     case vertical
+    /// Continuous vertical scroll with a black gap between pages.
+    case verticalGap
 
     /// Whether pages are turned one at a time.
-    var isPaged: Bool { self != .vertical }
+    var isPaged: Bool { self != .vertical && self != .verticalGap }
 
     var id: String { rawValue }
 
@@ -95,6 +97,7 @@ enum ReadMode: String, CaseIterable, Identifiable {
         case .rightToLeft: String(localized: "Right to Left")
         case .verticalPaged: String(localized: "Top to Bottom")
         case .vertical: String(localized: "Continuous (Webtoon)")
+        case .verticalGap: String(localized: "Continuous with Gaps")
         }
     }
 
@@ -104,6 +107,7 @@ enum ReadMode: String, CaseIterable, Identifiable {
         case .rightToLeft: "arrow.left.square"
         case .verticalPaged: "arrow.down.square"
         case .vertical: "scroll"
+        case .verticalGap: "rectangle.grid.1x2"
         }
     }
 }
@@ -133,6 +137,9 @@ final class AppSettings {
     var autoReadInterval: Double { didSet { save(autoReadInterval, "autoReadInterval") } }
     var preloadPages: Int { didSet { save(preloadPages, "preloadPages") } }
     var tapToTurnPages: Bool { didSet { save(tapToTurnPages, "tapToTurnPages") } }
+    var animatePageTurns: Bool { didSet { save(animatePageTurns, "animatePageTurns") } }
+    /// Gap between pages in the "Continuous with Gaps" mode, in points.
+    var pageGap: Double { didSet { save(pageGap, "pageGap") } }
     var keepScreenOn: Bool { didSet { save(keepScreenOn, "keepScreenOn") } }
     var detectClipboard: Bool { didSet { save(detectClipboard, "detectClipboard") } }
 
@@ -155,6 +162,8 @@ final class AppSettings {
         autoReadInterval = d.object(forKey: "autoReadInterval") as? Double ?? 3
         preloadPages = d.object(forKey: "preloadPages") as? Int ?? 4
         tapToTurnPages = d.object(forKey: "tapToTurnPages") as? Bool ?? true
+        animatePageTurns = d.object(forKey: "animatePageTurns") as? Bool ?? true
+        pageGap = d.object(forKey: "pageGap") as? Double ?? 12
         keepScreenOn = d.object(forKey: "keepScreenOn") as? Bool ?? true
         // Reading the clipboard shows the system paste prompt: opt in.
         detectClipboard = d.object(forKey: "detectClipboard") as? Bool ?? false

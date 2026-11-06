@@ -145,8 +145,13 @@ struct ReaderView: View {
                 sliderValue = Double(new)
                 if position != new { position = new }
                 prefetch(around: new)
-                modelContext.recordHistory(item: source.item, title: source.title,
-                                           numPages: source.numPages, page: new)
+            }
+            .task(id: page) {
+                // Saved once the page settles, not on every turn (saving
+                // refreshes the history list and costs a frame).
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                recordPage()
             }
             .onChange(of: position) { _, new in
                 if let new, new != page { page = new }
@@ -156,12 +161,12 @@ struct ReaderView: View {
             .onAppear {
                 UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
                 prefetch(around: page)
-                modelContext.recordHistory(item: source.item, title: source.title,
-                                           numPages: source.numPages, page: page)
+                recordPage()
             }
             .onDisappear {
                 UIApplication.shared.isIdleTimerDisabled = false
                 prefetcher.stopPrefetching()
+                recordPage()
             }
             .sheet(isPresented: $showSettings) {
                 ReaderSettingsSheet()
@@ -180,7 +185,7 @@ struct ReaderView: View {
             .id(settings.readMode)
         } else {
             ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
+                LazyVStack(spacing: settings.readMode == .verticalGap ? settings.pageGap : 0) {
                     ForEach(source.pages) { page in
                         Color.clear
                             .aspectRatio(page.aspectRatio, contentMode: .fit)
@@ -200,25 +205,30 @@ struct ReaderView: View {
     }
 
     private func handleTap(at fraction: CGFloat) {
-        guard settings.tapToTurnPages else {
+        guard ReaderTapZones.turnsPage(at: fraction) else {
             chromeVisible.toggle()
             return
         }
-        if fraction < 0.3 {
+        if fraction < 0.5 {
             go(isRTL ? page + 1 : page - 1)
-        } else if fraction > 0.7 {
-            go(isRTL ? page - 1 : page + 1)
         } else {
-            chromeVisible.toggle()
+            go(isRTL ? page - 1 : page + 1)
         }
+    }
+
+    private func recordPage() {
+        modelContext.recordHistory(item: source.item, title: source.title,
+                                   numPages: source.numPages, page: page)
     }
 
     private func go(_ target: Int) {
         guard (0..<pageCount).contains(target) else { return }
         if settings.readMode.isPaged {
             page = target
-        } else {
+        } else if settings.animatePageTurns {
             withAnimation(.smooth(duration: 0.3)) { position = target }
+        } else {
+            position = target
         }
     }
 
@@ -347,8 +357,22 @@ struct ReadingSettingsSections: View {
                     Label(mode.title, systemImage: mode.systemImage).tag(mode)
                 }
             }
+            if settings.readMode == .verticalGap {
+                VStack(alignment: .leading) {
+                    LabeledContent("Page Gap") {
+                        Text("\(Int(settings.pageGap)) pt")
+                            .monospacedDigit()
+                    }
+                    Slider(value: $settings.pageGap, in: 2...60, step: 2) {
+                        Text("Page Gap")
+                    }
+                }
+            }
             Toggle("Tap Edges to Turn Pages", isOn: $settings.tapToTurnPages)
+            Toggle("Page Turn Animation", isOn: $settings.animatePageTurns)
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
+        } footer: {
+            Text("Without the animation, tapping an edge shows the next page at once.")
         }
         Section {
             VStack(alignment: .leading) {
@@ -370,6 +394,17 @@ struct ReadingSettingsSections: View {
         } footer: {
             Text("Pages ahead of the current one are downloaded in advance.")
         }
+    }
+}
+
+// MARK: - Tap zones
+
+/// Which taps turn the page: the outer 30 % on each side, when enabled.
+enum ReaderTapZones {
+    static let edge: CGFloat = 0.3
+
+    static func turnsPage(at fraction: CGFloat) -> Bool {
+        AppSettings.shared.tapToTurnPages && (fraction < edge || fraction > 1 - edge)
     }
 }
 
@@ -404,23 +439,24 @@ struct PagedReader: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: UIPageViewController, context: Context) {
-        context.coordinator.parent = self
-        guard let current = (controller.viewControllers?.first as? PageController)?.index,
-              current != page,
-              let target = context.coordinator.controller(for: page)
+        let coordinator = context.coordinator
+        coordinator.parent = self
+        // A running page turn picks up the newest page when it ends.
+        guard !coordinator.isAnimating,
+              let current = (controller.viewControllers?.first as? PageController)?.index,
+              current != page
         else { return }
-        let forward = page > current
-        let direction: UIPageViewController.NavigationDirection
-        if mode == .rightToLeft {
-            direction = forward ? .reverse : .forward
-        } else {
-            direction = forward ? .forward : .reverse
-        }
-        controller.setViewControllers([target], direction: direction, animated: abs(page - current) == 1)
+        coordinator.show(page, from: current, in: controller,
+                         animated: AppSettings.shared.animatePageTurns && abs(page - current) == 1)
     }
 
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: PagedReader
+        private(set) var isAnimating = false
+        private var animationID = 0
+        /// Page controllers near the current page, reused so a tap shows
+        /// the very page that was already laid out next to this one.
+        private var cache: [Int: PageController] = [:]
 
         init(_ parent: PagedReader) {
             self.parent = parent
@@ -428,9 +464,56 @@ struct PagedReader: UIViewControllerRepresentable {
 
         func controller(for index: Int) -> PageController? {
             guard parent.pages.indices.contains(index) else { return nil }
+            if let cached = cache[index] { return cached }
             let controller = PageController(index: index, url: parent.pages[index].url)
             controller.onTap = { [weak self] fraction in self?.parent.onTap(fraction) }
+            cache[index] = controller
+            let current = parent.page
+            cache = cache.filter { abs($0.key - current) <= 3 || $0.key == index }
             return controller
+        }
+
+        func show(_ index: Int, from current: Int, in pageController: UIPageViewController, animated: Bool) {
+            guard let target = controller(for: index) else { return }
+            let forward = index > current
+            let direction: UIPageViewController.NavigationDirection
+            if parent.mode == .rightToLeft {
+                direction = forward ? .reverse : .forward
+            } else {
+                direction = forward ? .forward : .reverse
+            }
+            guard animated else {
+                pageController.setViewControllers([target], direction: direction, animated: false)
+                return
+            }
+            animationID += 1
+            let id = animationID
+            isAnimating = true
+            pageController.setViewControllers([target], direction: direction, animated: true) { [weak self, weak pageController] _ in
+                DispatchQueue.main.async {
+                    self?.finishTurn(id, at: index, target: target, direction: direction, in: pageController)
+                }
+            }
+            // In case the completion never comes, taps must keep working.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self, weak pageController] in
+                self?.finishTurn(id, at: index, target: target, direction: direction, in: pageController)
+            }
+        }
+
+        private func finishTurn(_ id: Int, at index: Int, target: PageController,
+                                direction: UIPageViewController.NavigationDirection,
+                                in pageController: UIPageViewController?) {
+            guard id == animationID, isAnimating, let pageController else { return }
+            isAnimating = false
+            let wanted = parent.page
+            if wanted != index {
+                // Tapped again during the turn: go straight there.
+                show(wanted, from: index, in: pageController, animated: false)
+            } else {
+                // Refreshes the neighbours UIPageViewController keeps
+                // (they can be stale after an animated jump).
+                pageController.setViewControllers([target], direction: direction, animated: false)
+            }
         }
 
         private func neighbour(of controller: UIViewController, _ delta: Int) -> UIViewController? {
@@ -498,12 +581,21 @@ final class PageController: UIViewController {
 // MARK: - Zoomable page
 
 /// A page image that can be pinch-zoomed and double-tapped (UIScrollView).
+///
+/// Taps on the page-turning edges are handled the moment the finger lifts.
+/// Only taps in the middle wait briefly to see whether a second tap
+/// (double-tap zoom) follows, instead of every tap waiting for it.
 final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     private let imageView = UIImageView()
     private let spinner = UIActivityIndicatorView(style: .large)
     private var task: ImageTask?
     private var currentURL: URL?
+    private var pendingTap: DispatchWorkItem?
+    private var lastTapTime: CFTimeInterval = 0
+    private var lastTapPoint: CGPoint = .zero
     var onTap: ((CGFloat) -> Void)?
+
+    private static let doubleTapInterval: CFTimeInterval = 0.28
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -525,12 +617,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         spinner.hidesWhenStopped = true
         addSubview(spinner)
 
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap(_:)))
-        doubleTap.numberOfTapsRequired = 2
-        addGestureRecognizer(doubleTap)
-        let singleTap = UITapGestureRecognizer(target: self, action: #selector(handleSingleTap(_:)))
-        singleTap.require(toFail: doubleTap)
-        addGestureRecognizer(singleTap)
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(handleTap(_:))))
     }
 
     required init?(coder: NSCoder) {
@@ -539,6 +626,7 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
 
     deinit {
         task?.cancel()
+        pendingTap?.cancel()
     }
 
     override func layoutSubviews() {
@@ -551,6 +639,8 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
     }
 
     func resetZoom() {
+        pendingTap?.cancel()
+        pendingTap = nil
         if zoomScale != minimumZoomScale {
             setZoomScale(minimumZoomScale, animated: false)
         }
@@ -590,22 +680,51 @@ final class ZoomableImageView: UIScrollView, UIScrollViewDelegate {
         imageView.center = CGPoint(x: contentSize.width / 2 + offsetX, y: contentSize.height / 2 + offsetY)
     }
 
-    @objc private func handleDoubleTap(_ gesture: UITapGestureRecognizer) {
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        guard bounds.width > 0 else { return }
+        let location = gesture.location(in: self)
+        // Position on screen (the scroll view's bounds move when zoomed).
+        let point = CGPoint(x: location.x - bounds.minX, y: location.y - bounds.minY)
+        let fraction = point.x / bounds.width
+        let zoomed = zoomScale > minimumZoomScale + 0.01
+
+        if !zoomed, ReaderTapZones.turnsPage(at: fraction) {
+            pendingTap?.cancel()
+            pendingTap = nil
+            onTap?(fraction)
+            return
+        }
+
+        let now = CACurrentMediaTime()
+        let dx = point.x - lastTapPoint.x
+        let dy = point.y - lastTapPoint.y
+        if let pending = pendingTap, now - lastTapTime < Self.doubleTapInterval, dx * dx + dy * dy < 3600 {
+            pending.cancel()
+            pendingTap = nil
+            toggleZoom(at: gesture.location(in: imageView))
+            return
+        }
+
+        pendingTap?.cancel()
+        lastTapTime = now
+        lastTapPoint = point
+        let work = DispatchWorkItem { [weak self] in
+            self?.pendingTap = nil
+            self?.onTap?(0.5)
+        }
+        pendingTap = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.doubleTapInterval, execute: work)
+    }
+
+    private func toggleZoom(at point: CGPoint) {
         if zoomScale > minimumZoomScale {
             setZoomScale(minimumZoomScale, animated: true)
         } else {
-            let point = gesture.location(in: imageView)
             let scale: CGFloat = 2.5
             let size = CGSize(width: bounds.width / scale, height: bounds.height / scale)
             zoom(to: CGRect(x: point.x - size.width / 2, y: point.y - size.height / 2,
                             width: size.width, height: size.height), animated: true)
         }
-    }
-
-    @objc private func handleSingleTap(_ gesture: UITapGestureRecognizer) {
-        guard bounds.width > 0 else { return }
-        let fraction = zoomScale > minimumZoomScale ? 0.5 : gesture.location(in: self).x / bounds.width
-        onTap?(fraction)
     }
 }
 

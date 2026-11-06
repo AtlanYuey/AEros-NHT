@@ -174,3 +174,9 @@
 "Translate Tags to Chinese" = "标签翻译为中文";
 "Update Tag Database" = "更新标签数据库";
 "%lld tags, %lld translations (EhTagTranslation). Updated automatically every week." = "%1$lld 个标签，%2$lld 条翻译（EhTagTranslation），每周自动更新。";
+
+/* Reader: gaps and page turns */
+"Continuous with Gaps" = "上下连续（有间距）";
+"Page Gap" = "页面间距";
+"Page Turn Animation" = "翻页动画";
+"Without the animation, tapping an edge shows the next page at once." = "关闭动画后，点按屏幕边缘会立即显示下一页。";

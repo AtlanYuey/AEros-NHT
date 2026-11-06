@@ -581,28 +581,130 @@ struct AboutView: View {
                         .resizable()
                         .frame(width: 88, height: 88)
                         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    Text("Eros-N").font(.title2.bold())
+                    Text(verbatim: "AEros-NHT").font(.title2.bold())
                     Text("Version \(version)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    Text("A modified version of eros_n by honjow.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
                 .listRowBackground(Color.clear)
             }
             Section {
-                Link(destination: URL(string: "https://github.com/erosTeam/eros_n")!) {
+                Link(destination: URL(string: "https://github.com/AtlanYuey/eros_n")!) {
                     LabeledContent("Source Code", value: "GitHub")
+                }
+                Link(destination: URL(string: "https://github.com/honjow/eros_n")!) {
+                    LabeledContent("Original Project", value: "honjow/eros_n")
                 }
                 Link(destination: NHHost.site) {
                     LabeledContent("Website", value: "nhentai.net")
                 }
             }
-            Section("Acknowledgements") {
-                LabeledContent("Nuke", value: "MIT License")
+            Section {
+                NavigationLink {
+                    AcknowledgementsView()
+                } label: {
+                    Text("Open Source Licenses")
+                }
             }
         }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// Licenses of the original project and the components the app uses.
+struct AcknowledgementsView: View {
+    private struct Item: Identifiable {
+        let name: String
+        let author: String
+        let license: String
+        /// License text bundled with the app, or nil for a link.
+        let file: String?
+        let url: URL
+
+        var id: String { name }
+    }
+
+    private let items: [Item] = [
+        Item(name: "eros_n", author: "honjow", license: "Apache License 2.0",
+             file: "eros_n-LICENSE", url: URL(string: "https://github.com/honjow/eros_n")!),
+        Item(name: "Nuke", author: "Alexander Grebenyuk", license: "MIT License",
+             file: "Nuke-LICENSE", url: URL(string: "https://github.com/kean/Nuke")!),
+        Item(name: "nhentai_tags_fetcher", author: "honjow", license: "MIT License",
+             file: "nhentai_tags_fetcher-LICENSE", url: URL(string: "https://github.com/honjow/nhentai_tags_fetcher")!),
+        Item(name: "EhTagTranslation Database", author: "EhTagTranslation", license: "CC BY-NC-SA 3.0",
+             file: nil, url: URL(string: "https://github.com/EhTagTranslation/Database")!),
+    ]
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(items) { item in
+                    if let file = item.file {
+                        NavigationLink {
+                            LicenseTextView(title: item.name, file: file, url: item.url)
+                        } label: {
+                            row(item)
+                        }
+                    } else {
+                        Link(destination: item.url) {
+                            row(item)
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
+            } footer: {
+                Text("Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags.")
+            }
+        }
+        .navigationTitle("Open Source Licenses")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func row(_ item: Item) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: item.name)
+            Text(verbatim: "\(item.author) · \(item.license)")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct LicenseTextView: View {
+    let title: String
+    let file: String
+    let url: URL
+
+    private var text: String {
+        guard let path = Bundle.main.url(forResource: file, withExtension: "txt"),
+              let text = try? String(contentsOf: path, encoding: .utf8)
+        else { return url.absoluteString }
+        return text
+    }
+
+    var body: some View {
+        ScrollView {
+            Text(verbatim: text)
+                .font(.footnote.monospaced())
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+        }
+        .navigationTitle(Text(verbatim: title))
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Link(destination: url) {
+                    Image(systemName: "safari")
+                }
+            }
+        }
     }
 }

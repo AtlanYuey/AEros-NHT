@@ -192,8 +192,14 @@
 "Settings follow your Apple Account to your other devices. Choose whether this iPad shares them with your iPhone, or only with your other iPads." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPad 与 iPhone 共用设置，还是只与其他 iPad 同步。";
 "Settings follow your Apple Account to your other devices. Choose whether this iPhone shares them with your iPad, or only with your other iPhones." = "设置会通过你的 Apple 账户同步到其他设备。可以选择这台 iPhone 与 iPad 共用设置，还是只与其他 iPhone 同步。";
 "Last synced: %@" = "上次同步：%@";
-"Eros-N Settings" = "Eros-N 设置";
+"AEros-NHT Settings" = "AEros-NHT 设置";
 "Export Settings" = "导出设置";
 "Import Settings" = "导入设置";
 "Save the settings as a file, for example in iCloud Drive, and import it on another device." = "把设置存成文件（例如存到 iCloud 云盘），再在其他设备上导入。";
 "The settings were imported." = "设置已导入。";
+
+/* About / licenses */
+"A modified version of eros_n by honjow." = "基于 honjow 的 eros_n 修改而来。";
+"Original Project" = "原项目";
+"Open Source Licenses" = "开源许可";
+"Tag translations come from the EhTagTranslation database, licensed under CC BY-NC-SA 3.0 (attribution, non-commercial, share alike). They are downloaded when the app updates its tags." = "标签翻译来自 EhTagTranslation 数据库，采用 CC BY-NC-SA 3.0 协议（署名、非商业性使用、相同方式共享），在 App 更新标签库时下载。";

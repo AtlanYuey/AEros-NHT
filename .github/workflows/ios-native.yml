@@ -74,12 +74,12 @@ jobs:
           BUILD=$(/usr/libexec/PlistBuddy -c "Print CFBundleVersion" "$APP/Info.plist")
           rm -rf build/ipa && mkdir -p build/ipa/Payload
           cp -R "$APP" build/ipa/Payload/
-          (cd build/ipa && zip -qry "../Eros-N_native_${VERSION}_${BUILD}.ipa" Payload)
+          (cd build/ipa && zip -qry "../AEros-NHT_${VERSION}_${BUILD}.ipa" Payload)
           ls -lh build/*.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: eros-n-native-ios
+          name: aeros-nht-ios
           path: apple/build/*.ipa
           if-no-files-found: error

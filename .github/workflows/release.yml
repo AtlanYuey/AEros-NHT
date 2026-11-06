@@ -11,6 +11,7 @@ on:
     paths-ignore:
       - 'apple/**'
       - '.github/workflows/ios-native.yml'
+      - '**.md'
   workflow_dispatch:
 
 env:

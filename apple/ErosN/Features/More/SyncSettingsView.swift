@@ -42,7 +42,7 @@ struct SyncSettingsView: View {
             }
 
             Section {
-                ShareLink(item: SettingsFile(), preview: SharePreview("Eros-N Settings")) {
+                ShareLink(item: SettingsFile(), preview: SharePreview("AEros-NHT Settings")) {
                     Label("Export Settings", systemImage: "square.and.arrow.up")
                 }
                 Button {
@@ -91,7 +91,7 @@ struct SettingsFile: Transferable {
     static var transferRepresentation: some TransferRepresentation {
         FileRepresentation(exportedContentType: .json) { _ in
             let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Eros-N Settings.json")
+                .appendingPathComponent("AEros-NHT Settings.json")
             let data = try JSONSerialization.data(
                 withJSONObject: AppSettings.shared.snapshot(),
                 options: [.prettyPrinted, .sortedKeys]

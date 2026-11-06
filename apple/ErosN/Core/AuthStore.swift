@@ -52,7 +52,7 @@ final class AuthStore: @unchecked Sendable {
 }
 
 private enum Keychain {
-    static let service = "com.honjow.erosn.ios"
+    static let service = "com.atlanyuey.nhentai"
 
     static func read(_ key: String) -> String? {
         let query: [String: Any] = [

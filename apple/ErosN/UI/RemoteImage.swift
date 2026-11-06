@@ -48,7 +48,7 @@ enum ImageSetup {
     /// Disk-cached pipeline for covers and pages.
     static func configure() {
         ImagePipeline.shared = ImagePipeline(configuration: .withDataCache(
-            name: "com.honjow.erosn.images",
+            name: "com.atlanyuey.nhentai.images",
             sizeLimit: 600 * 1024 * 1024
         ))
     }

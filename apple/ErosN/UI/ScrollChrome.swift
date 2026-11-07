@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Scrolling a list down hides its navigation bar and the tab bar (when
 /// Appearance › Hide Bars When Scrolling is on); scrolling up, or reaching
-/// the top, shows them again. While they are hidden, a short blur stays
-/// behind the status bar and at the bottom edge.
+/// the top, shows them again. While they are hidden nothing is drawn over
+/// the content: only the system's own soft scroll edges remain.
 struct HidesBarsOnScroll: ViewModifier {
     @Environment(AppSettings.self) private var settings
     @State private var chrome = AppChrome.shared
@@ -25,12 +25,6 @@ struct HidesBarsOnScroll: ViewModifier {
             }
             .toolbarVisibility(hiding ? .hidden : .automatic, for: .navigationBar)
             .toolbarVisibility(hiding ? .hidden : .automatic, for: .tabBar)
-            .overlay(alignment: .top) {
-                if hiding { EdgeBlur(edge: .top, extra: 6) }
-            }
-            .overlay(alignment: .bottom) {
-                if hiding { EdgeBlur(edge: .bottom, extra: 30) }
-            }
             .onChange(of: settings.hideBarsOnScroll) { _, on in
                 if !on { setHidden(false) }
             }
@@ -75,51 +69,18 @@ extension View {
     }
 }
 
-/// A short progressive blur at the top or bottom edge, over the safe area
-/// and [extra] points more (instead of the taller blur under the bars).
-struct EdgeBlur: View {
-    let edge: VerticalEdge
-    var extra: CGFloat = 0
-
-    var body: some View {
-        GeometryReader { geometry in
-            let inset = edge == .top ? geometry.safeAreaInsets.top : geometry.safeAreaInsets.bottom
-            VStack(spacing: 0) {
-                if edge == .bottom { Spacer(minLength: 0) }
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .mask {
-                        LinearGradient(
-                            stops: [
-                                .init(color: .black, location: 0),
-                                .init(color: .black, location: 0.45),
-                                .init(color: .clear, location: 1),
-                            ],
-                            startPoint: edge == .top ? .top : .bottom,
-                            endPoint: edge == .top ? .bottom : .top
-                        )
-                    }
-                    .frame(height: inset + extra)
-                if edge == .top { Spacer(minLength: 0) }
-            }
-            .ignoresSafeArea()
-        }
-        .allowsHitTesting(false)
-        .transition(.opacity)
-    }
-}
-
 /// The round glass search button that stays while the bars are hidden
 /// (when Hide Search Too is off).
 struct FloatingSearchButton: View {
+    var size: CGFloat = 62
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 21, weight: .medium))
+                .font(.system(size: size * 0.34, weight: .medium))
                 .foregroundStyle(.primary)
-                .frame(width: 62, height: 62)
+                .frame(width: size, height: size)
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

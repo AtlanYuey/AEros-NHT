@@ -89,21 +89,25 @@ struct RootView: View {
     /// iPhone: the system tab bar (Liquid Glass, search tab at the side).
     private var phoneTabs: some View {
         tabView
-            .overlay(alignment: .bottomTrailing) {
-                // Where the system search button is: it stays while the bars
-                // are hidden unless Hide Search Too is on.
+            .overlay {
+                // Exactly where the system search button is (56 pt, 20 pt
+                // from the right and bottom edges of the screen): it stays
+                // while the bars are hidden unless Hide Search Too is on.
                 if settings.hideBarsOnScroll, chrome.barsHidden, !settings.hideSearchOnScroll, !chrome.hidesTabBar {
-                    FloatingSearchButton {
-                        withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
-                        if selection == .search {
-                            chrome.searchRequest += 1
-                        } else {
-                            selection = .search
+                    GeometryReader { geometry in
+                        FloatingSearchButton(size: 56) {
+                            withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
+                            if selection == .search {
+                                chrome.searchRequest += 1
+                            } else {
+                                selection = .search
+                            }
                         }
+                        .position(
+                            x: geometry.size.width - 20 - 28,
+                            y: geometry.size.height + geometry.safeAreaInsets.bottom - 20 - 28
+                        )
                     }
-                    .padding(.trailing, 19)
-                    .padding(.bottom, 18)
-                    .ignoresSafeArea(edges: .bottom)
                 }
             }
             .onChange(of: selection) { chrome.barsHidden = false }

@@ -604,11 +604,13 @@ struct AboutView: View {
         return "\(short) (\(build))"
     }
 
+    @State private var egg = AboutEgg()
+
     var body: some View {
         List {
             Section {
                 VStack(spacing: 10) {
-                    AboutIcon()
+                    AboutIcon(egg: egg)
                     Text(verbatim: "AEros-NHT").font(.title2.bold())
                     Text("Version \(version)")
                         .font(.subheadline)
@@ -641,6 +643,8 @@ struct AboutView: View {
                 }
             }
         }
+        // The easter egg flies over the whole page, not just its row.
+        .overlay { AboutEggEffects(egg: egg) }
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
     }

@@ -5,7 +5,7 @@ import SwiftUI
 struct SearchView: View {
     var body: some View {
         SearchHost()
-            .navigationTitle("Search")
+            .scrollHidingTitle("Search")
     }
 }
 
@@ -166,7 +166,7 @@ struct SearchResultsView: View {
 
     var body: some View {
         SearchResults(query: route.query)
-            .navigationTitle(route.title ?? route.query)
+            .scrollHidingTitle(verbatim: route.title ?? route.query)
             .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -179,6 +179,7 @@ struct SearchResults: View {
     let showsMenus: Bool
 
     @Environment(AppSettings.self) private var settings
+    @State private var chrome = AppChrome.shared
     @State private var feed: GalleryFeed
     @State private var match: GalleryItem?
 
@@ -233,7 +234,7 @@ struct SearchResults: View {
             }
         }
         .toolbar {
-            if showsMenus {
+            if showsMenus, !chrome.listBarsHidden {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Picker("Language", selection: $settings.searchLanguage) {

@@ -33,7 +33,7 @@ struct FavoritesView: View {
                 }
             }
         }
-        .navigationTitle("Favorites")
+        .scrollHidingTitle("Favorites")
         .sheet(isPresented: $showLogin) { LoginView() }
         .task(id: session.isLoggedIn) {
             if session.isLoggedIn { await feed.reload() }

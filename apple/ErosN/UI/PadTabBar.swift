@@ -18,8 +18,6 @@ final class AppChrome {
     /// Bumped to put the cursor in the search field (the floating search
     /// button while the bars are hidden).
     var searchRequest = 0
-    /// A list's top inset without its navigation bar, once measured.
-    @ObservationIgnored var hiddenTopBase: CGFloat?
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s
@@ -164,19 +162,6 @@ struct PadRootView: View {
                   !barFrame.insetBy(dx: -10, dy: -10).contains(touch.location) else { return }
             hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })
-        .overlay(alignment: .topTrailing) {
-            // Search lives in the Home page's bar; it stays reachable while
-            // the bars are hidden unless Hide Search Too is on.
-            if barsHidden, !settings.hideSearchOnScroll, !chrome.hidesTabBar {
-                FloatingSearchButton {
-                    withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
-                    selection = .home
-                    chrome.searchRequest += 1
-                }
-                .padding(.trailing, 20)
-                .padding(.top, 4)
-            }
-        }
         .onChange(of: selection) { chrome.barsHidden = false }
         .animation(.spring(duration: settings.followSpeed.duration, bounce: 0.15), value: alignment)
         .animation(.smooth(duration: 0.25), value: chrome.hidesTabBar)

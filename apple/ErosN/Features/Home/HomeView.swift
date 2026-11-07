@@ -3,6 +3,7 @@ import UIKit
 
 struct HomeView: View {
     @Environment(AppSettings.self) private var settings
+    @State private var chrome = AppChrome.shared
     @State private var popular: [GalleryItem] = []
     @State private var feed = GalleryFeed { page in
         let settings = AppSettings.shared
@@ -46,22 +47,24 @@ struct HomeView: View {
             }
         }
         .hidesBarsOnScroll()
-        .navigationTitle("Home")
+        .scrollHidingTitle("Home")
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Language", selection: language) {
-                        ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+            if !chrome.listBarsHidden {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Menu {
+                        Picker("Language", selection: language) {
+                            ForEach(LanguageFilter.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
                     }
-                } label: {
-                    Label("Language", systemImage: "globe")
-                }
-                Menu {
-                    Picker("Sort", selection: sort) {
-                        ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                    Menu {
+                        Picker("Sort", selection: sort) {
+                            ForEach(SearchSort.allCases) { Text($0.title).tag($0) }
+                        }
+                    } label: {
+                        Label("Sort", systemImage: "arrow.up.arrow.down")
                     }
-                } label: {
-                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }
             }
         }

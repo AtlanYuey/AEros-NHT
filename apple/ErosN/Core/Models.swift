@@ -120,7 +120,7 @@ struct GalleryItem: Decodable, Identifiable, Hashable {
     }
 
     init(id: Int, mediaID: String, title: String?, thumbnail: String?,
-         thumbnailWidth: Int = 0, thumbnailHeight: Int = 0) {
+         thumbnailWidth: Int = 0, thumbnailHeight: Int = 0, numPages: Int = 0, tagIDs: [Int] = []) {
         self.id = id
         self.mediaID = mediaID
         self.englishTitle = title
@@ -128,9 +128,9 @@ struct GalleryItem: Decodable, Identifiable, Hashable {
         self.thumbnail = thumbnail
         self.thumbnailWidth = thumbnailWidth
         self.thumbnailHeight = thumbnailHeight
-        self.numPages = 0
+        self.numPages = numPages
         self.numFavorites = 0
-        self.tagIDs = []
+        self.tagIDs = tagIDs
         self.blacklisted = false
     }
 
@@ -195,6 +195,12 @@ struct ImageInfo: Decodable, Hashable {
     }
 
     enum CodingKeys: String, CodingKey { case path, width, height }
+
+    init(path: String, width: Int, height: Int) {
+        self.path = path
+        self.width = width
+        self.height = height
+    }
 }
 
 struct GalleryPage: Decodable, Identifiable, Hashable {
@@ -221,6 +227,14 @@ struct GalleryPage: Decodable, Identifiable, Hashable {
         width = (try? c.decodeIfPresent(Int.self, forKey: .width)) ?? 0
         height = (try? c.decodeIfPresent(Int.self, forKey: .height)) ?? 0
         thumbnail = try? c.decodeIfPresent(String.self, forKey: .thumbnail)
+    }
+
+    init(number: Int, path: String, width: Int, height: Int, thumbnail: String? = nil) {
+        self.number = number
+        self.path = path
+        self.width = width
+        self.height = height
+        self.thumbnail = thumbnail
     }
 }
 
@@ -344,8 +358,33 @@ struct GalleryDetail: Decodable, Identifiable, Hashable {
             id: id, mediaID: mediaID, title: displayTitle,
             thumbnail: thumbnail?.path ?? cover?.path,
             thumbnailWidth: thumbnail?.width ?? cover?.width ?? 0,
-            thumbnailHeight: thumbnail?.height ?? cover?.height ?? 0
+            thumbnailHeight: thumbnail?.height ?? cover?.height ?? 0,
+            numPages: numPages,
+            tagIDs: tags.map(\.id)
         )
+    }
+}
+
+extension GalleryDetail {
+    /// What a download knows about its gallery, for its page without the
+    /// network when the gallery's JSON wasn't saved with it.
+    init(record: DownloadRecord) {
+        id = record.id
+        mediaID = record.mediaID
+        title = GalleryTitles(english: record.title, japanese: nil, pretty: nil)
+        let image = record.thumbnail.map { ImageInfo(path: $0, width: record.thumbWidth, height: record.thumbHeight) }
+        cover = image
+        thumbnail = image
+        scanlator = nil
+        uploadDate = nil
+        tags = []
+        numPages = record.pages.count
+        numFavorites = 0
+        pages = record.pages.map {
+            GalleryPage(number: $0.number, path: $0.remote, width: $0.width, height: $0.height)
+        }
+        related = []
+        isFavorited = nil
     }
 }
 
@@ -438,3 +477,12 @@ struct SearchRoute: Hashable {
     let query: String
     var title: String?
 }
+
+/// Every page of a gallery.
+struct PagesRoute: Hashable {
+    let detail: GalleryDetail
+}
+
+/// The downloaded galleries. Pushed by value like the galleries it opens:
+/// a value pushed from a view-destination link would show under it.
+struct DownloadsRoute: Hashable {}

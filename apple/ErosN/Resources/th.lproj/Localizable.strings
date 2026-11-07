@@ -207,3 +207,6 @@
 "Hide Controls After" = "ซ่อนตัวควบคุมหลังจาก";
 "The reader's controls hide on their own after this long without a touch." = "ตัวควบคุมของตัวอ่านจะซ่อนเองเมื่อไม่มีการแตะเป็นเวลาเท่านี้";
 "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "เมื่อเลื่อนรายการลง แถบแท็บจะย่อเหลือปุ่มเล็กๆ และจะกลับมาเมื่อเลื่อนขึ้น";
+"Me" = "ฉัน";
+"History and Downloads" = "ประวัติและดาวน์โหลด";
+"Cards" = "การ์ด";

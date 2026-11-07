@@ -13,9 +13,11 @@ final class HistoryEntry {
     var numPages: Int
     var lastPage: Int
     var lastRead: Date
+    /// For the language badge and tags on cards (empty for entries from before 2.1.0).
+    var tagIDs: [Int] = []
 
     init(gid: Int, mediaID: String, title: String, thumbnail: String?,
-         thumbWidth: Int, thumbHeight: Int, numPages: Int,
+         thumbWidth: Int, thumbHeight: Int, numPages: Int, tagIDs: [Int] = [],
          lastPage: Int = 0, lastRead: Date = .now) {
         self.gid = gid
         self.mediaID = mediaID
@@ -24,13 +26,15 @@ final class HistoryEntry {
         self.thumbWidth = thumbWidth
         self.thumbHeight = thumbHeight
         self.numPages = numPages
+        self.tagIDs = tagIDs
         self.lastPage = lastPage
         self.lastRead = lastRead
     }
 
     var item: GalleryItem {
         GalleryItem(id: gid, mediaID: mediaID, title: title, thumbnail: thumbnail,
-                    thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight)
+                    thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight,
+                    numPages: numPages, tagIDs: tagIDs)
     }
 }
 
@@ -48,13 +52,14 @@ extension ModelContext {
             entry.lastRead = .now
             entry.title = title
             if numPages > 0 { entry.numPages = numPages }
+            if !item.tagIDs.isEmpty { entry.tagIDs = item.tagIDs }
             if let page { entry.lastPage = page }
         } else {
             insert(HistoryEntry(
                 gid: gid, mediaID: item.mediaID, title: title,
                 thumbnail: item.thumbnail, thumbWidth: item.thumbnailWidth,
                 thumbHeight: item.thumbnailHeight, numPages: numPages,
-                lastPage: page ?? 0
+                tagIDs: item.tagIDs, lastPage: page ?? 0
             ))
         }
         try? save()

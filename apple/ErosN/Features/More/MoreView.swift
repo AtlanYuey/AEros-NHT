@@ -46,7 +46,7 @@ struct MoreView: View {
             }
 
             Section {
-                NavigationLink { DownloadsView() } label: {
+                NavigationLink(value: DownloadsRoute()) {
                     SettingsLabel("Downloads", systemImage: "arrow.down.circle.fill", color: .green)
                         .badge(downloads.records.filter { $0.state == .downloading }.count)
                 }
@@ -76,7 +76,7 @@ struct MoreView: View {
                 }
             }
         }
-        .navigationTitle("More")
+        .navigationTitle("Me")
         .sheet(isPresented: $showLogin) { LoginView() }
     }
 }
@@ -146,31 +146,22 @@ struct AccountView: View {
     }
 }
 
-/// Galleries saved for offline reading.
+/// Galleries saved for offline reading: cards like Favorites, or rows with
+/// their progress. A gallery opens on its page (offline too); Read there,
+/// or in its menu, opens the pages.
 struct DownloadsView: View {
     @Environment(DownloadManager.self) private var downloads
+    @Environment(AppSettings.self) private var settings
     @State private var usage: Int64?
 
     var body: some View {
-        List {
-            ForEach(downloads.records) { record in
-                DownloadRow(record: record)
-                    .swipeActions(edge: .trailing) {
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            downloads.delete(record.id)
-                        }
-                    }
-                    .contextMenu {
-                        NavigationLink(value: GalleryRoute(id: record.id, preview: record.item)) {
-                            Label("Open Gallery Page", systemImage: "info.circle")
-                        }
-                        Button("Delete", systemImage: "trash", role: .destructive) {
-                            downloads.delete(record.id)
-                        }
-                    }
+        Group {
+            if settings.libraryStyle == .cards {
+                cards
+            } else {
+                list
             }
         }
-        .listStyle(.plain)
         .overlay {
             if downloads.records.isEmpty {
                 ContentUnavailableView("No Downloads", systemImage: "arrow.down.circle",
@@ -192,6 +183,109 @@ struct DownloadsView: View {
             usage = await Task.detached { DownloadManager.diskUsage() }.value
         }
     }
+
+    private var cards: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                GalleryCollection(items: downloads.records.map(\.item))
+                    .padding(.top, 8)
+            }
+            .padding(.bottom, 16)
+        }
+        .environment(\.galleryCoverBadge) { item in
+            AnyView(DownloadBadge(id: item.id))
+        }
+        .environment(\.galleryMenuItems) { item in
+            AnyView(DownloadMenuItems(id: item.id))
+        }
+    }
+
+    private var list: some View {
+        List {
+            ForEach(downloads.records) { record in
+                DownloadRow(record: record)
+                    .swipeActions(edge: .trailing) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            downloads.delete(record.id)
+                        }
+                    }
+                    .contextMenu {
+                        DownloadMenuItems(id: record.id)
+                    }
+            }
+        }
+        .listStyle(.plain)
+    }
+}
+
+/// Read, pause / resume and delete for a download.
+private struct DownloadMenuItems: View {
+    let id: Int
+
+    @Environment(DownloadManager.self) private var downloads
+
+    var body: some View {
+        if let record = downloads.record(id) {
+            if record.completed > 0 {
+                NavigationLink(value: ReaderRoute(source: ReaderSource(record: record), page: 0)) {
+                    Label("Read", systemImage: "book")
+                }
+            }
+            switch record.state {
+            case .downloading, .queued:
+                Button("Pause", systemImage: "pause") { downloads.pause(id) }
+            case .paused:
+                Button("Resume", systemImage: "arrow.clockwise") { downloads.resume(id) }
+            case .failed:
+                Button("Retry", systemImage: "arrow.clockwise") { downloads.resume(id) }
+            case .finished:
+                EmptyView()
+            }
+            Button("Delete", systemImage: "trash", role: .destructive) { downloads.delete(id) }
+        }
+    }
+}
+
+/// A download's progress over its cover until it has finished.
+private struct DownloadBadge: View {
+    let id: Int
+
+    @Environment(DownloadManager.self) private var downloads
+
+    var body: some View {
+        if let record = downloads.record(id), record.state != .finished {
+            ZStack {
+                Circle().fill(.black.opacity(0.55))
+                Circle()
+                    .stroke(.white.opacity(0.3), lineWidth: 3)
+                    .padding(4)
+                Circle()
+                    .trim(from: 0, to: record.progress)
+                    .stroke(.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .padding(4)
+                Image(systemName: icon(record.state))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 34, height: 34)
+            .padding(6)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+            .animation(.smooth, value: record.progress)
+            .accessibilityElement()
+            .accessibilityLabel(Text("\(record.completed) / \(record.pages.count)"))
+        }
+    }
+
+    private func icon(_ state: DownloadRecord.State) -> String {
+        switch state {
+        case .downloading: "arrow.down"
+        case .queued: "clock"
+        case .paused: "pause.fill"
+        case .failed: "exclamationmark"
+        case .finished: "checkmark"
+        }
+    }
 }
 
 private struct DownloadRow: View {
@@ -200,7 +294,7 @@ private struct DownloadRow: View {
     @Environment(DownloadManager.self) private var downloads
 
     var body: some View {
-        NavigationLink(value: ReaderRoute(source: ReaderSource(record: record), page: 0)) {
+        NavigationLink(value: GalleryRoute(id: record.id, preview: record.item)) {
             HStack(spacing: 14) {
                 CoverView(item: record.item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
                     .frame(width: 72)
@@ -294,6 +388,9 @@ struct AppearanceSettingsView: View {
                     ForEach(GalleryListStyle.allCases) { style in
                         Label(style.title, systemImage: style.systemImage).tag(style)
                     }
+                }
+                Picker("History and Downloads", selection: $settings.libraryStyle) {
+                    ForEach(LibraryStyle.allCases) { Text($0.title).tag($0) }
                 }
                 NavigationLink {
                     CardSizeView()

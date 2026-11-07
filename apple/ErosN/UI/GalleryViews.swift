@@ -4,6 +4,10 @@ import UIKit
 extension EnvironmentValues {
     /// Namespace for the zoom transition from a gallery card to its page.
     @Entry var galleryNamespace: Namespace.ID? = nil
+    /// Drawn over a gallery's cover in cards and rows (download or reading progress).
+    @Entry var galleryCoverBadge: ((GalleryItem) -> AnyView)? = nil
+    /// More items for a gallery's context menu (Delete in History and Downloads).
+    @Entry var galleryMenuItems: ((GalleryItem) -> AnyView)? = nil
 }
 
 /// Registers the gallery / search destinations of a navigation stack and
@@ -25,6 +29,13 @@ struct GalleryDestinations: ViewModifier {
             }
             .navigationDestination(for: ReaderRoute.self) { route in
                 ReaderView(route: route)
+            }
+            .navigationDestination(for: PagesRoute.self) { route in
+                PagesView(detail: route.detail)
+            }
+            .navigationDestination(for: DownloadsRoute.self) { _ in
+                DownloadsView()
+                    .environment(\.galleryNamespace, namespace)
             }
     }
 }
@@ -72,7 +83,10 @@ struct CoverView: View {
         Color.clear
             .aspectRatio(aspectRatio ?? item.aspectRatio, contentMode: .fit)
             .overlay {
-                RemoteImage(url: item.thumbURL, targetWidth: targetWidth, blur: settings.blurCovers)
+                RemoteImage(url: item.thumbURL, targetWidth: targetWidth, blur: settings.blurCovers) {
+                    // Without the network, a downloaded gallery shows its first page.
+                    DownloadManager.shared.localURL(gallery: item.id, page: 0)
+                }
             }
             .overlay(alignment: .topLeading) {
                 if let language = item.language {
@@ -93,6 +107,7 @@ struct GalleryCard: View {
     let style: GalleryListStyle
 
     @Environment(\.galleryNamespace) private var namespace
+    @Environment(\.galleryCoverBadge) private var badge
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
@@ -101,15 +116,18 @@ struct GalleryCard: View {
                 switch style {
                 case .grid:
                     CoverView(item: item, aspectRatio: 3 / 4)
+                        .overlay { badge?(item) }
                         .galleryTransitionSource(item.id, namespace)
                     title.frame(maxWidth: .infinity, minHeight: 34, alignment: .topLeading)
                 case .compact:
                     CoverView(item: item)
                         .overlay(alignment: .bottom) { compactOverlay }
+                        .overlay { badge?(item) }
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .galleryTransitionSource(item.id, namespace)
                 default:
                     CoverView(item: item)
+                        .overlay { badge?(item) }
                         .galleryTransitionSource(item.id, namespace)
                     title
                     if settings.showTags {
@@ -230,11 +248,13 @@ struct GalleryRow: View {
     var subtitle: String? = nil
 
     @Environment(\.galleryNamespace) private var namespace
+    @Environment(\.galleryCoverBadge) private var badge
 
     var body: some View {
         NavigationLink(value: GalleryRoute(id: item.id, preview: item)) {
             HStack(alignment: .top, spacing: 14) {
                 CoverView(item: item, aspectRatio: 0.72, cornerRadius: 10, targetWidth: 200)
+                    .overlay { badge?(item) }
                     .frame(width: 84)
                     .galleryTransitionSource(item.id, namespace)
                 VStack(alignment: .leading, spacing: 6) {
@@ -266,7 +286,13 @@ struct GalleryRow: View {
 struct GalleryContextMenu: View {
     let item: GalleryItem
 
+    @Environment(\.galleryMenuItems) private var extraItems
+
     var body: some View {
+        if let extraItems {
+            extraItems(item)
+            Divider()
+        }
         ShareLink(item: NHHost.gallery(item.id)) {
             Label("Share", systemImage: "square.and.arrow.up")
         }

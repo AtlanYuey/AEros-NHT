@@ -114,9 +114,24 @@ final class NHClient: @unchecked Sendable {
         _ path: String,
         method: String = "GET",
         query: [URLQueryItem] = [],
+        body: [String: Any]? = nil
+    ) async throws -> T {
+        let data = try await sendData(path, method: method, query: query, body: body)
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw NHError.invalidResponse
+        }
+    }
+
+    /// The response body of a successful request.
+    private func sendData(
+        _ path: String,
+        method: String = "GET",
+        query: [URLQueryItem] = [],
         body: [String: Any]? = nil,
         retried: Bool = false
-    ) async throws -> T {
+    ) async throws -> Data {
         let request = try makeRequest(path, method: method, query: query, body: body)
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
@@ -124,18 +139,13 @@ final class NHClient: @unchecked Sendable {
         }
         if http.statusCode == 401, !retried, AuthStore.shared.refreshToken != nil {
             if await AuthStore.shared.refresh() {
-                return try await send(type, path, method: method, query: query,
-                                      body: body, retried: true)
+                return try await sendData(path, method: method, query: query, body: body, retried: true)
             }
         }
         guard (200..<300).contains(http.statusCode) else {
             throw NHError.http(http.statusCode, Self.message(from: data))
         }
-        do {
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw NHError.invalidResponse
-        }
+        return data
     }
 
     private static func message(from data: Data) -> String {
@@ -172,9 +182,21 @@ final class NHClient: @unchecked Sendable {
     }
 
     func gallery(_ id: Int) async throws -> GalleryDetail {
+        try Self.decodeGallery(await galleryData(id))
+    }
+
+    /// A gallery's JSON as the API sends it (downloads keep it for offline use).
+    func galleryData(_ id: Int) async throws -> Data {
         let include = AuthStore.shared.isLoggedIn ? "related,favorite" : "related"
-        return try await send(GalleryDetail.self, "galleries/\(id)",
-                              query: [URLQueryItem(name: "include", value: include)])
+        return try await sendData("galleries/\(id)", query: [URLQueryItem(name: "include", value: include)])
+    }
+
+    static func decodeGallery(_ data: Data) throws -> GalleryDetail {
+        do {
+            return try JSONDecoder().decode(GalleryDetail.self, from: data)
+        } catch {
+            throw NHError.invalidResponse
+        }
     }
 
     func comments(_ id: Int) async throws -> [GalleryComment] {

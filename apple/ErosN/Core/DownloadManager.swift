@@ -27,6 +27,8 @@ struct DownloadRecord: Codable, Identifiable, Hashable {
     var completed: Int
     var state: State
     var added: Date
+    /// For the language badge and tags on cards (nil for downloads from before 2.1.0).
+    var tagIDs: [Int]? = nil
 
     var progress: Double {
         pages.isEmpty ? 0 : Double(completed) / Double(pages.count)
@@ -34,7 +36,8 @@ struct DownloadRecord: Codable, Identifiable, Hashable {
 
     var item: GalleryItem {
         GalleryItem(id: id, mediaID: mediaID, title: title, thumbnail: thumbnail,
-                    thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight)
+                    thumbnailWidth: thumbWidth, thumbnailHeight: thumbHeight,
+                    numPages: pages.count, tagIDs: tagIDs ?? [])
     }
 }
 
@@ -69,9 +72,37 @@ final class DownloadManager {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
+    /// The page of a downloaded gallery without the network: the gallery's
+    /// JSON saved with the download, or what the download record knows.
+    func offlineDetail(_ id: Int) -> GalleryDetail? {
+        guard let record = record(id) else { return nil }
+        if let data = try? Data(contentsOf: Self.detailURL(id)),
+           let detail = try? NHClient.decodeGallery(data) {
+            return detail
+        }
+        return GalleryDetail(record: record)
+    }
+
+    /// Keeps the gallery's JSON ([data], as the API sent it) with its
+    /// download, for its page offline.
+    func saveDetail(_ data: Data, of detail: GalleryDetail) {
+        guard record(detail.id) != nil else { return }
+        if record(detail.id)?.tagIDs == nil {
+            update(detail.id) { $0.tagIDs = detail.tags.map(\.id) }
+            saveIndex()
+        }
+        let url = Self.detailURL(detail.id)
+        Task.detached(priority: .utility) {
+            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                     withIntermediateDirectories: true)
+            try? data.write(to: url, options: .atomic)
+        }
+    }
+
     // MARK: Actions
 
-    func start(_ detail: GalleryDetail) {
+    /// Downloads [detail]; [data] is its JSON, kept for its page offline.
+    func start(_ detail: GalleryDetail, data: Data? = nil) {
         if record(detail.id) == nil {
             let item = detail.asItem
             let pages = detail.pages.enumerated().map { offset, page in
@@ -88,10 +119,11 @@ final class DownloadManager {
                 id: detail.id, mediaID: detail.mediaID, title: detail.displayTitle,
                 thumbnail: item.thumbnail, thumbWidth: item.thumbnailWidth,
                 thumbHeight: item.thumbnailHeight, pages: pages, completed: 0,
-                state: .queued, added: Date()
+                state: .queued, added: Date(), tagIDs: detail.tags.map(\.id)
             ), at: 0)
             saveIndex()
         }
+        if let data { saveDetail(data, of: detail) }
         resume(detail.id)
     }
 
@@ -196,6 +228,10 @@ final class DownloadManager {
 
     nonisolated static func folder(_ id: Int) -> URL {
         root.appendingPathComponent("\(id)", isDirectory: true)
+    }
+
+    nonisolated private static func detailURL(_ id: Int) -> URL {
+        folder(id).appendingPathComponent("gallery.json")
     }
 
     nonisolated private static var indexURL: URL {

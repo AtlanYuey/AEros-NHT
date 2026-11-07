@@ -249,3 +249,6 @@
 
 /* iPhone tab bar minimize */
 "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "向下滚动列表时标签栏会缩成一个小按钮，向上滚动时恢复。";
+"Me" = "我的";
+"History and Downloads" = "历史和下载";
+"Cards" = "卡片";

@@ -207,3 +207,6 @@
 "Hide Controls After" = "Скрывать элементы через";
 "The reader's controls hide on their own after this long without a touch." = "Элементы управления читалки скрываются сами, если столько времени не касаться экрана.";
 "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "При прокрутке списка вниз панель вкладок сжимается до маленькой кнопки, при прокрутке вверх — возвращается.";
+"Me" = "Профиль";
+"History and Downloads" = "История и загрузки";
+"Cards" = "Карточки";

@@ -207,3 +207,6 @@
 "Hide Controls After" = "Nascondi controlli dopo";
 "The reader's controls hide on their own after this long without a touch." = "I controlli del lettore si nascondono da soli dopo questo tempo senza tocchi.";
 "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "Scorrendo un elenco verso il basso la barra delle schede si riduce a un piccolo pulsante; scorrendo verso l’alto ritorna.";
+"Me" = "Profilo";
+"History and Downloads" = "Cronologia e download";
+"Cards" = "Schede";

@@ -104,7 +104,7 @@ struct RootView: View {
                     HistoryView().galleryDestinations()
                 }
             }
-            Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) {
+            Tab("Me", systemImage: "person.crop.circle", value: AppTab.more) {
                 NavigationStack {
                     MoreView().galleryDestinations()
                 }

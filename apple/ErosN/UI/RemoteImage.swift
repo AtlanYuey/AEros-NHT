@@ -10,6 +10,8 @@ struct RemoteImage: View {
     /// Decode at this width (points) to save memory; nil keeps full size.
     var targetWidth: CGFloat? = 400
     var blur: Bool = false
+    /// Where to load the image from when [url] fails (asked only then).
+    var fallback: (() -> URL?)? = nil
 
     var body: some View {
         LazyImage(request: request) { state in
@@ -19,6 +21,8 @@ struct RemoteImage: View {
                     .aspectRatio(contentMode: contentMode)
                     .blur(radius: blur ? 18 : 0, opaque: true)
                     .transition(.opacity)
+            } else if state.error != nil, let other = fallback?(), other != url {
+                RemoteImage(url: other, contentMode: contentMode, targetWidth: targetWidth, blur: blur)
             } else if state.error != nil {
                 Rectangle()
                     .fill(.quaternary)

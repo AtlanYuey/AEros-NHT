@@ -7,6 +7,8 @@ final class GalleryModel {
     let id: Int
     var preview: GalleryItem?
     private(set) var detail: GalleryDetail?
+    /// The gallery's JSON as loaded; a download keeps it for offline use.
+    private(set) var data: Data?
     private(set) var error: String?
     private(set) var comments: [GalleryComment] = []
     var isFavorited = false
@@ -22,12 +24,22 @@ final class GalleryModel {
     func load() async {
         error = nil
         do {
-            let detail = try await NHClient.shared.gallery(id)
+            let data = try await NHClient.shared.galleryData(id)
+            let detail = try NHClient.decodeGallery(data)
+            self.data = data
             self.detail = detail
             isFavorited = detail.isFavorited ?? false
             numFavorites = detail.numFavorites
+            DownloadManager.shared.saveDetail(data, of: detail)
         } catch {
-            if detail == nil { self.error = error.localizedDescription }
+            // Without the network, a downloaded gallery still has its page.
+            if detail == nil, let offline = DownloadManager.shared.offlineDetail(id) {
+                detail = offline
+                isFavorited = offline.isFavorited ?? false
+                numFavorites = offline.numFavorites
+            } else if detail == nil {
+                self.error = error.localizedDescription
+            }
         }
         comments = (try? await NHClient.shared.comments(id)) ?? comments
     }
@@ -254,7 +266,7 @@ struct GalleryDetailView: View {
             }
         case nil:
             CircleButton(systemImage: "arrow.down", label: "Download", size: actionHeight) {
-                downloads.start(detail)
+                downloads.start(detail, data: model.data)
             }
         }
     }
@@ -548,6 +560,7 @@ private struct PreviewSection: View {
     let detail: GalleryDetail
 
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(DownloadManager.self) private var downloads
 
     var body: some View {
         let source = ReaderSource(detail: detail)
@@ -557,9 +570,8 @@ private struct PreviewSection: View {
                 SectionTitle(title: "Pages")
                 Spacer()
                 if detail.pages.count > 1 {
-                    NavigationLink {
-                        PagesView(detail: detail)
-                    } label: {
+                    // By value: the reader it opens must show above it.
+                    NavigationLink(value: PagesRoute(detail: detail)) {
                         Text("See All")
                     }
                     .padding(.trailing)
@@ -571,7 +583,8 @@ private struct PreviewSection: View {
                     ForEach(detail.pages) { page in
                         NavigationLink(value: ReaderRoute(source: source, page: page.number - 1)) {
                             VStack(spacing: 6) {
-                                RemoteImage(url: page.thumbURL, contentMode: .fill, targetWidth: 240)
+                                RemoteImage(url: downloads.localURL(gallery: detail.id, page: page.number - 1) ?? page.thumbURL,
+                                            contentMode: .fill, targetWidth: 240)
                                     .frame(width: height * min(max(page.aspectRatio, 0.5), 1.5), height: height)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                 Text("\(page.number)")
@@ -597,6 +610,8 @@ struct PageGrid: View {
     let detail: GalleryDetail
     var limit: Int? = nil
 
+    @Environment(DownloadManager.self) private var downloads
+
     var body: some View {
         let source = ReaderSource(detail: detail)
         let pages = limit.map { Array(detail.pages.prefix($0)) } ?? detail.pages
@@ -608,7 +623,8 @@ struct PageGrid: View {
                         Color.clear
                             .aspectRatio(0.7, contentMode: .fit)
                             .overlay {
-                                RemoteImage(url: page.thumbURL, contentMode: .fit, targetWidth: 240)
+                                RemoteImage(url: downloads.localURL(gallery: detail.id, page: page.number - 1) ?? page.thumbURL,
+                                            contentMode: .fit, targetWidth: 240)
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         Text("\(page.number)")

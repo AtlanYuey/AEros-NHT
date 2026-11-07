@@ -207,3 +207,6 @@
 "Hide Controls After" = "Steuerelemente ausblenden nach";
 "The reader's controls hide on their own after this long without a touch." = "Die Steuerelemente des Readers blenden sich nach dieser Zeit ohne Berührung von selbst aus.";
 "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "Beim Scrollen nach unten schrumpft die Tableiste zu einer kleinen Taste, beim Scrollen nach oben kommt sie zurück.";
+"Me" = "Profil";
+"History and Downloads" = "Verlauf und Downloads";
+"Cards" = "Karten";

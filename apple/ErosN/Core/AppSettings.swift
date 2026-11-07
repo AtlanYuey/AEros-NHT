@@ -95,6 +95,21 @@ enum TabBarPosition: String, CaseIterable, Identifiable {
     }
 }
 
+/// How History and Downloads show their galleries: cards like Favorites
+/// (in the list style), or a list with reading / download progress.
+enum LibraryStyle: String, CaseIterable, Identifiable {
+    case cards, list
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .cards: String(localized: "Cards")
+        case .list: String(localized: "List")
+        }
+    }
+}
+
 /// How quickly the iPad tab bar follows the hand.
 enum FollowSpeed: String, CaseIterable, Identifiable {
     case fast, medium, slow
@@ -202,6 +217,7 @@ final class AppSettings {
     var hideBarsOnScroll: Bool { didSet { save(hideBarsOnScroll, "hideBarsOnScroll") } }
     /// Seconds without a touch before the reader's controls hide (3 at least).
     var readerControlsDelay: Double { didSet { save(readerControlsDelay, "readerControlsDelay") } }
+    var libraryStyle: LibraryStyle { didSet { save(libraryStyle.rawValue, "libraryStyle") } }
     /// Recent search terms, newest first; synced with the settings.
     var recentSearches: [String] { didSet { save(recentSearches, "recentSearches") } }
 
@@ -235,6 +251,7 @@ final class AppSettings {
         saveSearchHistory = d.object(forKey: "saveSearchHistory") as? Bool ?? true
         hideBarsOnScroll = d.object(forKey: "hideBarsOnScroll") as? Bool ?? true
         readerControlsDelay = min(max(d.object(forKey: "readerControlsDelay") as? Double ?? 3, 3), 10)
+        libraryStyle = LibraryStyle(rawValue: d.string(forKey: "libraryStyle") ?? "") ?? .cards
         recentSearches = d.stringArray(forKey: "recentSearches") ?? []
     }
 
@@ -275,6 +292,7 @@ final class AppSettings {
         values["saveSearchHistory"] = saveSearchHistory
         values["hideBarsOnScroll"] = hideBarsOnScroll
         values["readerControlsDelay"] = readerControlsDelay
+        values["libraryStyle"] = libraryStyle.rawValue
         values["recentSearches"] = recentSearches
         return values
     }
@@ -325,6 +343,7 @@ final class AppSettings {
         case "saveSearchHistory": set(\.saveSearchHistory, number?.boolValue)
         case "hideBarsOnScroll": set(\.hideBarsOnScroll, number?.boolValue)
         case "readerControlsDelay": set(\.readerControlsDelay, number.map { min(max($0.doubleValue, 3), 10) })
+        case "libraryStyle": set(\.libraryStyle, string.flatMap(LibraryStyle.init(rawValue:)))
         case "recentSearches": set(\.recentSearches, (value as? [String]).map { Array($0.prefix(AppSettings.recentSearchLimit)) })
         default: break
         }

@@ -247,7 +247,7 @@ struct PadTabBar: View {
         Item(tab: .home, title: "Home", icon: "house"),
         Item(tab: .favorites, title: "Favorites", icon: "heart"),
         Item(tab: .history, title: "History", icon: "clock"),
-        Item(tab: .more, title: "More", icon: "ellipsis.circle"),
+        Item(tab: .more, title: "Me", icon: "person.crop.circle"),
     ]
 
     var body: some View {

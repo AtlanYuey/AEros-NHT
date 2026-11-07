@@ -202,3 +202,7 @@
 "Medium" = "Vừa";
 "Slow" = "Chậm";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Thanh tab chuyển sang phía màn hình bạn chạm: Nhanh ngay lần chạm đầu, Vừa sau hai lần chạm phía đó, Chậm sau bốn lần.";
+"Hide Tab Bar When Scrolling" = "Ẩn thanh tab khi cuộn";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Cuộn danh sách xuống thì thanh tab trượt đi, cuộn lên thì nó quay lại.";
+"Hide Controls After" = "Ẩn điều khiển sau";
+"The reader's controls hide on their own after this long without a touch." = "Các điều khiển của trình đọc tự ẩn sau khoảng thời gian này nếu không chạm.";

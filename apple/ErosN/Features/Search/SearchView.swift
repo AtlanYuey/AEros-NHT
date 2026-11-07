@@ -1,91 +1,97 @@
 import SwiftUI
 
-/// The system Search tab: search field with tag suggestions, recent
-/// searches, and results.
-struct SearchView: View {
-    var body: some View {
-        SearchHost()
-            .scrollHidingTitle("Search")
-    }
-}
-
-/// Search field with tag suggestions, recent searches and results. Given
-/// [idle] content (the iPad Home page), that content shows until the search
-/// field is used, and the search shows over it, so it keeps its scroll
-/// position; the closure is told whether results are showing (its toolbar
-/// menus then change the search's language and sort, so the toolbar keeps
-/// the same items and the search field keeps the keyboard).
-struct SearchHost<Idle: View>: View {
-    private let placement: SearchFieldPlacement
-    private let idle: ((Bool) -> Idle)?
+/// In-place search on the Home page: a search field at the top with tag
+/// suggestions, recent searches and results, shown over the feed (which
+/// keeps its scroll position). Cancel goes back to the feed.
+struct InlineSearch: View {
+    @Binding var isActive: Bool
 
     @Environment(AppSettings.self) private var settings
-    @State private var chrome = AppChrome.shared
     @State private var text = ""
     @State private var query = ""
-    @State private var isPresented = false
     @State private var suggestions: [TagSuggestion] = []
-
-    init(placement: SearchFieldPlacement = .automatic, @ViewBuilder idle: @escaping (_ showingResults: Bool) -> Idle) {
-        self.placement = placement
-        self.idle = idle
-    }
-
-    private var searching: Bool { isPresented || !query.isEmpty }
+    @FocusState private var focused: Bool
 
     var body: some View {
-        content
-            .searchable(text: $text, isPresented: $isPresented, placement: placement, prompt: "Titles, tags, artists, IDs")
-            .searchSuggestions {
-                ForEach(suggestions) { tag in
-                    Label {
-                        HStack {
-                            Text(tag.name)
-                            Spacer()
-                            Text(tag.type.capitalized)
-                                .foregroundStyle(.secondary)
-                        }
-                    } icon: {
-                        Image(systemName: "tag")
+        VStack(spacing: 0) {
+            field
+            content
+        }
+        .background(.background)
+        .onChange(of: text) { _, new in
+            if new.isEmpty { query = "" }
+        }
+        .task(id: text) { await loadSuggestions() }
+        .task {
+            // The keyboard comes up as soon as the search opens.
+            try? await Task.sleep(for: .milliseconds(80))
+            focused = true
+        }
+    }
+
+    private var field: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Titles, tags, artists, IDs", text: $text)
+                    .focused($focused)
+                    .submitLabel(.search)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .onSubmit { submit(text) }
+                if !text.isEmpty {
+                    Button {
+                        text = ""
+                        focused = true
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.tertiary)
                     }
-                    .searchCompletion(completion(for: tag))
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Clear"))
                 }
             }
-            .onSubmit(of: .search) { submit(text) }
-            .onChange(of: text) { _, new in
-                if new.isEmpty { query = "" }
-            }
-            .task(id: text) { await loadSuggestions() }
-            .onChange(of: chrome.searchRequest) { isPresented = true }
-            .task {
-                // The search tab opens with the keyboard up.
-                guard idle == nil, query.isEmpty, !isPresented else { return }
-                try? await Task.sleep(for: .milliseconds(150))
-                isPresented = true
-            }
+            .padding(.horizontal, 12)
+            .frame(height: 40)
+            .background(.fill.tertiary, in: Capsule())
+            Button("Cancel") { close() }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder private var content: some View {
-        if let idle {
-            idle(!query.isEmpty)
-                .overlay {
-                    if searching {
-                        searchContent
-                            .background(.background)
-                    }
-                }
+        if focused, !suggestions.isEmpty {
+            suggestionList
+        } else if query.isEmpty {
+            recentList
         } else {
-            searchContent
+            SearchResults(query: query)
+                .id(query)
         }
     }
 
-    @ViewBuilder private var searchContent: some View {
-        if query.isEmpty {
-            recentList
-        } else {
-            SearchResults(query: query, showsMenus: idle == nil)
-                .id(query)
+    private var suggestionList: some View {
+        List(suggestions) { tag in
+            Button {
+                text = completion(for: tag)
+                suggestions = []
+            } label: {
+                Label {
+                    HStack {
+                        Text(tag.name)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(tag.type.capitalized)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "tag")
+                }
+            }
         }
+        .listStyle(.plain)
     }
 
     private var recentList: some View {
@@ -124,6 +130,12 @@ struct SearchHost<Idle: View>: View {
                 }
             }
         }
+        .scrollDismissesKeyboard(.immediately)
+    }
+
+    private func close() {
+        focused = false
+        withAnimation(.smooth(duration: 0.25)) { isActive = false }
     }
 
     /// Replaces the word being typed with the tag.
@@ -138,6 +150,8 @@ struct SearchHost<Idle: View>: View {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         settings.addRecentSearch(trimmed)
+        suggestions = []
+        focused = false
         query = trimmed
     }
 
@@ -153,20 +167,13 @@ struct SearchHost<Idle: View>: View {
     }
 }
 
-extension SearchHost where Idle == EmptyView {
-    init(placement: SearchFieldPlacement = .automatic) {
-        self.placement = placement
-        self.idle = nil
-    }
-}
-
 /// Search results for a query (also pushed from tags).
 struct SearchResultsView: View {
     let route: SearchRoute
 
     var body: some View {
         SearchResults(query: route.query)
-            .scrollHidingTitle(verbatim: route.title ?? route.query)
+            .navigationTitle(route.title ?? route.query)
             .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -179,7 +186,6 @@ struct SearchResults: View {
     let showsMenus: Bool
 
     @Environment(AppSettings.self) private var settings
-    @State private var chrome = AppChrome.shared
     @State private var feed: GalleryFeed
     @State private var match: GalleryItem?
 
@@ -234,7 +240,7 @@ struct SearchResults: View {
             }
         }
         .toolbar {
-            if showsMenus, !chrome.listBarsHidden {
+            if showsMenus {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Menu {
                         Picker("Language", selection: $settings.searchLanguage) {

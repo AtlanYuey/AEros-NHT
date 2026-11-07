@@ -203,9 +203,13 @@
     <string name="l_200">Média</string>
     <string name="l_201">Lenta</string>
     <string name="l_202">A barra de abas vai para o lado da tela que você toca: Rápida no primeiro toque, Média após dois toques nesse lado e Lenta após quatro.</string>
-    <string name="l_203">Backup dos ajustes</string>
-    <string name="l_204">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_205">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_206">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_207">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_203">Ocultar barra de abas ao rolar</string>
+    <string name="l_204">Rolar uma lista para baixo esconde a barra de abas; rolar para cima a traz de volta.</string>
+    <string name="l_205">Ocultar controles após</string>
+    <string name="l_206">Os controles do leitor se ocultam sozinhos após esse tempo sem toque.</string>
+    <string name="l_207">Backup dos ajustes</string>
+    <string name="l_208">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_209">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_210">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_211">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

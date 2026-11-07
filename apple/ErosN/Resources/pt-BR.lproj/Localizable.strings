@@ -202,3 +202,7 @@
 "Medium" = "Média";
 "Slow" = "Lenta";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "A barra de abas vai para o lado da tela que você toca: Rápida no primeiro toque, Média após dois toques nesse lado e Lenta após quatro.";
+"Hide Tab Bar When Scrolling" = "Ocultar barra de abas ao rolar";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Rolar uma lista para baixo esconde a barra de abas; rolar para cima a traz de volta.";
+"Hide Controls After" = "Ocultar controles após";
+"The reader's controls hide on their own after this long without a touch." = "Os controles do leitor se ocultam sozinhos após esse tempo sem toque.";

@@ -203,9 +203,13 @@
     <string name="l_200">Media</string>
     <string name="l_201">Lenta</string>
     <string name="l_202">La barra si sposta sul lato dello schermo che tocchi: Veloce al primo tocco, Media dopo due tocchi su quel lato, Lenta dopo quattro.</string>
-    <string name="l_203">Backup impostazioni</string>
-    <string name="l_204">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_205">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_206">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_207">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_203">Nascondi barra delle schede durante lo scorrimento</string>
+    <string name="l_204">Scorrendo un elenco verso il basso la barra delle schede scompare; scorrendo verso l’alto ritorna.</string>
+    <string name="l_205">Nascondi controlli dopo</string>
+    <string name="l_206">I controlli del lettore si nascondono da soli dopo questo tempo senza tocchi.</string>
+    <string name="l_207">Backup impostazioni</string>
+    <string name="l_208">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_209">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_210">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_211">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

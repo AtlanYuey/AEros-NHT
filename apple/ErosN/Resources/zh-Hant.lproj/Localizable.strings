@@ -202,3 +202,7 @@
 "Medium" = "中";
 "Slow" = "慢";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "標籤列會移到你觸碰的螢幕一側：「快」在第一次觸碰時移動，「中」在同一側連續觸碰兩次後移動，「慢」在四次後移動。";
+"Hide Tab Bar When Scrolling" = "捲動時隱藏標籤列";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "向下捲動列表時標籤列會滑走，向上捲動時回來。";
+"Hide Controls After" = "控制列自動隱藏時間";
+"The reader's controls hide on their own after this long without a touch." = "閱讀器的控制列在這段時間內沒有觸碰就會自動隱藏。";

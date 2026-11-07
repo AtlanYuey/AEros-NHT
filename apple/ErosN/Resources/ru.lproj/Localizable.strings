@@ -202,3 +202,7 @@
 "Medium" = "Средне";
 "Slow" = "Медленно";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Панель вкладок переходит на ту сторону экрана, которой вы касаетесь: «Быстро» — с первого касания, «Средне» — после двух касаний этой стороны, «Медленно» — после четырёх.";
+"Hide Tab Bar When Scrolling" = "Скрывать панель вкладок при прокрутке";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "При прокрутке списка вниз панель вкладок уезжает, при прокрутке вверх — возвращается.";
+"Hide Controls After" = "Скрывать элементы через";
+"The reader's controls hide on their own after this long without a touch." = "Элементы управления читалки скрываются сами, если столько времени не касаться экрана.";

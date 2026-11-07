@@ -202,3 +202,7 @@
 "Medium" = "普通";
 "Slow" = "遅い";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "タブバーは触れた側に移動します。「速い」は最初のタッチで、「普通」は同じ側を2回続けてタッチすると、「遅い」は4回で移動します。";
+"Hide Tab Bar When Scrolling" = "スクロール時にタブバーを隠す";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "リストを下にスクロールするとタブバーが隠れ、上にスクロールすると戻ります。";
+"Hide Controls After" = "コントロールを隠すまで";
+"The reader's controls hide on their own after this long without a touch." = "この時間タッチがないと、リーダーのコントロールが自動的に隠れます。";

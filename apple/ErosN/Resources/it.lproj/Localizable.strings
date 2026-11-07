@@ -202,3 +202,7 @@
 "Medium" = "Media";
 "Slow" = "Lenta";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "La barra si sposta sul lato dello schermo che tocchi: Veloce al primo tocco, Media dopo due tocchi su quel lato, Lenta dopo quattro.";
+"Hide Tab Bar When Scrolling" = "Nascondi barra delle schede durante lo scorrimento";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Scorrendo un elenco verso il basso la barra delle schede scompare; scorrendo verso l’alto ritorna.";
+"Hide Controls After" = "Nascondi controlli dopo";
+"The reader's controls hide on their own after this long without a touch." = "I controlli del lettore si nascondono da soli dopo questo tempo senza tocchi.";

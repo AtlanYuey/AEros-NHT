@@ -3,8 +3,8 @@ import SwiftUI
 import UIKit
 import UIKit.UIGestureRecognizerSubclass
 
-/// App-wide chrome state: the reader hides the iPad tab bar, and scrolling
-/// a list down can hide the bars (Appearance › Hide Bars When Scrolling).
+/// App-wide chrome state: the reader hides the tab bar, and scrolling a
+/// list down can slide it away (Appearance › Hide Tab Bar When Scrolling).
 @MainActor
 @Observable
 final class AppChrome {
@@ -13,11 +13,8 @@ final class AppChrome {
     var readersOpen = 0
     var hidesTabBar: Bool { readersOpen > 0 }
 
-    /// A list was scrolled down: its navigation bar and the tab bar hide.
+    /// A list was scrolled down: the tab bar slides away (keeping its space).
     var barsHidden = false
-    /// Bumped to put the cursor in the search field (the floating search
-    /// button while the bars are hidden).
-    var searchRequest = 0
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s
@@ -132,9 +129,9 @@ struct TouchObserver: UIViewRepresentable {
     }
 }
 
-/// iPad: the tabs with a floating glass tab bar at the bottom (left, center
-/// or right, or following the hand in use) instead of the tab bar at the
-/// top. Search is on the Home page.
+/// The tabs with a floating glass tab bar at the bottom (on iPad left,
+/// center or right, or following the hand in use; centered on iPhone).
+/// Search is on the Home page.
 struct PadRootView: View {
     @Binding var selection: AppTab
 
@@ -151,14 +148,14 @@ struct PadRootView: View {
             tab(.history) { HistoryView() }
             tab(.more) { MoreView() }
         }
-        .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar && !barsHidden) {
+        .modifier(BottomBar(alignment: alignment, visible: !chrome.hidesTabBar, collapsed: barsHidden) {
             PadTabBar(selection: $selection)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { barFrame = $0 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, isPad ? 20 : 16)
                 .padding(.bottom, 6)
         })
         .background(TouchObserver { touch in
-            guard settings.followHand, !chrome.hidesTabBar, !chrome.barsHidden,
+            guard isPad, settings.followHand, !chrome.hidesTabBar, !chrome.barsHidden,
                   !barFrame.insetBy(dx: -10, dy: -10).contains(touch.location) else { return }
             hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })
@@ -168,8 +165,11 @@ struct PadRootView: View {
     }
 
     private var barsHidden: Bool { settings.hideBarsOnScroll && chrome.barsHidden }
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     private var alignment: HorizontalAlignment {
+        // iPhone: always centered (the position settings are for iPad).
+        guard isPad else { return .center }
         let position: TabBarPosition
         if settings.followHand {
             switch hand.side {
@@ -189,7 +189,7 @@ struct PadRootView: View {
 
     /// Every tab keeps its own navigation stack; only the selected one shows.
     private func tab<Content: View>(_ value: AppTab, @ViewBuilder content: () -> Content) -> some View {
-        // There is no search tab on iPad: Home has the search field.
+        // There is no search tab: Home has the search.
         let selected = selection == value || (value == .home && selection == .search)
         return NavigationStack {
             content().galleryDestinations()
@@ -202,21 +202,30 @@ struct PadRootView: View {
 }
 
 /// The bar as a bottom bar of the content (iOS 26 safe area bar, so scroll
-/// edges blur under it), or a safe area inset before.
+/// edges blur under it), or a safe area inset before. [collapsed] slides
+/// the bar away but keeps its space, so the lists don't move.
 private struct BottomBar<Bar: View>: ViewModifier {
     let alignment: HorizontalAlignment
     let visible: Bool
+    let collapsed: Bool
     @ViewBuilder let bar: () -> Bar
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            content.safeAreaBar(edge: .bottom, alignment: alignment, spacing: 0) {
-                if visible { bar().transition(.move(edge: .bottom).combined(with: .opacity)) }
-            }
+            content.safeAreaBar(edge: .bottom, alignment: alignment, spacing: 0) { placedBar }
         } else {
-            content.safeAreaInset(edge: .bottom, alignment: alignment, spacing: 0) {
-                if visible { bar().transition(.move(edge: .bottom).combined(with: .opacity)) }
-            }
+            content.safeAreaInset(edge: .bottom, alignment: alignment, spacing: 0) { placedBar }
+        }
+    }
+
+    @ViewBuilder private var placedBar: some View {
+        if visible {
+            bar()
+                .offset(y: collapsed ? 140 : 0)
+                .opacity(collapsed ? 0 : 1)
+                .allowsHitTesting(!collapsed)
+                .accessibilityHidden(collapsed)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }
 }
@@ -225,6 +234,8 @@ private struct BottomBar<Bar: View>: ViewModifier {
 struct PadTabBar: View {
     @Binding var selection: AppTab
     @Namespace private var namespace
+    /// Narrow screens (iPhone): the tabs share the width instead of a fixed one each.
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     private struct Item {
         let tab: AppTab
@@ -247,6 +258,7 @@ struct PadTabBar: View {
                 }
             }
             .padding(4)
+            .frame(maxWidth: sizeClass == .compact ? 420 : nil)
             .modifier(GlassBackground(shape: Capsule()))
         }
         .sensoryFeedback(.selection, trigger: selection)
@@ -266,7 +278,8 @@ struct PadTabBar: View {
                     .lineLimit(1)
             }
             .foregroundStyle(selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
-            .frame(width: 84, height: 54)
+            .frame(width: sizeClass == .compact ? nil : 84, height: 54)
+            .frame(maxWidth: sizeClass == .compact ? .infinity : nil)
             .background {
                 if selected {
                     Capsule()

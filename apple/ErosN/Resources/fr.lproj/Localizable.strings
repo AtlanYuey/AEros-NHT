@@ -202,3 +202,7 @@
 "Medium" = "Moyenne";
 "Slow" = "Lente";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "La barre d’onglets se place du côté de l’écran que vous touchez : Rapide dès le premier toucher, Moyenne après deux touchers de ce côté, Lente après quatre.";
+"Hide Tab Bar When Scrolling" = "Masquer la barre d’onglets au défilement";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Faire défiler une liste vers le bas masque la barre d’onglets ; remonter la fait revenir.";
+"Hide Controls After" = "Masquer les commandes après";
+"The reader's controls hide on their own after this long without a touch." = "Les commandes du lecteur se masquent d’elles-mêmes après cette durée sans toucher l’écran.";

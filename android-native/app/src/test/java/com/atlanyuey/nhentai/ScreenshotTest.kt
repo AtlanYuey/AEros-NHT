@@ -115,16 +115,14 @@ class ScreenshotTest {
 
     @Test fun homeScrolled() {
         AppSettings.hideBarsOnScroll = true
-        AppSettings.hideSearchOnScroll = false
-        shoot("24_home_bars_hidden_search")
+        shoot("24_home_docked")
         compose.onRoot().performTouchInput { swipeUp(startY = centerY + 300f, endY = centerY - 300f) }
         compose.mainClock.advanceTimeBy(1000)
-        compose.waitForIdle()
-        compose.onRoot().captureRoboImage("build/screens/24_home_bars_hidden_search.png")
-        AppSettings.hideSearchOnScroll = true
+        compose.onRoot().performTouchInput { swipeUp(startY = centerY + 200f, endY = centerY - 200f) }
         compose.mainClock.advanceTimeBy(1000)
         compose.waitForIdle()
-        compose.onRoot().captureRoboImage("build/screens/25_home_bars_hidden.png")
+        // The sort, language and search buttons docked in the bar; the tab bar slid away.
+        compose.onRoot().captureRoboImage("build/screens/24_home_docked.png")
     }
 
     @Test fun aboutEgg() {
@@ -144,20 +142,30 @@ class ScreenshotTest {
 
     @Test fun more() = shoot("06_more", tab = 3)
 
-    @Test fun search() = shoot("07_search", tab = 4)
+    @Test fun search() {
+        shoot("07_search")
+        compose.onNodeWithContentDescription("Search").performClick()
+        compose.mainClock.advanceTimeBy(800)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/07_search.png")
+    }
 
     @Test fun history() = shoot("08_history", tab = 2)
 
     @Test fun searchNumber() {
-        com.atlanyuey.nhentai.screens.searchState.submit("500001")
-        shoot("20_search_number", tab = 4)
-        com.atlanyuey.nhentai.screens.searchState.reset()
+        val tabs = Tabs()
+        tabs.home.push(com.atlanyuey.nhentai.screens.SearchResultsScreen("500001", null))
+        shoot("20_search_number", tabs)
     }
 
     @Test fun searchHistory() {
         AppSettings.clearRecentSearches()
         listOf("glasses", "artist:sample", "500001", "beach").forEach { AppSettings.addRecentSearch(it) }
-        shoot("21_search_history", tab = 4)
+        shoot("21_search_history")
+        compose.onNodeWithContentDescription("Search").performClick()
+        compose.mainClock.advanceTimeBy(800)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/21_search_history.png")
         compose.onNodeWithText("artist:sample").performTouchInput { longClick() }
         compose.mainClock.advanceTimeBy(1000)
         compose.waitForIdle()

@@ -1,5 +1,22 @@
 package com.atlanyuey.nhentai.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.atlanyuey.nhentai.ui.components.NAV_BAR_HEIGHT
+import com.atlanyuey.nhentai.ui.components.rememberAnchor
+import com.atlanyuey.nhentai.ui.components.anchor
+import com.atlanyuey.nhentai.ui.components.MenuItem
+import com.atlanyuey.nhentai.ui.components.GlassCapsuleButton
 import com.atlanyuey.nhentai.ui.components.hidesBarsOnScroll
 import com.atlanyuey.nhentai.ui.components.BarsState
 import androidx.compose.foundation.layout.heightIn
@@ -187,8 +204,9 @@ class HomeScreen : Screen() {
         }
         val language = AppSettings.homeLanguage
         val sort = AppSettings.homeSort
-        val large = LocalConfiguration.current.smallestScreenWidthDp >= 600
         val focusManager = LocalFocusManager.current
+        val density = LocalDensity.current
+        val screenWidth = LocalConfiguration.current.screenWidthDp.dp
         val endSearch = {
             focusManager.clearFocus()
             search.reset()
@@ -198,33 +216,63 @@ class HomeScreen : Screen() {
             searchPanel.Effects()
             BackHandler { endSearch() }
         }
-        // The floating search button (bars hidden) opens the search here.
-        LaunchedEffect(large) {
-            snapshotFlow { BarsState.searchRequest }.drop(1).collect { if (large) searching = true }
+        // The feed's header (sort, language, search) has scrolled under the
+        // navigation bar: its buttons show in the bar instead.
+        val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        val barBottom = with(density) { (statusTop + NAV_BAR_HEIGHT.dp).roundToPx() }
+        val headerIndex = if (popular.isNotEmpty()) 3 else 1
+        val docked by remember(headerIndex, barBottom) {
+            derivedStateOf {
+                val info = grid.layoutInfo
+                val header = info.visibleItemsInfo.firstOrNull { it.key == "feedTitle" }
+                if (header != null) {
+                    header.offset.y + header.size.height < barBottom
+                } else {
+                    (info.visibleItemsInfo.firstOrNull()?.index ?: 0) > headerIndex
+                }
+            }
+        }
+        val sortItems = {
+            listOf(pickerItems(SearchSort.entries, AppSettings.homeSort, { L10n.string(it.title) }) { AppSettings.homeSort = it })
+        }
+        val languageItems = {
+            listOf(pickerItems(LanguageFilter.entries, AppSettings.homeLanguage, { L10n.string(it.title) }) { AppSettings.homeLanguage = it })
         }
         ScreenScaffold(
             title = tr("Home"),
-            hidesBarsOnScroll = true,
             showTitle = { !searching && grid.pastTitle() },
+            leading = if (searching) null else {
+                {
+                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
+                        DockedSortButton(sort, sortItems)
+                    }
+                }
+            },
             trailing = {
                 if (searching) {
-                    if (searchPanel.results() != null) {
+                    val showsMenus = searchPanel.results() != null
+                    if (showsMenus) {
                         FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
                     }
                     val focus = remember { FocusRequester() }
+                    val room = screenWidth - 32.dp - 54.dp - if (showsMenus) 108.dp else 0.dp
                     SearchField(
                         text = search.text,
                         onTextChange = { search.text = it },
                         placeholder = tr("Titles, tags, artists, IDs"),
                         onSubmit = { search.submit(search.text) },
-                        modifier = Modifier.width(340.dp).height(44.dp),
+                        modifier = Modifier.width(minOf(340.dp, room)).height(44.dp),
                         focusRequester = focus,
                     )
                     LaunchedEffect(Unit) { focus.requestFocus() }
                     GlassCircleButton(Icons.Close, tr("Cancel"), endSearch)
                 } else {
-                    FeedMenus(language, sort, { AppSettings.homeLanguage = it }, { AppSettings.homeSort = it })
-                    if (large) GlassCircleButton(Icons.Search, tr("Search"), { searching = true })
+                    AnimatedVisibility(docked, enter = fadeIn() + scaleIn(initialScale = 0.8f), exit = fadeOut() + scaleOut(targetScale = 0.8f)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
+                            GlassCircleButton(Icons.Search, tr("Search"), { searching = true })
+                        }
+                    }
                 }
             },
         ) { padding ->
@@ -242,12 +290,69 @@ class HomeScreen : Screen() {
                             fullLine("popularTitle") { FeedTitle(tr("Popular Now"), null) }
                             fullLine("popular") { PopularRow(popular) }
                         }
-                        fullLine("feedTitle") { FeedTitle(tr(sort.title), tr(language.title)) }
+                        fullLine("feedTitle") {
+                            FeedHeader(sort, language, sortItems, languageItems) { searching = true }
+                        }
                     },
                     footer = { feedFooter(feed, L10n.string("No Galleries") to Icons.Photo) },
                 )
             }
         }
+    }
+}
+
+/**
+ * The feed's header: the sort (tap it to switch), and on the right the
+ * language and search buttons. Scrolled under the navigation bar, the same
+ * buttons show in the bar.
+ */
+@Composable
+private fun FeedHeader(
+    sort: SearchSort,
+    language: LanguageFilter,
+    sortItems: () -> List<List<MenuItem>>,
+    languageItems: () -> List<List<MenuItem>>,
+    onSearch: () -> Unit,
+) {
+    val overlays = LocalOverlays.current
+    val anchor = rememberAnchor()
+    val sortTitle = tr("Sort")
+    Row(
+        Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 6.dp, start = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Column(
+            Modifier
+                .weight(1f)
+                .anchor(anchor)
+                .clickable(interactionSource = null, indication = null) { overlays.menu(anchor.bounds, sortItems(), sortTitle) }
+                .semantics { contentDescription = sortTitle },
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Txt(tr(sort.title), style = Type.title2, maxLines = 1)
+                AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 16.dp)
+            }
+            Txt(tr(language.title), style = Type.subheadline, color = AppTheme.colors.secondaryLabel, maxLines = 1)
+        }
+        MenuButton(Icons.Globe, tr("Language"), languageItems, title = tr("Language"))
+        GlassCircleButton(Icons.Search, tr("Search"), onSearch)
+    }
+}
+
+/** The sort, as a small glass button in the navigation bar (header docked). */
+@Composable
+private fun DockedSortButton(sort: SearchSort, items: () -> List<List<MenuItem>>) {
+    val overlays = LocalOverlays.current
+    val anchor = rememberAnchor()
+    val title = tr("Sort")
+    GlassCapsuleButton(
+        onClick = { overlays.menu(anchor.bounds, items(), title) },
+        modifier = Modifier.anchor(anchor).widthIn(max = 160.dp),
+        horizontalPadding = 14.dp,
+    ) {
+        Txt(tr(sort.title), Modifier.weight(1f, fill = false), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
+        AppIcon(Icons.ChevronDown, null, tint = AppTheme.colors.secondaryLabel, size = 12.dp)
     }
 }
 
@@ -266,7 +371,7 @@ class FavoritesScreen : Screen() {
             if (loggedIn) feed.reload()
         }
         LaunchedEffect(feed.isLoading) { if (!feed.isLoading) pulling = false }
-        ScreenScaffold(title = tr("Favorites"), showTitle = { !loggedIn || grid.pastTitle() }, hidesBarsOnScroll = true) { padding ->
+        ScreenScaffold(title = tr("Favorites"), showTitle = { !loggedIn || grid.pastTitle() }) { padding ->
             if (!loggedIn) {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     EmptyState(
@@ -309,7 +414,6 @@ class HistoryScreen : Screen() {
         val clearLabel = tr("Clear History")
         ScreenScaffold(
             title = tr("History"),
-            hidesBarsOnScroll = true,
             showTitle = { list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60 },
             trailing = {
                 GlassCircleButton(
@@ -436,7 +540,7 @@ private fun Modifier.matchParentSize() = this.then(Modifier.fillMaxWidth().heigh
 
 // MARK: - Search
 
-/** The search field's text, shared by the tab bar and the search screen. */
+/** A search field's text and the search it started. */
 class SearchState {
     var text by mutableStateOf("")
     var query by mutableStateOf("")
@@ -470,34 +574,7 @@ class SearchState {
     }
 }
 
-val searchState = SearchState()
-
-/** The search tab: recent searches, tag suggestions and results. */
-class SearchScreen : Screen() {
-    private val panel = SearchPanel(searchState, scope)
-
-    @Composable
-    override fun Content() {
-        panel.Effects()
-        val query = searchState.query
-        val current = panel.results()
-        ScreenScaffold(
-            title = if (query.isEmpty()) tr("Search") else query,
-            hidesBarsOnScroll = true,
-            showTitle = { query.isNotEmpty() },
-            trailing = {
-                if (current != null) {
-                    FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
-                }
-            },
-        ) { padding -> panel.Body(padding, largeTitle = tr("Search")) }
-    }
-}
-
-/**
- * Recent searches, tag suggestions and results for a [SearchState]: the
- * search tab, and the Home page on large screens (which searches in place).
- */
+/** Recent searches, tag suggestions and results for a [SearchState]: the Home page searches in place. */
 class SearchPanel(private val state: SearchState, private val scope: kotlinx.coroutines.CoroutineScope) {
     private var results: SearchResults? = null
 
@@ -689,27 +766,9 @@ class SearchResultsScreen(private val query: String, private val title: String?)
     override fun Content() {
         ScreenScaffold(
             title = title ?: query,
-            hidesBarsOnScroll = true,
             trailing = {
                 FeedMenus(AppSettings.searchLanguage, AppSettings.searchSort, { AppSettings.searchLanguage = it }, { AppSettings.searchSort = it })
             },
         ) { padding -> results.Content(padding) }
     }
-}
-
-/** The search field at the bottom of the search tab (iOS 26). */
-@Composable
-fun SearchBar(modifier: Modifier = Modifier) {
-    val state = searchState
-    val focus = remember { FocusRequester() }
-    // Opening the search tab puts the cursor in the field.
-    LaunchedEffect(Unit) { if (state.query.isEmpty()) focus.requestFocus() }
-    SearchField(
-        text = state.text,
-        onTextChange = { state.text = it },
-        placeholder = tr("Titles, tags, artists, IDs"),
-        onSubmit = { state.submit(state.text) },
-        modifier = modifier,
-        focusRequester = focus,
-    )
 }

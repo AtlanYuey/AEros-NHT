@@ -307,11 +307,9 @@ struct AppearanceSettingsView: View {
                 Text("Card size applies to the grid and waterfall styles.")
             }
             Section {
-                Toggle("Hide Bars When Scrolling", isOn: $settings.hideBarsOnScroll)
-                Toggle("Hide Search Too", isOn: $settings.hideSearchOnScroll)
-                    .disabled(!settings.hideBarsOnScroll)
+                Toggle("Hide Tab Bar When Scrolling", isOn: $settings.hideBarsOnScroll)
             } footer: {
-                Text("Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays.")
+                Text("Scrolling down a list slides the tab bar away; scrolling up brings it back.")
             }
             if UIDevice.current.userInterfaceIdiom == .pad {
                 Section {

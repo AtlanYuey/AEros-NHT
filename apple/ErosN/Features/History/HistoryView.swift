@@ -2,7 +2,6 @@ import SwiftData
 import SwiftUI
 
 struct HistoryView: View {
-    @State private var chrome = AppChrome.shared
     @Query(sort: \HistoryEntry.lastRead, order: .reverse) private var entries: [HistoryEntry]
     @Environment(\.modelContext) private var modelContext
     @State private var searchText = ""
@@ -56,14 +55,12 @@ struct HistoryView: View {
                 ContentUnavailableView.search(text: searchText)
             }
         }
-        .scrollHidingTitle("History")
-        .searchable(text: $searchText, prompt: "Search History")
+        .navigationTitle("History")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search History")
         .toolbar {
-            if !chrome.listBarsHidden {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Clear", systemImage: "trash") { confirmClear = true }
-                        .disabled(entries.isEmpty)
-                }
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Clear", systemImage: "trash") { confirmClear = true }
+                    .disabled(entries.isEmpty)
             }
         }
         .confirmationDialog("Clear all history?", isPresented: $confirmClear, titleVisibility: .visible) {

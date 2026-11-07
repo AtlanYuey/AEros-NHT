@@ -155,9 +155,10 @@ struct ReaderView: View {
             })
             .task(id: ChromeTimer(visible: chromeVisible, activity: chromeActivity,
                                   held: sliderEditing || showSettings || topBarTouched)) {
-                // The controls hide on their own 1 s after they were last touched.
+                // The controls hide on their own a while (Reading settings,
+                // 3 s at least) after they were last touched.
                 guard chromeVisible, !sliderEditing, !showSettings, !topBarTouched else { return }
-                try? await Task.sleep(for: .seconds(1))
+                try? await Task.sleep(for: .seconds(settings.readerControlsDelay))
                 guard !Task.isCancelled else { return }
                 chromeVisible = false
             }
@@ -419,6 +420,23 @@ struct ReadingSettingsSections: View {
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
         } footer: {
             Text("Without the animation, tapping an edge shows the next page at once.")
+        }
+        Section {
+            VStack(alignment: .leading) {
+                LabeledContent("Hide Controls After") {
+                    Text(settings.readerControlsDelay, format: .number.precision(.fractionLength(0)))
+                        + Text(" s")
+                }
+                Slider(value: $settings.readerControlsDelay, in: 3...10, step: 1) {
+                    Text("Hide Controls After")
+                } minimumValueLabel: {
+                    Text(verbatim: "3")
+                } maximumValueLabel: {
+                    Text(verbatim: "10")
+                }
+            }
+        } footer: {
+            Text("The reader's controls hide on their own after this long without a touch.")
         }
         Section {
             VStack(alignment: .leading) {

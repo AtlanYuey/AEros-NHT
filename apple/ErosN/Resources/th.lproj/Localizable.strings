@@ -202,3 +202,7 @@
 "Medium" = "ปานกลาง";
 "Slow" = "ช้า";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "แถบแท็บจะย้ายไปฝั่งที่คุณแตะ: เร็ว ย้ายเมื่อแตะครั้งแรก, ปานกลาง หลังแตะฝั่งนั้นสองครั้ง, ช้า หลังแตะสี่ครั้ง";
+"Hide Tab Bar When Scrolling" = "ซ่อนแถบแท็บเมื่อเลื่อน";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "เมื่อเลื่อนรายการลง แถบแท็บจะเลื่อนหายไป และจะกลับมาเมื่อเลื่อนขึ้น";
+"Hide Controls After" = "ซ่อนตัวควบคุมหลังจาก";
+"The reader's controls hide on their own after this long without a touch." = "ตัวควบคุมของตัวอ่านจะซ่อนเองเมื่อไม่มีการแตะเป็นเวลาเท่านี้";

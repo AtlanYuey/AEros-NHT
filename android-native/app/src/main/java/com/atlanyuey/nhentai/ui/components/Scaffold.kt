@@ -1,8 +1,5 @@
 package com.atlanyuey.nhentai.ui.components
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.getValue
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -60,14 +57,9 @@ fun ScreenScaffold(
     leading: (@Composable RowScope.() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {},
     overlay: @Composable () -> Unit = {},
-    /** A list screen whose bars hide while it scrolls down (see [BarsState]). */
-    hidesBarsOnScroll: Boolean = false,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val backdrop = rememberLayerBackdrop()
-    val barsHidden = hidesBarsOnScroll && BarsState.hiding
-    // While the bars are hidden the soft edges shrink: the top one to the
-    // status bar, the bottom one to the lower half of where the tab bar was.
     val navigator = LocalNavigator.current
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -87,28 +79,20 @@ fun ScreenScaffold(
             content(padding)
         }
         CompositionLocalProvider(LocalBackdrop provides backdrop) {
-            val topEdge by animateDpAsState(if (barsHidden) statusTop + 6.dp else statusTop + barHeight + 18.dp, label = "topEdge")
-            val bottomEdge by animateDpAsState(if (barsHidden) navBottom + 30.dp else bottomInset + 18.dp, label = "bottomEdge")
-            SoftEdge(topEdge, Modifier.align(Alignment.TopCenter))
-            if (bottomEdge > 0.dp) {
-                SoftEdge(bottomEdge, Modifier.align(Alignment.BottomCenter), top = false)
+            SoftEdge(statusTop + barHeight + 18.dp, Modifier.align(Alignment.TopCenter))
+            if (bottomInset > 0.dp) {
+                SoftEdge(bottomInset + 18.dp, Modifier.align(Alignment.BottomCenter), top = false)
             }
-            AnimatedVisibility(
-                visible = !barsHidden,
-                enter = fadeIn() + slideInVertically { -it },
-                exit = fadeOut() + slideOutVertically { -it },
-            ) {
-                NavBar(
-                    title = title,
-                    showTitle = showTitle,
-                    leading = leading ?: if (showBack && navigator.canPop) {
-                        { BackButton() }
-                    } else {
-                        null
-                    },
-                    trailing = trailing,
-                )
-            }
+            NavBar(
+                title = title,
+                showTitle = showTitle,
+                leading = leading ?: if (showBack && navigator.canPop) {
+                    { BackButton() }
+                } else {
+                    null
+                },
+                trailing = trailing,
+            )
             overlay()
         }
     }

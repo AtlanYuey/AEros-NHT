@@ -202,3 +202,7 @@
 "Medium" = "Mittel";
 "Slow" = "Langsam";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Die Tableiste wandert auf die Seite, die du berührst: Schnell bei der ersten Berührung, Mittel nach zwei Berührungen auf dieser Seite, Langsam nach vier.";
+"Hide Tab Bar When Scrolling" = "Tableiste beim Scrollen ausblenden";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Beim Scrollen nach unten verschwindet die Tableiste, beim Scrollen nach oben kommt sie zurück.";
+"Hide Controls After" = "Steuerelemente ausblenden nach";
+"The reader's controls hide on their own after this long without a touch." = "Die Steuerelemente des Readers blenden sich nach dieser Zeit ohne Berührung von selbst aus.";

@@ -203,9 +203,13 @@
     <string name="l_200">Media</string>
     <string name="l_201">Lenta</string>
     <string name="l_202">La barra de pestañas se mueve al lado de la pantalla que tocas: Rápida al primer toque, Media tras dos toques en ese lado y Lenta tras cuatro.</string>
-    <string name="l_203">Copia de los ajustes</string>
-    <string name="l_204">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_205">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_206">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_207">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_203">Ocultar barra de pestañas al desplazarse</string>
+    <string name="l_204">Al desplazarte hacia abajo en una lista, la barra de pestañas se oculta; al subir, vuelve.</string>
+    <string name="l_205">Ocultar controles tras</string>
+    <string name="l_206">Los controles del lector se ocultan solos tras este tiempo sin tocar la pantalla.</string>
+    <string name="l_207">Copia de los ajustes</string>
+    <string name="l_208">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_209">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_210">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_211">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

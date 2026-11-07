@@ -35,25 +35,18 @@ enum AppTab: Hashable {
     case home, favorites, history, more, search
 }
 
-/// The system tab bar on iPhone; on iPad a floating glass tab bar at the
-/// bottom that follows the hand in use (PadRootView).
+/// The tabs with a floating glass tab bar at the bottom (PadRootView).
 struct RootView: View {
     @State private var selection: AppTab = .home
     @Environment(AppSettings.self) private var settings
-    @State private var chrome = AppChrome.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var clipboardGallery: Int?
     @State private var openedFromClipboard: GalleryRoute?
 
     var body: some View {
-        Group {
-            if UIDevice.current.userInterfaceIdiom == .pad {
-                // iPad: tab bar at the bottom (see PadRootView).
-                PadRootView(selection: $selection)
-            } else {
-                phoneTabs
-            }
-        }
+        // The floating glass tab bar at the bottom, on iPhone and iPad (see
+        // PadRootView). Search is on the Home page.
+        PadRootView(selection: $selection)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { checkClipboard() }
         }
@@ -82,63 +75,6 @@ struct RootView: View {
                             Button("Close", systemImage: "xmark") { openedFromClipboard = nil }
                         }
                     }
-            }
-        }
-    }
-
-    /// iPhone: the system tab bar (Liquid Glass, search tab at the side).
-    private var phoneTabs: some View {
-        tabView
-            .overlay {
-                // Exactly where the system search button is (56 pt, 20 pt
-                // from the right and bottom edges of the screen): it stays
-                // while the bars are hidden unless Hide Search Too is on.
-                if settings.hideBarsOnScroll, chrome.barsHidden, !settings.hideSearchOnScroll, !chrome.hidesTabBar {
-                    GeometryReader { geometry in
-                        FloatingSearchButton(size: 56) {
-                            withAnimation(.smooth(duration: 0.28)) { chrome.barsHidden = false }
-                            if selection == .search {
-                                chrome.searchRequest += 1
-                            } else {
-                                selection = .search
-                            }
-                        }
-                        .position(
-                            x: geometry.size.width - 20 - 28,
-                            y: geometry.size.height + geometry.safeAreaInsets.bottom - 20 - 28
-                        )
-                    }
-                }
-            }
-            .onChange(of: selection) { chrome.barsHidden = false }
-    }
-
-    private var tabView: some View {
-        TabView(selection: $selection) {
-            Tab("Home", systemImage: "house", value: AppTab.home) {
-                NavigationStack {
-                    HomeView().galleryDestinations()
-                }
-            }
-            Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
-                NavigationStack {
-                    FavoritesView().galleryDestinations()
-                }
-            }
-            Tab("History", systemImage: "clock", value: AppTab.history) {
-                NavigationStack {
-                    HistoryView().galleryDestinations()
-                }
-            }
-            Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) {
-                NavigationStack {
-                    MoreView().galleryDestinations()
-                }
-            }
-            Tab(value: AppTab.search, role: .search) {
-                NavigationStack {
-                    SearchView().galleryDestinations()
-                }
             }
         }
     }

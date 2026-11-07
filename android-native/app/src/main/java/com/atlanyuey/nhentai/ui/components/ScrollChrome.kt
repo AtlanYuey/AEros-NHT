@@ -3,7 +3,6 @@ package com.atlanyuey.nhentai.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -18,15 +17,12 @@ import androidx.compose.ui.unit.dp
 import com.atlanyuey.nhentai.core.AppSettings
 
 /**
- * Scrolling a list down hides the navigation bar and the tab bar (when
- * Appearance › Hide Bars When Scrolling is on); scrolling up, or reaching
- * the top, shows them again.
+ * Scrolling a list down slides the tab bar away (when Appearance › Hide Tab
+ * Bar When Scrolling is on); scrolling up, or reaching the top, brings it
+ * back. The navigation bar always stays.
  */
 object BarsState {
     var hidden by mutableStateOf(false)
-
-    /** Bumped to open the search (the floating search button while the bars are hidden). */
-    var searchRequest by mutableIntStateOf(0)
 
     /** Whether the bars are hidden right now. */
     val hiding: Boolean get() = AppSettings.hideBarsOnScroll && hidden

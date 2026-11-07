@@ -203,9 +203,13 @@
     <string name="l_200">普通</string>
     <string name="l_201">遅い</string>
     <string name="l_202">タブバーは触れた側に移動します。「速い」は最初のタッチで、「普通」は同じ側を2回続けてタッチすると、「遅い」は4回で移動します。</string>
-    <string name="l_203">設定のバックアップ</string>
-    <string name="l_204">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_205">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_206">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_207">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_203">スクロール時にタブバーを隠す</string>
+    <string name="l_204">リストを下にスクロールするとタブバーが隠れ、上にスクロールすると戻ります。</string>
+    <string name="l_205">コントロールを隠すまで</string>
+    <string name="l_206">この時間タッチがないと、リーダーのコントロールが自動的に隠れます。</string>
+    <string name="l_207">設定のバックアップ</string>
+    <string name="l_208">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_209">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_210">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_211">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

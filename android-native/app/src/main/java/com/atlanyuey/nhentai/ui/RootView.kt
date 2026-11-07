@@ -60,8 +60,6 @@ import com.atlanyuey.nhentai.screens.GalleryScreen
 import com.atlanyuey.nhentai.screens.HistoryScreen
 import com.atlanyuey.nhentai.screens.HomeScreen
 import com.atlanyuey.nhentai.screens.MoreScreen
-import com.atlanyuey.nhentai.screens.SearchScreen
-import com.atlanyuey.nhentai.screens.SearchBar
 import com.atlanyuey.nhentai.ui.components.LocalBackdrop
 import com.atlanyuey.nhentai.ui.components.ButtonRole
 import com.atlanyuey.nhentai.ui.components.DialogButton
@@ -90,16 +88,11 @@ class Tabs {
     val favorites = Navigator(FavoritesScreen())
     val history = Navigator(HistoryScreen())
     val more = Navigator(MoreScreen())
-    val search = Navigator(SearchScreen())
-    val all = listOf(home, favorites, history, more, search)
+    val all = listOf(home, favorites, history, more)
 }
 
-private const val SEARCH = 4
 
-/**
- * Tabs with the iOS 26 floating glass tab bar and the separate search
- * button. Large screens have no search button: Home searches in place.
- */
+/** Tabs with the iOS 26 floating glass tab bar. Search is on the Home page. */
 @Composable
 fun RootView(
     linkedGallery: androidx.compose.runtime.MutableState<Int?>,
@@ -107,8 +100,8 @@ fun RootView(
     initialTab: Int = 0,
     overlays: OverlayController = remember { OverlayController() },
 ) {
-    var selected by rememberSaveable { mutableIntStateOf(initialTab) }
-    var lastTab by rememberSaveable { mutableIntStateOf(if (initialTab == SEARCH) 0 else initialTab) }
+    var selected by rememberSaveable { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
+    var lastTab by rememberSaveable { mutableIntStateOf(initialTab.coerceIn(0, 3)) }
     val holder = rememberSaveableStateHolder()
     val backdrop = rememberLayerBackdrop()
     val navigator = tabs.all[selected]
@@ -117,15 +110,11 @@ fun RootView(
     // the side of the hand in use); phones keep it centered.
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val large = configuration.smallestScreenWidthDp >= 600
-    LaunchedEffect(large) { if (large && selected == SEARCH) selected = lastTab }
     // Where the bar is; touches on it don't move it.
     var barBounds by remember { mutableStateOf(Rect.Zero) }
-    // Scrolling a list down hides the bars (the search button stays unless
-    // Hide Search Too is on).
+    // Scrolling a list down slides the tab bar away.
     val barsHidden = BarsState.hiding
-    val searchHidden = barsHidden && AppSettings.hideSearchOnScroll
     val tabsAway by animateFloatAsState(if (barsHidden) 1f else 0f, label = "tabsAway")
-    val searchAway by animateFloatAsState(if (searchHidden) 1f else 0f, label = "searchAway")
     LaunchedEffect(selected) { BarsState.show() }
     val tracksHand by rememberUpdatedState(large && showTabBar && !barsHidden && AppSettings.followHand)
     val position = if (AppSettings.followHand) {
@@ -162,7 +151,7 @@ fun RootView(
             tabs.all[index].popToRoot()
         } else {
             selected = index
-            if (index != SEARCH) lastTab = index
+            lastTab = index
         }
     }
 
@@ -209,83 +198,27 @@ fun RootView(
                 enter = fadeIn() + slideInVertically { it / 2 },
                 exit = fadeOut() + slideOutVertically { it / 2 },
             ) {
-                Row(
-                    Modifier
+                // The tabs only (search is on the Home page). Scrolling a list
+                // down slides them away; their space doesn't change.
+                LiquidBottomTabs(
+                    selectedTabIndex = { lastTab },
+                    onTabSelected = { select(it) },
+                    backdrop = backdrop,
+                    tabsCount = items.size,
+                    modifier = Modifier
                         .navigationBarsPadding()
-                        .imePadding()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                        .then(if (large) Modifier.width(366.dp) else Modifier.widthIn(max = 560.dp))
-                        .onGloballyPositioned { barBounds = it.boundsInRoot() },
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .then(if (large) Modifier.width(366.dp) else Modifier.widthIn(max = 420.dp))
+                        .onGloballyPositioned { barBounds = it.boundsInRoot() }
+                        .away(tabsAway),
                 ) {
-                    if (selected == SEARCH) {
-                        // iOS 26: the tabs collapse into one button and the
-                        // search field takes the tab bar's place.
-                        GlassCircleButton(
-                            icon = items[lastTab].icon,
-                            contentDescription = items[lastTab].title,
-                            onClick = { select(lastTab) },
-                            modifier = Modifier.away(tabsAway),
-                            size = 52.dp,
-                            iconSize = 22.dp,
-                            backdrop = backdrop,
-                        )
-                        CompositionLocalProvider(LocalBackdrop provides backdrop) {
-                            SearchBar(Modifier.weight(1f).height(52.dp).away(searchAway))
-                        }
-                    } else {
-                        LiquidBottomTabs(
-                            selectedTabIndex = { lastTab },
-                            onTabSelected = { select(it) },
-                            backdrop = backdrop,
-                            tabsCount = items.size,
-                            modifier = Modifier.weight(1f).away(tabsAway),
-                        ) {
-                            items.forEachIndexed { index, item ->
-                                LiquidBottomTab({ select(index) }) {
-                                    AppIcon(item.icon, null, size = 24.dp)
-                                    Txt(item.title, style = Type.caption2.copy(fontWeight = FontWeight.Medium), maxLines = 1)
-                                }
-                            }
-                        }
-                        if (!large) {
-                            GlassCircleButton(
-                                icon = Icons.Search,
-                                contentDescription = tr("Search"),
-                                onClick = {
-                                    BarsState.show()
-                                    select(SEARCH)
-                                },
-                                modifier = Modifier.away(searchAway),
-                                size = 64.dp,
-                                iconSize = 24.dp,
-                                backdrop = backdrop,
-                            )
+                    items.forEachIndexed { index, item ->
+                        LiquidBottomTab({ select(index) }) {
+                            AppIcon(item.icon, null, size = 24.dp)
+                            Txt(item.title, style = Type.caption2.copy(fontWeight = FontWeight.Medium), maxLines = 1)
                         }
                     }
                 }
-            }
-            // Large screens: search is in the Home page's bar, so a round
-            // search button stays at the top while the bars are hidden.
-            AnimatedVisibility(
-                visible = large && showTabBar && barsHidden && !AppSettings.hideSearchOnScroll,
-                modifier = Modifier.align(Alignment.TopEnd),
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut(),
-            ) {
-                GlassCircleButton(
-                    icon = Icons.Search,
-                    contentDescription = tr("Search"),
-                    onClick = {
-                        BarsState.show()
-                        select(0)
-                        BarsState.searchRequest++
-                    },
-                    modifier = Modifier.statusBarsPadding().padding(top = 4.dp, end = 16.dp),
-                    size = 52.dp,
-                    backdrop = backdrop,
-                )
             }
             OverlayHost(overlays, backdrop)
         }

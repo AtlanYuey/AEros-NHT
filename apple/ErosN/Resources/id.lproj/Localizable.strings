@@ -202,3 +202,7 @@
 "Medium" = "Sedang";
 "Slow" = "Lambat";
 "The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four." = "Bar tab pindah ke sisi layar yang Anda sentuh: Cepat pada sentuhan pertama, Sedang setelah dua sentuhan di sisi itu, Lambat setelah empat.";
+"Hide Tab Bar When Scrolling" = "Sembunyikan Bar Tab Saat Menggulir";
+"Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Menggulir daftar ke bawah menyembunyikan bar tab; menggulir ke atas memunculkannya lagi.";
+"Hide Controls After" = "Sembunyikan Kontrol Setelah";
+"The reader's controls hide on their own after this long without a touch." = "Kontrol pembaca tersembunyi sendiri setelah selama ini tanpa sentuhan.";

@@ -221,7 +221,7 @@ object AppSettings {
         followSpeed = FollowSpeed.of(p.getString("followSpeed", null))
         saveSearchHistory = p.getBoolean("saveSearchHistory", true)
         hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", true)
-        hideSearchOnScroll = p.getBoolean("hideSearchOnScroll", true)
+        readerControlsDelay = p.getFloat("readerControlsDelay", 3f).toDouble().coerceIn(3.0, 10.0)
         recentSearches.clear()
         p.getString("recentSearches", null)?.let { text ->
             runCatching { recentSearches.addAll(json.decodeFromString(ListSerializer(String.serializer()), text)) }
@@ -272,10 +272,10 @@ object AppSettings {
     var followHand by Pref(false) { save("followHand", it) }
     var followSpeed by Pref(FollowSpeed.Fast) { save("followSpeed", it.raw) }
     var saveSearchHistory by Pref(true) { save("saveSearchHistory", it) }
-    /** Scrolling a list down hides the bars at the top and bottom. */
+    /** Scrolling a list down slides the tab bar away. */
     var hideBarsOnScroll by Pref(true) { save("hideBarsOnScroll", it) }
-    /** …the search button too (otherwise a round search button stays). */
-    var hideSearchOnScroll by Pref(true) { save("hideSearchOnScroll", it) }
+    /** Seconds without a touch before the reader's controls hide (3 at least). */
+    var readerControlsDelay by Pref(3.0) { save("readerControlsDelay", it) }
 
     /** Recent search terms, newest first. */
     val recentSearches = mutableStateListOf<String>()
@@ -342,7 +342,7 @@ object AppSettings {
         "followSpeed" to followSpeed.raw,
         "saveSearchHistory" to saveSearchHistory,
         "hideBarsOnScroll" to hideBarsOnScroll,
-        "hideSearchOnScroll" to hideSearchOnScroll,
+        "readerControlsDelay" to readerControlsDelay,
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -378,7 +378,7 @@ object AppSettings {
                 "followSpeed" -> string?.let { followSpeed = FollowSpeed.of(it) }
                 "saveSearchHistory" -> bool?.let { saveSearchHistory = it }
                 "hideBarsOnScroll" -> bool?.let { hideBarsOnScroll = it }
-                "hideSearchOnScroll" -> bool?.let { hideSearchOnScroll = it }
+                "readerControlsDelay" -> number?.let { readerControlsDelay = it.toDouble().coerceIn(3.0, 10.0) }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }

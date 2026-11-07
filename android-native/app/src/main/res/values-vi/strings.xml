@@ -203,9 +203,13 @@
     <string name="l_200">Vừa</string>
     <string name="l_201">Chậm</string>
     <string name="l_202">Thanh tab chuyển sang phía màn hình bạn chạm: Nhanh ngay lần chạm đầu, Vừa sau hai lần chạm phía đó, Chậm sau bốn lần.</string>
-    <string name="l_203">Sao lưu cài đặt</string>
-    <string name="l_204">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_205">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_206">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_207">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_203">Ẩn thanh tab khi cuộn</string>
+    <string name="l_204">Cuộn danh sách xuống thì thanh tab trượt đi, cuộn lên thì nó quay lại.</string>
+    <string name="l_205">Ẩn điều khiển sau</string>
+    <string name="l_206">Các điều khiển của trình đọc tự ẩn sau khoảng thời gian này nếu không chạm.</string>
+    <string name="l_207">Sao lưu cài đặt</string>
+    <string name="l_208">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_209">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_210">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_211">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

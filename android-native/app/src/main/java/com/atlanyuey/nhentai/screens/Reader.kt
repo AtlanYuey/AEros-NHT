@@ -228,12 +228,12 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
             val interactions = if (mode.isPaged) pager.interactionSource else list.interactionSource
             interactions.interactions.collect { if (it is DragInteraction.Start) chromeVisible = false }
         }
-        // …and so does leaving them alone for 1 s (not while a finger is
-        // down or a menu or sheet is open).
+        // …and so does leaving them alone for a while (Reading settings, 3 s
+        // at least; not while a finger is down or a menu or sheet is open).
         val overlays = LocalOverlays.current
         LaunchedEffect(chromeVisible, chromeActivity, touching, overlays.items.size) {
             if (!chromeVisible || touching || overlays.items.isNotEmpty()) return@LaunchedEffect
-            delay(1000)
+            delay((AppSettings.readerControlsDelay * 1000).toLong())
             chromeVisible = false
         }
         LaunchedEffect(autoRead) {
@@ -536,6 +536,19 @@ fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
             ToggleRow(tr("Tap Edges to Turn Pages"), AppSettings.tapToTurnPages, { AppSettings.tapToTurnPages = it })
             ToggleRow(tr("Page Turn Animation"), AppSettings.animatePageTurns, { AppSettings.animatePageTurns = it })
             ToggleRow(tr("Keep Screen On"), AppSettings.keepScreenOn, { AppSettings.keepScreenOn = it }, last = true)
+        }
+        section(footer = { FooterText(tr("The reader's controls hide on their own after this long without a touch.")) }) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Row {
+                    Txt(tr("Hide Controls After"), Modifier.weight(1f))
+                    Txt("${AppSettings.readerControlsDelay.toInt()}" + tr(" s"), color = AppTheme.colors.secondaryLabel)
+                }
+                GlassSlider(
+                    AppSettings.readerControlsDelay.toFloat(),
+                    { AppSettings.readerControlsDelay = Math.round(it).toDouble().coerceIn(3.0, 10.0) },
+                    3f..10f,
+                )
+            }
         }
         section(footer = { FooterText(tr("Pages ahead of the current one are downloaded in advance.")) }) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {

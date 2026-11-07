@@ -404,12 +404,8 @@ class AppearanceScreen : Screen() {
                 )
                 ToggleRow(tr("Blur Covers"), AppSettings.blurCovers, { AppSettings.blurCovers = it }, last = true)
             }
-            section(footer = { FooterText(tr("Scrolling down a list hides the bars at the top and bottom, and scrolling up shows them again. With Hide Search Too off, a round search button stays.")) }) {
-                val hideBars = AppSettings.hideBarsOnScroll
-                ToggleRow(tr("Hide Bars When Scrolling"), hideBars, { AppSettings.hideBarsOnScroll = it }, last = !hideBars)
-                if (hideBars) {
-                    ToggleRow(tr("Hide Search Too"), AppSettings.hideSearchOnScroll, { AppSettings.hideSearchOnScroll = it }, last = true)
-                }
+            section(footer = { FooterText(tr("Scrolling down a list slides the tab bar away; scrolling up brings it back.")) }) {
+                ToggleRow(tr("Hide Tab Bar When Scrolling"), AppSettings.hideBarsOnScroll, { AppSettings.hideBarsOnScroll = it }, last = true)
             }
             if (large) {
                 section(footer = { FooterText(tr("The tab bar moves to the side of the screen you touch: Fast at the first touch, Medium after two touches on that side, Slow after four.")) }) {

@@ -66,7 +66,7 @@ enum LanguageFilter: String, CaseIterable, Identifiable, Codable {
 final class NHClient: @unchecked Sendable {
     static let shared = NHClient()
 
-    static let userAgent = "AEros-NHT/2.0 (iOS; +https://github.com/AtlanYuey/eros_n)"
+    static let userAgent = "AEros-NHT/2.1 (iOS; +https://github.com/AtlanYuey/AEros-NHT)"
 
     private let session: URLSession
     private let decoder = JSONDecoder()

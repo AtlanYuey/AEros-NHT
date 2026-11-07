@@ -829,7 +829,7 @@ class AboutScreen : Screen() {
                 }
             }
             section {
-                ListRow(tr("Source Code"), value = "GitHub", chevron = true, onClick = { open("https://github.com/AtlanYuey/eros_n") })
+                ListRow(tr("Source Code"), value = "GitHub", chevron = true, onClick = { open("https://github.com/AtlanYuey/AEros-NHT") })
                 ListRow(tr("Original Project"), value = "honjow/eros_n", chevron = true, onClick = { open("https://github.com/honjow/eros_n") })
                 ListRow(tr("Website"), value = "nhentai.net", chevron = true, last = true, onClick = { open(NHHost.SITE) })
             }

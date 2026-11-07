@@ -26,7 +26,7 @@ class NHException(message: String) : Exception(message)
 
 /** Shared HTTP clients. */
 object Net {
-    const val USER_AGENT = "AEros-NHT/2.1 (Android; +https://github.com/AtlanYuey/eros_n)"
+    const val USER_AGENT = "AEros-NHT/2.1 (Android; +https://github.com/AtlanYuey/AEros-NHT)"
 
     /** Extra interceptors (tests answer requests with sample data). */
     val interceptors = mutableListOf<okhttp3.Interceptor>()

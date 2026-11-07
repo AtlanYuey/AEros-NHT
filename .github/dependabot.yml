@@ -4,14 +4,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
 
   - package-ecosystem: "gradle"
-    directory: "/android"
+    directory: "/android-native"
     schedule:
-      interval: "daily"
-
-  - package-ecosystem: "pub"
-    directory: "/"
-    schedule:
-      interval: "daily"
+      interval: "weekly"

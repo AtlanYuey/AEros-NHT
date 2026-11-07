@@ -724,7 +724,7 @@ struct AboutView: View {
                 .listRowBackground(Color.clear)
             }
             Section {
-                Link(destination: URL(string: "https://github.com/AtlanYuey/eros_n")!) {
+                Link(destination: URL(string: "https://github.com/AtlanYuey/AEros-NHT")!) {
                     LabeledContent("Source Code", value: "GitHub")
                 }
                 Link(destination: URL(string: "https://github.com/honjow/eros_n")!) {

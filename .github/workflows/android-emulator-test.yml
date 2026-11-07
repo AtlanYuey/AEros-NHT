@@ -34,7 +34,7 @@ jobs:
         api: [30, 31, 33, 36]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: APK built in this run
         if: inputs.tag == ''

@@ -38,7 +38,7 @@ jobs:
 
       - name: APK built in this run
         if: inputs.tag == ''
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: aeros-nht-android
           path: apk

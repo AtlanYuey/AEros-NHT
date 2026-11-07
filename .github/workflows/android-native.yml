@@ -10,6 +10,7 @@ on:
     paths:
       - 'android-native/**'
       - '.github/workflows/android-native.yml'
+      - '.github/workflows/android-emulator-test.yml'
   workflow_call:
     inputs:
       for_release:
@@ -104,3 +105,9 @@ jobs:
           name: aeros-nht-android
           path: android-native/dist/*.apk
           if-no-files-found: error
+
+  # The APK on emulators: a build (and a release) fails when the app crashes.
+  emulator:
+    name: Emulator
+    needs: build
+    uses: ./.github/workflows/android-emulator-test.yml

@@ -1,0 +1,85 @@
+name: Android Emulator Test
+
+# Runs the APK on emulators (Android 10, 12, 14 and 16): opens it, sends it
+# to the background and back, taps around with the monkey and fails when
+# the app crashes. Robolectric tests run on the JVM and miss what only
+# breaks on Android itself (e.g. its regex engine), so every Android build
+# and release goes through this.
+# Called by android-native.yml, it tests the APK built in the same run; run
+# by hand, the APK of a GitHub release.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose APK to test (e.g. v2.1.0)
+        type: string
+        required: true
+
+jobs:
+  emulator:
+    name: Android ${{ matrix.api }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 31, 34, 36]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: APK built in this run
+        if: inputs.tag == ''
+        uses: actions/download-artifact@v4
+        with:
+          name: aeros-nht-android
+          path: apk
+
+      - name: APK of a release
+        if: inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release download "$TAG" --pattern '*.apk' --dir apk --repo "$GITHUB_REPOSITORY"
+
+      - name: Find the APK
+        run: |
+          ls -l apk
+          echo "APK=$(ls apk/*.apk | head -1)" >> "$GITHUB_ENV"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run on the emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: google_apis
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: android-native/scripts/smoke-test.sh "$APK" emulator-out
+
+      - name: Result
+        if: always()
+        run: |
+          cat emulator-out/summary.txt 2>/dev/null || true
+          grep -qx OK emulator-out/result.txt
+
+      - name: Upload logs and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emulator-android-${{ matrix.api }}
+          path: emulator-out
+          if-no-files-found: ignore

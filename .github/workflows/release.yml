@@ -14,6 +14,7 @@ on:
       - '.github/workflows/android-native.yml'
       - '.github/workflows/ios-native.yml'
       - '.github/workflows/native-release.yml'
+      - '.github/workflows/android-emulator-test.yml'
       - '**.md'
   workflow_dispatch:
 

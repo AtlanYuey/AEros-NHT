@@ -121,8 +121,9 @@ data class GalleryItem(
             blacklisted = o.bool("blacklisted") ?: false,
         )
 
-        private val leading = Regex("""^\s*(\([^)]*\)\s*)?(\[[^\]]*]\s*)?""")
-        private val trailing = Regex("""(\s*\[[^\]]*]|\s*\([^)]*\)|\s*\{[^}]*})+\s*$""")
+        // Android's regex engine (ICU) needs literal ] and } escaped.
+        private val leading = Regex("""^\s*(\([^)]*\)\s*)?(\[[^\]]*\]\s*)?""")
+        private val trailing = Regex("""(\s*\[[^\]]*\]|\s*\([^)]*\)|\s*\{[^\}]*\})+\s*$""")
 
         fun pretty(title: String): String {
             val result = title.replaceFirst(leading, "").replaceFirst(trailing, "").trim()

@@ -4,7 +4,8 @@ name: Native Release
 # IPA and the Android APK, with RELEASE_NOTES.md as the description.
 # Push a commit whose message contains [publish] (or run this workflow by
 # hand). apple/project.yml and android-native/app/build.gradle.kts must
-# have the same version. Publishing a version again replaces its release.
+# have the same version, and the Android app must run on the emulators
+# without crashing. Publishing a version again replaces its release.
 on:
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'RELEASE_NOTES.md'
       - '.github/workflows/ios-native.yml'
       - '.github/workflows/android-native.yml'
+      - '.github/workflows/android-emulator-test.yml'
       - '.github/workflows/native-release.yml'
   workflow_dispatch:
     inputs:

@@ -18,6 +18,8 @@ final class AppChrome {
     /// Bumped to put the cursor in the search field (the floating search
     /// button while the bars are hidden).
     var searchRequest = 0
+    /// A list's top inset without its navigation bar, once measured.
+    @ObservationIgnored var hiddenTopBase: CGFloat?
 }
 
 /// Follows the hand in use: the side of the screen touched last ([record]'s

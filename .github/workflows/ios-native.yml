@@ -101,6 +101,14 @@ jobs:
           path: apple/build/*.ipa
           if-no-files-found: error
 
+      # One release per version: publishing a version that already has a
+      # release replaces it (and moves its tag to this commit).
+      - name: Replace an existing release of this version
+        if: contains(github.event.head_commit.message, '[publish]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "ios-v${APP_VERSION}" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+
       # A commit message containing [release] (or a manual run with
       # "release") drafts a GitHub release to publish on GitHub;
       # [publish] publishes it right away.

@@ -15,6 +15,10 @@ on:
         description: Create a draft GitHub release with the APK
         type: boolean
         default: false
+      publish:
+        description: Publish the GitHub release with the APK right away
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -53,10 +57,15 @@ jobs:
       - name: Signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          RELEASING: ${{ contains(github.event.head_commit.message, '[android-release]') || contains(github.event.head_commit.message, '[android-publish]') || inputs.release || inputs.publish }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          elif [ "$RELEASING" = "true" ]; then
+            # A release must be signed with the release key, or it can't update installed copies.
+            echo "::error::No signing key secrets: add them (android-native/README.md) before releasing."
+            exit 1
           else
             echo "::warning::No signing key secrets: the APK is signed with a temporary debug key and cannot update an installed release."
           fi
@@ -87,10 +96,19 @@ jobs:
           path: android-native/dist/*.apk
           if-no-files-found: error
 
-      # [android-release] in the commit message drafts a GitHub release;
-      # [android-publish] publishes it right away.
+      # One release per version: publishing replaces an existing release
+      # of this version (and moves its tag to this commit).
+      - name: Replace an existing release of this version
+        if: contains(github.event.head_commit.message, '[android-publish]') || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "android-v${APP_VERSION}" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+
+      # [android-release] in the commit message (or a manual run with
+      # "release") drafts a GitHub release; [android-publish] (or "publish")
+      # publishes it right away.
       - name: GitHub release
-        if: contains(github.event.head_commit.message, '[android-release]') || contains(github.event.head_commit.message, '[android-publish]') || inputs.release
+        if: contains(github.event.head_commit.message, '[android-release]') || contains(github.event.head_commit.message, '[android-publish]') || inputs.release || inputs.publish
         uses: ncipollo/release-action@v1
         with:
           tag: android-v${{ env.APP_VERSION }}
@@ -98,7 +116,7 @@ jobs:
           name: AEros-NHT ${{ env.APP_VERSION }} (${{ env.APP_BUILD }}) · Android
           bodyFile: android-native/RELEASE_NOTES.md
           artifacts: android-native/dist/*.apk
-          draft: ${{ !contains(github.event.head_commit.message, '[android-publish]') }}
+          draft: ${{ !(contains(github.event.head_commit.message, '[android-publish]') || inputs.publish) }}
           makeLatest: false
           allowUpdates: true
           replacesArtifacts: true

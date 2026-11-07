@@ -1,6 +1,6 @@
 name: Android Emulator Test
 
-# Runs the APK on emulators (Android 10, 12, 14 and 16): opens it, sends it
+# Runs the APK on emulators (Android 11, 12, 13 and 16): opens it, sends it
 # to the background and back, taps around with the monkey and fails when
 # the app crashes. Robolectric tests run on the JVM and miss what only
 # breaks on Android itself (e.g. its regex engine), so every Android build
@@ -24,13 +24,14 @@ jobs:
   emulator:
     name: Android ${{ matrix.api }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 31, 34, 36]
+        # Older system images (Android 8–10) hang while booting on GitHub's runners.
+        api: [30, 31, 33, 36]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,6 +69,7 @@ jobs:
           target: google_apis
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
+          emulator-boot-timeout: 300
           script: android-native/scripts/smoke-test.sh "$APK" emulator-out
 
       - name: Result

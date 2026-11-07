@@ -208,9 +208,12 @@
     <string name="l_205">コントロールを隠すまで</string>
     <string name="l_206">この時間タッチがないと、リーダーのコントロールが自動的に隠れます。</string>
     <string name="l_207">リストを下にスクロールするとタブバーが小さなボタンに縮み、上にスクロールすると元に戻ります。</string>
-    <string name="l_208">設定のバックアップ</string>
-    <string name="l_209">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_210">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_211">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_212">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_208">マイページ</string>
+    <string name="l_209">履歴とダウンロード</string>
+    <string name="l_210">カード</string>
+    <string name="l_211">設定のバックアップ</string>
+    <string name="l_212">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_213">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_214">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_215">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

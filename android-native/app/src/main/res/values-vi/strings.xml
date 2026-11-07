@@ -208,9 +208,12 @@
     <string name="l_205">Ẩn điều khiển sau</string>
     <string name="l_206">Các điều khiển của trình đọc tự ẩn sau khoảng thời gian này nếu không chạm.</string>
     <string name="l_207">Cuộn danh sách xuống thì thanh tab thu nhỏ thành một nút nhỏ, cuộn lên thì nó trở lại.</string>
-    <string name="l_208">Sao lưu cài đặt</string>
-    <string name="l_209">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_210">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_211">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_212">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_208">Tôi</string>
+    <string name="l_209">Lịch sử và tải xuống</string>
+    <string name="l_210">Thẻ</string>
+    <string name="l_211">Sao lưu cài đặt</string>
+    <string name="l_212">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_213">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_214">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_215">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

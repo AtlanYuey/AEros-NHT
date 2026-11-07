@@ -169,6 +169,8 @@ class ReaderSource(
 
 class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem?) : Screen() {
     private var detail by mutableStateOf<GalleryDetail?>(null)
+    /** The gallery's JSON as loaded; a download keeps it for offline use. */
+    private var json: kotlinx.serialization.json.JsonObject? = null
     private var error by mutableStateOf<String?>(null)
     private val comments = mutableStateListOf<GalleryComment>()
     private var isFavorited by mutableStateOf(false)
@@ -186,14 +188,26 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
     private suspend fun load() {
         error = null
         try {
-            val loaded = NHClient.gallery(galleryId)
+            val data = NHClient.galleryJson(galleryId)
+            val loaded = GalleryDetail.parse(data)
             val first = detail == null
+            json = data
             detail = loaded
             isFavorited = loaded.isFavorited ?: false
             numFavorites = loaded.numFavorites
+            Downloads.saveDetail(data, loaded)
             if (first) HistoryStore.record(loaded)
         } catch (e: Exception) {
-            if (detail == null) error = e.localizedMessage
+            // Without the network, a downloaded gallery still has its page.
+            val offline = if (detail == null) Downloads.offlineDetail(galleryId) else null
+            if (offline != null) {
+                detail = offline
+                isFavorited = offline.isFavorited ?: false
+                numFavorites = offline.numFavorites
+                HistoryStore.record(offline)
+            } else if (detail == null) {
+                error = e.localizedMessage
+            }
         }
         runCatching { NHClient.comments(galleryId) }.getOrNull()?.let {
             comments.clear()
@@ -436,7 +450,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                 DownloadRecord.PAUSED, DownloadRecord.FAILED -> ProgressCircle(record.progress) {
                     GlassCircleButton(Icons.Refresh, tr("Resume Download"), onClick = { Downloads.resume(d.id) }, size = 46.dp, iconColor = AppTheme.tint, iconSize = 18.dp)
                 }
-                else -> GlassCircleButton(Icons.ArrowDown, tr("Download"), onClick = { Downloads.start(d) }, size = 46.dp, iconColor = AppTheme.tint)
+                else -> GlassCircleButton(Icons.ArrowDown, tr("Download"), onClick = { Downloads.start(d, json) }, size = 46.dp, iconColor = AppTheme.tint)
             }
         }
     }
@@ -535,7 +549,7 @@ class GalleryScreen(private val galleryId: Int, private val preview: GalleryItem
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
                             RemoteImage(
-                                page.thumbUrl,
+                                Downloads.localFile(d.id, page.number - 1) ?: page.thumbUrl,
                                 Modifier
                                     .size(width = height * page.aspectRatio.coerceIn(0.5f, 1.5f), height = height)
                                     .clip(RoundedCornerShape(8.dp)),
@@ -598,7 +612,7 @@ class PagesScreen(private val detail: GalleryDetail) : Screen() {
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         RemoteImage(
-                            page.thumbUrl,
+                            Downloads.localFile(detail.id, page.number - 1) ?: page.thumbUrl,
                             Modifier.fillMaxWidth().height(130.dp).clip(RoundedCornerShape(8.dp)),
                             contentScale = ContentScale.Fit,
                             targetWidth = 240.dp,

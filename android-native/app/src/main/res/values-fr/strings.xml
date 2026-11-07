@@ -208,9 +208,12 @@
     <string name="l_205">Masquer les commandes après</string>
     <string name="l_206">Les commandes du lecteur se masquent d’elles-mêmes après cette durée sans toucher l’écran.</string>
     <string name="l_207">Faire défiler une liste vers le bas réduit la barre d’onglets à un petit bouton ; remonter la rétablit.</string>
-    <string name="l_208">Sauvegarde des réglages</string>
-    <string name="l_209">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_210">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_211">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_212">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_208">Profil</string>
+    <string name="l_209">Historique et téléchargements</string>
+    <string name="l_210">Cartes</string>
+    <string name="l_211">Sauvegarde des réglages</string>
+    <string name="l_212">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_213">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_214">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_215">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

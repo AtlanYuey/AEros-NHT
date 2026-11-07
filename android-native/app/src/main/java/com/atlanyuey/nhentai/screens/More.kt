@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,6 +94,13 @@ import com.atlanyuey.nhentai.ui.components.ListRow
 import com.atlanyuey.nhentai.ui.components.LocalNavigator
 import com.atlanyuey.nhentai.ui.components.LocalOverlays
 import com.atlanyuey.nhentai.ui.components.MenuItem
+import com.atlanyuey.nhentai.ui.components.fullLine
+import com.atlanyuey.nhentai.ui.components.LocalGalleryMenuItems
+import com.atlanyuey.nhentai.ui.components.LocalCoverBadge
+import com.atlanyuey.nhentai.ui.components.GalleryGrid
+import com.atlanyuey.nhentai.core.LibraryStyle
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import com.atlanyuey.nhentai.ui.components.PickerRow
 import com.atlanyuey.nhentai.ui.components.RemoteImage
 import com.atlanyuey.nhentai.ui.components.Screen
@@ -129,7 +138,7 @@ class MoreScreen : Screen() {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.current
-        GroupedListScreen(tr("More"), list, largeTitle = true) {
+        GroupedListScreen(tr("Me"), list, largeTitle = true) {
             section {
                 if (Session.isLoggedIn) {
                     ListRow(
@@ -295,67 +304,117 @@ class LoginScreen : Screen() {
 
 // MARK: - Downloads
 
+/**
+ * Galleries saved for offline reading: cards like Favorites, or rows with
+ * their progress. A gallery opens on its page (offline too); Read there,
+ * or in its menu, opens the pages.
+ */
 class DownloadsScreen : Screen() {
-    @OptIn(ExperimentalFoundationApi::class)
+    private val grid = LazyStaggeredGridState()
+
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
-        val overlays = LocalOverlays.current
         val context = LocalContext.current
         var usage by remember { mutableStateOf(0L) }
         val records = Downloads.records
         LaunchedEffect(records.size) { usage = withContext(Dispatchers.IO) { Downloads.diskUsage() } }
-        val openLabel = tr("Open Gallery Page")
-        val deleteLabel = tr("Delete")
+        val menu = downloadMenu()
         ScreenScaffold(
             title = tr("Downloads"),
             trailing = {
                 if (usage > 0) Txt(Formatter.formatShortFileSize(context, usage), style = Type.caption1, color = AppTheme.colors.secondaryLabel)
             },
         ) { padding ->
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
-                if (records.isEmpty()) {
-                    item {
-                        EmptyState(Icons.DownloadCircle, tr("No Downloads"), tr("Download a gallery from its page to read it offline."))
-                    }
+            if (AppSettings.libraryStyle == LibraryStyle.Cards) {
+                CompositionLocalProvider(
+                    LocalCoverBadge provides { item -> DownloadBadge(item.id) },
+                    LocalGalleryMenuItems provides { item -> menu(item.id) },
+                ) {
+                    GalleryGrid(
+                        records.map { it.item }, grid, padding,
+                        header = {
+                            if (records.isEmpty()) fullLine("empty") { NoDownloads() }
+                        },
+                    )
                 }
-                items(records.toList(), key = { it.id }) { record ->
-                    val anchor = rememberAnchor()
-                    SwipeToDelete(onDelete = { Downloads.delete(record.id) }) {
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .background(AppTheme.colors.background)
-                                .anchor(anchor)
-                                .combinedClickable(
-                                    onClick = { navigator.push(ReaderScreen(ReaderSource.from(record), 0)) },
-                                    onLongClick = {
-                                        overlays.menu(anchor.bounds, listOf(listOf(
-                                            MenuItem(openLabel, Icons.Info) { navigator.push(GalleryScreen(record.id, record.item)) },
-                                            MenuItem(deleteLabel, Icons.Trash, destructive = true) { Downloads.delete(record.id) },
-                                        )))
-                                    },
-                                )
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            CoverView(record.item, Modifier.width(72.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Txt(record.item.prettyTitle, style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 2)
-                                if (record.state == DownloadRecord.FINISHED) {
-                                    Txt(tr("%lld pages", record.pages.size), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
-                                } else {
-                                    ProgressBar(record.progress)
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Txt("${record.completed} / ${record.pages.size}", Modifier.weight(1f), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
-                                        val (label, action) = when (record.state) {
-                                            DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> tr("Pause") to { Downloads.pause(record.id) }
-                                            DownloadRecord.PAUSED -> tr("Resume") to { Downloads.resume(record.id) }
-                                            else -> tr("Retry") to { Downloads.resume(record.id) }
-                                        }
-                                        com.atlanyuey.nhentai.ui.components.TextButton(label, action)
+            } else {
+                Rows(padding, menu)
+            }
+        }
+    }
+
+    @Composable
+    private fun NoDownloads() {
+        EmptyState(Icons.DownloadCircle, tr("No Downloads"), tr("Download a gallery from its page to read it offline."))
+    }
+
+    /** Read, pause / resume and delete for a download. */
+    @Composable
+    private fun downloadMenu(): (Int) -> List<MenuItem> {
+        val navigator = LocalNavigator.current
+        val read = tr("Read")
+        val pause = tr("Pause")
+        val resume = tr("Resume")
+        val retry = tr("Retry")
+        val delete = tr("Delete")
+        return { id ->
+            val record = Downloads.record(id)
+            buildList {
+                if (record != null && record.completed > 0) {
+                    add(MenuItem(read, Icons.Book) { navigator.push(ReaderScreen(ReaderSource.from(record), 0)) })
+                }
+                when (record?.state) {
+                    DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> add(MenuItem(pause, Icons.Pause) { Downloads.pause(id) })
+                    DownloadRecord.PAUSED -> add(MenuItem(resume, Icons.Refresh) { Downloads.resume(id) })
+                    DownloadRecord.FAILED -> add(MenuItem(retry, Icons.Refresh) { Downloads.resume(id) })
+                    else -> {}
+                }
+                add(MenuItem(delete, Icons.Trash, destructive = true) { Downloads.delete(id) })
+            }
+        }
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    private fun Rows(padding: PaddingValues, menu: (Int) -> List<MenuItem>) {
+        val navigator = LocalNavigator.current
+        val overlays = LocalOverlays.current
+        val records = Downloads.records
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = padding) {
+            if (records.isEmpty()) {
+                item { NoDownloads() }
+            }
+            items(records.toList(), key = { it.id }) { record ->
+                val anchor = rememberAnchor()
+                SwipeToDelete(onDelete = { Downloads.delete(record.id) }) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(AppTheme.colors.background)
+                            .anchor(anchor)
+                            .combinedClickable(
+                                onClick = { navigator.push(GalleryScreen(record.id, record.item)) },
+                                onLongClick = { overlays.menu(anchor.bounds, listOf(menu(record.id))) },
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CoverView(record.item, Modifier.width(72.dp), aspectRatio = 0.72f, cornerRadius = 10.dp, targetWidth = 200.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Txt(record.item.prettyTitle, style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), maxLines = 2)
+                            if (record.state == DownloadRecord.FINISHED) {
+                                Txt(tr("%lld pages", record.pages.size), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                            } else {
+                                ProgressBar(record.progress)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Txt("${record.completed} / ${record.pages.size}", Modifier.weight(1f), style = Type.footnote, color = AppTheme.colors.secondaryLabel)
+                                    val (label, action) = when (record.state) {
+                                        DownloadRecord.DOWNLOADING, DownloadRecord.QUEUED -> tr("Pause") to { Downloads.pause(record.id) }
+                                        DownloadRecord.PAUSED -> tr("Resume") to { Downloads.resume(record.id) }
+                                        else -> tr("Retry") to { Downloads.resume(record.id) }
                                     }
+                                    com.atlanyuey.nhentai.ui.components.TextButton(label, action)
                                 }
                             }
                         }
@@ -366,15 +425,45 @@ class DownloadsScreen : Screen() {
     }
 }
 
+/** A download's progress over its cover until it has finished. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.DownloadBadge(id: Int) {
+    val record = Downloads.record(id) ?: return
+    if (record.state == DownloadRecord.FINISHED) return
+    val icon = when (record.state) {
+        DownloadRecord.DOWNLOADING -> Icons.ArrowDown
+        DownloadRecord.QUEUED -> Icons.Hourglass
+        DownloadRecord.PAUSED -> Icons.Pause
+        else -> Icons.Warning
+    }
+    Box(
+        Modifier
+            .align(Alignment.TopEnd)
+            .padding(6.dp)
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.55f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize().padding(5.dp)) {
+            val stroke = 3.dp.toPx()
+            val inset = stroke / 2
+            val arcSize = androidx.compose.ui.geometry.Size(size.width - stroke, size.height - stroke)
+            val topLeft = androidx.compose.ui.geometry.Offset(inset, inset)
+            drawArc(Color.White.copy(alpha = 0.3f), 0f, 360f, false, topLeft, arcSize, style = androidx.compose.ui.graphics.drawscope.Stroke(stroke))
+            drawArc(
+                Color.White, -90f, 360f * record.progress.coerceIn(0f, 1f), false, topLeft, arcSize,
+                style = androidx.compose.ui.graphics.drawscope.Stroke(stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round),
+            )
+        }
+        AppIcon(icon, null, tint = Color.White, size = 12.dp)
+    }
+}
+
 @Composable
 private fun ProgressBar(progress: Float) {
-    Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).clip(RoundedCornerShape(2.dp)).background(AppTheme.colors.tertiaryFill)) {
-        Box(
-            Modifier
-                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .padding(vertical = 2.dp)
-                .background(AppTheme.tint),
-        )
+    Box(Modifier.fillMaxWidth().padding(vertical = 2.dp).height(4.dp).clip(RoundedCornerShape(2.dp)).background(AppTheme.colors.tertiaryFill)) {
+        Box(Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).fillMaxHeight().background(AppTheme.tint))
     }
 }
 
@@ -394,6 +483,13 @@ class AppearanceScreen : Screen() {
             }
             section(header = "Gallery List", footer = { FooterText(tr("Card size applies to the grid and waterfall styles.")) }) {
                 PickerRow(tr("List Style"), GalleryListStyle.entries, AppSettings.listStyle, { tr(it.title) }, { AppSettings.listStyle = it })
+                PickerRow(
+                    tr("History and Downloads"),
+                    com.atlanyuey.nhentai.core.LibraryStyle.entries,
+                    AppSettings.libraryStyle,
+                    { tr(it.title) },
+                    { AppSettings.libraryStyle = it },
+                )
                 val portrait = AppSettings.cardSizePortrait
                 val landscape = AppSettings.cardSizeLandscape
                 ListRow(

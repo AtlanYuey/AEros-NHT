@@ -30,7 +30,13 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -52,6 +58,7 @@ import coil3.request.ImageRequest
 import coil3.size.Dimension
 import coil3.size.Size
 import com.atlanyuey.nhentai.core.AppSettings
+import com.atlanyuey.nhentai.core.Downloads
 import com.atlanyuey.nhentai.core.GalleryFeed
 import com.atlanyuey.nhentai.core.GalleryItem
 import com.atlanyuey.nhentai.core.GalleryLanguage
@@ -76,12 +83,16 @@ fun RemoteImage(
     contentScale: ContentScale = ContentScale.Crop,
     targetWidth: Dp? = 400.dp,
     blur: Boolean = false,
+    /** Where to load the image from when [url] fails (asked only then). */
+    fallback: (() -> Any?)? = null,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
     val placeholder = AppTheme.colors.quaternaryFill
+    var failed by remember(url) { mutableStateOf(false) }
+    val data = if (failed) fallback?.invoke() ?: url else url
     val request = ImageRequest.Builder(context)
-        .data(url)
+        .data(data)
         .apply {
             targetWidth?.let { size(Size(Dimension(with(density) { it.roundToPx() }), Dimension.Undefined)) }
         }
@@ -90,6 +101,7 @@ fun RemoteImage(
         model = request,
         contentDescription = null,
         contentScale = contentScale,
+        onError = { if (!failed && fallback != null) failed = true },
         modifier = modifier
             .background(placeholder)
             .then(if (blur) Modifier.blur(18.dp) else Modifier),
@@ -127,11 +139,21 @@ fun CoverView(
             .clip(shape)
             .border(0.5.dp, AppTheme.colors.label.copy(alpha = 0.08f), shape),
     ) {
-        RemoteImage(item.thumbUrl, Modifier.fillMaxSize(), targetWidth = targetWidth, blur = AppSettings.blurCovers)
+        RemoteImage(item.thumbUrl, Modifier.fillMaxSize(), targetWidth = targetWidth, blur = AppSettings.blurCovers) {
+            // Without the network, a downloaded gallery shows its first page.
+            Downloads.localFile(item.id, 0)
+        }
         item.language?.let { LanguageBadge(it, Modifier.padding(6.dp).align(Alignment.TopStart)) }
         overlay(Modifier.align(Alignment.BottomCenter))
+        LocalCoverBadge.current?.invoke(this, item)
     }
 }
+
+/** Drawn over a gallery's cover in cards and rows (download or reading progress). */
+val LocalCoverBadge = compositionLocalOf<(@Composable BoxScope.(GalleryItem) -> Unit)?> { null }
+
+/** More items for a gallery's long-press menu (Delete in History and Downloads). */
+val LocalGalleryMenuItems = compositionLocalOf<((GalleryItem) -> List<MenuItem>)?> { null }
 
 // MARK: - Cards
 
@@ -169,11 +191,15 @@ fun Modifier.galleryClick(item: GalleryItem): Modifier {
     val anchor = rememberAnchor()
     val share = tr("Share")
     val copy = tr("Copy Link")
+    val extra = LocalGalleryMenuItems.current
     return this
         .anchor(anchor)
         .combinedClickable(
             onClick = { navigator.push(GalleryScreen(item.id, item)) },
-            onLongClick = { overlays.menu(anchor.bounds, galleryMenu(context, item, share, copy)) },
+            onLongClick = {
+                val more = extra?.invoke(item)?.takeIf { it.isNotEmpty() }?.let { listOf(it) } ?: emptyList()
+                overlays.menu(anchor.bounds, more + galleryMenu(context, item, share, copy))
+            },
         )
 }
 
@@ -309,6 +335,24 @@ fun GalleryGrid(
     header: LazyStaggeredGridScope.() -> Unit = {},
     footer: LazyStaggeredGridScope.() -> Unit = {},
 ) {
+    GalleryLayout(state, contentPadding, modifier) { style ->
+        header()
+        galleryItems(items, style, onItemShown)
+        footer()
+    }
+}
+
+/**
+ * The grid of [GalleryGrid] for screens that lay out their own items
+ * (History, with a header for each day): [content] gets the list style.
+ */
+@Composable
+fun GalleryLayout(
+    state: LazyStaggeredGridState,
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    content: LazyStaggeredGridScope.(GalleryListStyle) -> Unit,
+) {
     val style = AppSettings.listStyle
     val topSlack = with(androidx.compose.ui.platform.LocalDensity.current) { 60.dp.roundToPx() }
     BoxWithConstraints(modifier.fillMaxSize()) {
@@ -327,13 +371,16 @@ fun GalleryGrid(
                 .fillMaxSize()
                 .hidesBarsOnScroll { state.firstVisibleItemIndex == 0 && state.firstVisibleItemScrollOffset < topSlack },
         ) {
-            header()
-            itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
-                androidx.compose.runtime.LaunchedEffect(item.id) { onItemShown(index) }
-                if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
-            }
-            footer()
+            content(style)
         }
+    }
+}
+
+/** Galleries in a [GalleryLayout]: cards, or rows in the list style. */
+fun LazyStaggeredGridScope.galleryItems(items: List<GalleryItem>, style: GalleryListStyle, onItemShown: (Int) -> Unit = {}) {
+    itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+        androidx.compose.runtime.LaunchedEffect(item.id) { onItemShown(index) }
+        if (style == GalleryListStyle.List) GalleryRow(item) else GalleryCard(item, style)
     }
 }
 

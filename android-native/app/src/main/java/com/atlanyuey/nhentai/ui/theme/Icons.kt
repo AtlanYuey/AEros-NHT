@@ -65,13 +65,13 @@ object Icons {
         )
     }
 
-    val MoreCircle: ImageVector by lazy {
+    /** The Me tab: a person in a circle, outlined like the other tab icons. */
+    val PersonCircleOutline: ImageVector by lazy {
         icon(
-            "MoreCircle",
-        p("M230,256a26,26 0 1,0 52,0a26,26 0 1,0 -52,0Z", fill = true, stroke = 0f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
-        p("M320,256a26,26 0 1,0 52,0a26,26 0 1,0 -52,0Z", fill = true, stroke = 0f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
-        p("M140,256a26,26 0 1,0 52,0a26,26 0 1,0 -52,0Z", fill = true, stroke = 0f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
-        p("M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192Z", fill = false, stroke = 32f, cap = StrokeCap.Butt, join = StrokeJoin.Miter)
+            "PersonCircleOutline",
+        p("M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192Z", fill = false, stroke = 32f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        p("M256 140a64 64 0 1 0 0 128a64 64 0 1 0 0-128Z", fill = false, stroke = 32f, cap = StrokeCap.Butt, join = StrokeJoin.Miter),
+        p("M128 382c26-38 74-62 128-62s102 24 128 62", fill = false, stroke = 32f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
     }
 

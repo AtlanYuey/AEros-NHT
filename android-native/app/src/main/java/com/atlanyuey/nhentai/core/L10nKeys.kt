@@ -213,10 +213,13 @@ object L10nKeys {
         "Hide Controls After" to R.string.l_205,
         "The reader's controls hide on their own after this long without a touch." to R.string.l_206,
         "Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." to R.string.l_207,
-        "Settings Backup" to R.string.l_208,
-        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_209,
-        "Android's own backup also keeps these settings." to R.string.l_210,
-        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_211,
-        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_212,
+        "Me" to R.string.l_208,
+        "History and Downloads" to R.string.l_209,
+        "Cards" to R.string.l_210,
+        "Settings Backup" to R.string.l_211,
+        "Save the settings as a file and import it on another device. The file also works with the iOS app." to R.string.l_212,
+        "Android's own backup also keeps these settings." to R.string.l_213,
+        "When you return to the app, offer to open an nhentai link found on the clipboard." to R.string.l_214,
+        "Recent searches show when you start a search. When this is off, new searches aren't saved and the list is hidden." to R.string.l_215,
     )
 }

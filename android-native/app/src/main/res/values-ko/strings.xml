@@ -208,9 +208,12 @@
     <string name="l_205">컨트롤 자동 숨김 시간</string>
     <string name="l_206">이 시간 동안 터치가 없으면 리더의 컨트롤이 자동으로 숨겨집니다.</string>
     <string name="l_207">목록을 아래로 스크롤하면 탭 막대가 작은 버튼으로 줄어들고, 위로 스크롤하면 다시 펼쳐집니다.</string>
-    <string name="l_208">설정 백업</string>
-    <string name="l_209">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_210">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_211">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_212">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_208">마이페이지</string>
+    <string name="l_209">기록 및 다운로드</string>
+    <string name="l_210">카드</string>
+    <string name="l_211">설정 백업</string>
+    <string name="l_212">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_213">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_214">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_215">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

@@ -152,6 +152,72 @@ class ScreenshotTest {
 
     @Test fun history() = shoot("08_history", tab = 2)
 
+    private fun sample(i: Int) = com.atlanyuey.nhentai.core.GalleryItem(
+        id = 500000 + i, mediaId = "${100 + i}", englishTitle = listOf("Summer Vacation Story", "Night Walk", "Rainy Day Café", "The Library at Midnight", "Festival", "Letters")[i % 6],
+        thumbnail = "galleries/${100 + i}/thumb.jpg", thumbnailWidth = 350, thumbnailHeight = listOf(500, 470, 540, 495, 520, 480)[i % 6],
+        numPages = 20 + i, tagIds = listOf(listOf(6346, 29963, 12227)[i % 3], 17249),
+    )
+
+    private fun seedHistory() {
+        val store = com.atlanyuey.nhentai.core.HistoryStore
+        store.clear()
+        (5 downTo 0).forEach { i -> store.record(sample(i), sample(i).englishTitle!!, 20 + i, page = if (i % 2 == 0) i * 3 else null) }
+    }
+
+    @Test fun historyCards() {
+        seedHistory()
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.Cards
+        shoot("28_history_cards", tab = 2)
+        com.atlanyuey.nhentai.core.HistoryStore.clear()
+    }
+
+    @Test fun historyList() {
+        seedHistory()
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.List
+        shoot("29_history_list", tab = 2)
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.Cards
+        com.atlanyuey.nhentai.core.HistoryStore.clear()
+    }
+
+    private fun seedDownloads(): Tabs {
+        val downloads = com.atlanyuey.nhentai.core.Downloads
+        downloads.records.clear()
+        val states = listOf("finished", "downloading", "paused", "finished", "failed")
+        states.forEachIndexed { i, state ->
+            val item = sample(i)
+            val pages = (1..item.numPages).map { com.atlanyuey.nhentai.core.DownloadPage(it, "https://i.nhentai.net/galleries/${100 + i}/$it.jpg", "%04d.jpg".format(it), 1280, 1800) }
+            downloads.records.add(
+                com.atlanyuey.nhentai.core.DownloadRecord(
+                    id = item.id, mediaId = item.mediaId, title = item.englishTitle!!, thumbnail = item.thumbnail,
+                    thumbWidth = item.thumbnailWidth, thumbHeight = item.thumbnailHeight, pages = pages,
+                    completed = if (state == "finished") pages.size else pages.size * (i + 1) / 6,
+                    state = state, added = 0, tagIds = item.tagIds,
+                ),
+            )
+        }
+        return Tabs().also { it.more.push(com.atlanyuey.nhentai.screens.DownloadsScreen()) }
+    }
+
+    @Test fun downloadsCards() {
+        val tabs = seedDownloads()
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.Cards
+        shoot("30_downloads_cards", tabs, tab = 3)
+        // A long press shows Pause / Resume and Delete above Share.
+        compose.onNodeWithText("Night Walk").performTouchInput { longClick() }
+        compose.mainClock.advanceTimeBy(1000)
+        compose.waitForIdle()
+        compose.onRoot().captureRoboImage("build/screens/31_downloads_menu.png")
+        com.atlanyuey.nhentai.core.Downloads.records.clear()
+    }
+
+    @Test fun downloadsList() {
+        val tabs = seedDownloads()
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.List
+        shoot("32_downloads_list", tabs, tab = 3)
+        AppSettings.libraryStyle = com.atlanyuey.nhentai.core.LibraryStyle.Cards
+        com.atlanyuey.nhentai.core.Downloads.records.clear()
+    }
+
     @Test fun searchNumber() {
         val tabs = Tabs()
         tabs.home.push(com.atlanyuey.nhentai.screens.SearchResultsScreen("500001", null))

@@ -41,6 +41,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -90,6 +93,12 @@ import com.atlanyuey.nhentai.ui.components.DialogButton
 import com.atlanyuey.nhentai.ui.components.EmptyState
 import com.atlanyuey.nhentai.ui.components.GalleryCard
 import com.atlanyuey.nhentai.ui.components.GalleryGrid
+import com.atlanyuey.nhentai.ui.components.GalleryLayout
+import com.atlanyuey.nhentai.ui.components.LocalCoverBadge
+import com.atlanyuey.nhentai.ui.components.LocalGalleryMenuItems
+import com.atlanyuey.nhentai.ui.components.galleryItems
+import com.atlanyuey.nhentai.core.LibraryStyle
+import androidx.compose.runtime.CompositionLocalProvider
 import com.atlanyuey.nhentai.ui.components.GalleryRow
 import com.atlanyuey.nhentai.ui.components.GlassCircleButton
 import com.atlanyuey.nhentai.ui.components.LargeTitle
@@ -399,6 +408,7 @@ class FavoritesScreen : Screen() {
 
 class HistoryScreen : Screen() {
     private val list = LazyListState()
+    private val grid = LazyStaggeredGridState()
     private var search by mutableStateOf("")
 
     @Composable
@@ -412,9 +422,12 @@ class HistoryScreen : Screen() {
         val sections = filtered.groupBy { startOfDay(it.lastRead) }.toSortedMap(compareByDescending { it })
         val clearTitle = tr("Clear all history?")
         val clearLabel = tr("Clear History")
+        val cards = AppSettings.libraryStyle == LibraryStyle.Cards
         ScreenScaffold(
             title = tr("History"),
-            showTitle = { list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60 },
+            showTitle = {
+                if (cards) grid.pastTitle() else list.firstVisibleItemIndex > 0 || list.firstVisibleItemScrollOffset > 60
+            },
             trailing = {
                 GlassCircleButton(
                     Icons.Trash, tr("Clear"),
@@ -425,38 +438,73 @@ class HistoryScreen : Screen() {
                 )
             },
         ) { padding ->
-            val topSlack = with(LocalDensity.current) { 60.dp.roundToPx() }
-            LazyColumn(
-                Modifier
-                    .fillMaxSize()
-                    .hidesBarsOnScroll { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < topSlack },
-                state = list,
-                contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
-            ) {
-                item("title") { LargeTitle(tr("History")) }
-                item("search") {
-                    SearchField(
-                        search, { search = it }, tr("Search History"), onSubmit = {},
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                        filled = true,
-                    )
-                }
+            if (cards) {
+                Cards(padding, entries.isEmpty(), filtered, sections)
+            } else {
+                Rows(padding, entries.isEmpty(), filtered, sections)
+            }
+        }
+    }
+
+    @Composable
+    private fun SearchBox(modifier: Modifier) {
+        SearchField(search, { search = it }, tr("Search History"), onSubmit = {}, modifier = modifier, filled = true)
+    }
+
+    /** Cards like Favorites (in the list style), by day. */
+    @Composable
+    private fun Cards(padding: PaddingValues, empty: Boolean, filtered: List<HistoryEntry>, sections: Map<Long, List<HistoryEntry>>) {
+        val byId = filtered.associateBy { it.gid }
+        val deleteLabel = tr("Delete")
+        CompositionLocalProvider(
+            LocalCoverBadge provides { item -> ReadingProgress(byId[item.id]) },
+            LocalGalleryMenuItems provides { item ->
+                listOf(MenuItem(deleteLabel, Icons.Trash, destructive = true) { HistoryStore.delete(item.id) })
+            },
+        ) {
+            GalleryLayout(grid, padding) { style ->
+                fullLine("title") { LargeTitle(tr("History"), inset = 4.dp) }
+                fullLine("search") { SearchBox(Modifier.fillMaxWidth().padding(vertical = 6.dp)) }
                 when {
-                    entries.isEmpty() -> item("empty") {
-                        EmptyState(Icons.Clock, tr("No History"), tr("Galleries you open appear here."))
-                    }
-                    filtered.isEmpty() -> item("noresults") { EmptyState(Icons.Search, tr("No Results")) }
+                    empty -> fullLine("empty") { EmptyState(Icons.Clock, tr("No History"), tr("Galleries you open appear here.")) }
+                    filtered.isEmpty() -> fullLine("noresults") { EmptyState(Icons.Search, tr("No Results")) }
                 }
                 sections.forEach { (day, dayEntries) ->
-                    item("day$day") { DayHeader(day) }
-                    items(dayEntries, key = { it.gid }) { entry ->
-                        SwipeToDelete(onDelete = { HistoryStore.delete(entry.gid) }) {
-                            GalleryRow(
-                                entry.item,
-                                Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
-                                subtitle = historySubtitle(entry),
-                            )
-                        }
+                    fullLine("day$day") { DayHeader(day, inset = 4.dp) }
+                    galleryItems(dayEntries.map { it.item }, style)
+                }
+            }
+        }
+    }
+
+    /** Rows with the page read, by day; swipe left to delete. */
+    @Composable
+    private fun Rows(padding: PaddingValues, empty: Boolean, filtered: List<HistoryEntry>, sections: Map<Long, List<HistoryEntry>>) {
+        val topSlack = with(LocalDensity.current) { 60.dp.roundToPx() }
+        LazyColumn(
+            Modifier
+                .fillMaxSize()
+                .hidesBarsOnScroll { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < topSlack },
+            state = list,
+            contentPadding = PaddingValues(top = padding.calculateTopPadding(), bottom = padding.calculateBottomPadding()),
+        ) {
+            item("title") { LargeTitle(tr("History")) }
+            item("search") { SearchBox(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) }
+            when {
+                empty -> item("empty") {
+                    EmptyState(Icons.Clock, tr("No History"), tr("Galleries you open appear here."))
+                }
+                filtered.isEmpty() -> item("noresults") { EmptyState(Icons.Search, tr("No Results")) }
+            }
+            sections.forEach { (day, dayEntries) ->
+                item("day$day") { DayHeader(day) }
+                items(dayEntries, key = { it.gid }) { entry ->
+                    SwipeToDelete(onDelete = { HistoryStore.delete(entry.gid) }) {
+                        GalleryRow(
+                            entry.item,
+                            Modifier.background(AppTheme.colors.background).padding(horizontal = 16.dp),
+                            subtitle = historySubtitle(entry),
+                        )
                     }
                 }
             }
@@ -472,7 +520,7 @@ class HistoryScreen : Screen() {
     }.timeInMillis
 
     @Composable
-    private fun DayHeader(day: Long) {
+    private fun DayHeader(day: Long, inset: androidx.compose.ui.unit.Dp = 20.dp) {
         val today = startOfDay(System.currentTimeMillis())
         val title = when (day) {
             today -> tr("Today")
@@ -481,7 +529,7 @@ class HistoryScreen : Screen() {
         }
         Txt(
             title,
-            Modifier.fillMaxWidth().padding(start = 20.dp, end = 16.dp, top = 18.dp, bottom = 4.dp),
+            Modifier.fillMaxWidth().padding(start = inset, end = 16.dp, top = 18.dp, bottom = 4.dp),
             style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold),
             color = AppTheme.colors.secondaryLabel,
         )
@@ -492,6 +540,24 @@ class HistoryScreen : Screen() {
         val time = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(entry.lastRead))
         if (entry.numPages <= 0) return time
         return tr("Page %lld of %lld · %@", entry.lastPage + 1, entry.numPages, time)
+    }
+}
+
+/** How far a gallery has been read: a thin bar at the bottom of its cover. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.ReadingProgress(entry: HistoryEntry?) {
+    if (entry == null || entry.numPages <= 1 || entry.lastPage <= 0) return
+    val fraction = ((entry.lastPage + 1).toFloat() / entry.numPages).coerceIn(0f, 1f)
+    Box(
+        Modifier
+            .align(Alignment.BottomCenter)
+            .padding(start = 8.dp, end = 8.dp, bottom = 6.dp)
+            .fillMaxWidth()
+            .height(4.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .background(Color.Black.copy(alpha = 0.35f)),
+    ) {
+        Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(Color.White))
     }
 }
 

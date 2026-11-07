@@ -208,9 +208,12 @@
     <string name="l_205">Ocultar controles tras</string>
     <string name="l_206">Los controles del lector se ocultan solos tras este tiempo sin tocar la pantalla.</string>
     <string name="l_207">Al desplazarte hacia abajo en una lista, la barra de pestañas se reduce a un botón pequeño; al subir, vuelve.</string>
-    <string name="l_208">Copia de los ajustes</string>
-    <string name="l_209">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_210">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_211">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_212">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_208">Perfil</string>
+    <string name="l_209">Historial y descargas</string>
+    <string name="l_210">Tarjetas</string>
+    <string name="l_211">Copia de los ajustes</string>
+    <string name="l_212">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_213">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_214">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_215">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

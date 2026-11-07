@@ -54,6 +54,19 @@ enum class TabBarPosition(val raw: String, val title: String) {
     }
 }
 
+/**
+ * How History and Downloads show their galleries: cards like Favorites (in
+ * the list style), or a list with reading / download progress.
+ */
+enum class LibraryStyle(val raw: String, val title: String) {
+    Cards("cards", "Cards"),
+    List("list", "List");
+
+    companion object {
+        fun of(raw: String?) = entries.firstOrNull { it.raw == raw } ?: Cards
+    }
+}
+
 /** How quickly the tablet tab bar follows the hand. */
 enum class FollowSpeed(val raw: String, val title: String, val touches: Int, val durationMillis: Int) {
     Fast("fast", "Fast", 1, 300),
@@ -222,6 +235,7 @@ object AppSettings {
         saveSearchHistory = p.getBoolean("saveSearchHistory", true)
         hideBarsOnScroll = p.getBoolean("hideBarsOnScroll", true)
         readerControlsDelay = p.getFloat("readerControlsDelay", 3f).toDouble().coerceIn(3.0, 10.0)
+        libraryStyle = LibraryStyle.of(p.getString("libraryStyle", null))
         recentSearches.clear()
         p.getString("recentSearches", null)?.let { text ->
             runCatching { recentSearches.addAll(json.decodeFromString(ListSerializer(String.serializer()), text)) }
@@ -276,6 +290,7 @@ object AppSettings {
     var hideBarsOnScroll by Pref(true) { save("hideBarsOnScroll", it) }
     /** Seconds without a touch before the reader's controls hide (3 at least). */
     var readerControlsDelay by Pref(3.0) { save("readerControlsDelay", it) }
+    var libraryStyle by Pref(LibraryStyle.Cards) { save("libraryStyle", it.raw) }
 
     /** Recent search terms, newest first. */
     val recentSearches = mutableStateListOf<String>()
@@ -343,6 +358,7 @@ object AppSettings {
         "saveSearchHistory" to saveSearchHistory,
         "hideBarsOnScroll" to hideBarsOnScroll,
         "readerControlsDelay" to readerControlsDelay,
+        "libraryStyle" to libraryStyle.raw,
         "recentSearches" to recentSearches.toList(),
     )
 
@@ -379,6 +395,7 @@ object AppSettings {
                 "saveSearchHistory" -> bool?.let { saveSearchHistory = it }
                 "hideBarsOnScroll" -> bool?.let { hideBarsOnScroll = it }
                 "readerControlsDelay" -> number?.let { readerControlsDelay = it.toDouble().coerceIn(3.0, 10.0) }
+                "libraryStyle" -> string?.let { libraryStyle = LibraryStyle.of(it) }
                 "recentSearches" -> (value as? List<*>)?.let { list -> setRecentSearches(list.filterIsInstance<String>()) }
             }
         }

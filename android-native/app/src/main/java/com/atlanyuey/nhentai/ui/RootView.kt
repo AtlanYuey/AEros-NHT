@@ -143,7 +143,7 @@ fun RootView(
         TabInfo(tr("Home"), Icons.Home),
         TabInfo(tr("Favorites"), Icons.Heart),
         TabInfo(tr("History"), Icons.Clock),
-        TabInfo(tr("More"), Icons.MoreCircle),
+        TabInfo(tr("Me"), Icons.PersonCircleOutline),
     )
 
     fun select(index: Int) {

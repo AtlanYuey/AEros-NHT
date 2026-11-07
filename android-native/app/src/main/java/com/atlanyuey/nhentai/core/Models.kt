@@ -245,6 +245,21 @@ data class GalleryDetail(
         )
 
     companion object {
+        /**
+         * What a download knows about its gallery, for its page without the
+         * network when the gallery's JSON wasn't saved with it.
+         */
+        fun from(record: DownloadRecord): GalleryDetail {
+            val image = record.thumbnail?.let { ImageInfo(it, record.thumbWidth, record.thumbHeight) }
+            return GalleryDetail(
+                id = record.id, mediaId = record.mediaId, englishTitle = record.title,
+                japaneseTitle = null, prettyTitle = null, cover = image, thumbnail = image,
+                uploadDate = null, tags = emptyList(), numPages = record.pages.size, numFavorites = 0,
+                pages = record.pages.map { GalleryPage(it.number, it.remote, it.width, it.height, null) },
+                related = emptyList(), isFavorited = null,
+            )
+        }
+
         fun parse(o: JsonObject): GalleryDetail {
             val title = o["title"].obj()
             return GalleryDetail(

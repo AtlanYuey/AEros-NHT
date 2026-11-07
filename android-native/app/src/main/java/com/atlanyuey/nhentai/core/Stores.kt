@@ -42,11 +42,14 @@ data class HistoryEntry(
     val numPages: Int,
     val lastPage: Int,
     val lastRead: Long,
+    /** For the language badge and tags on cards (empty for entries from before 2.1.0). */
+    val tagIds: List<Int> = emptyList(),
 ) {
     val item: GalleryItem
         get() = GalleryItem(
             id = gid, mediaId = mediaId, englishTitle = title, thumbnail = thumbnail,
             thumbnailWidth = thumbWidth, thumbnailHeight = thumbHeight, numPages = numPages,
+            tagIds = tagIds,
         )
 }
 
@@ -78,6 +81,7 @@ object HistoryStore {
             numPages = if (numPages > 0) numPages else previous?.numPages ?: 0,
             lastPage = page ?: previous?.lastPage ?: 0,
             lastRead = System.currentTimeMillis(),
+            tagIds = item.tagIds.ifEmpty { previous?.tagIds ?: emptyList() },
         )
         if (index >= 0) entries.removeAt(index)
         entries.add(0, entry)
@@ -136,6 +140,8 @@ data class DownloadRecord(
     val completed: Int,
     val state: String,
     val added: Long,
+    /** For the language badge and tags on cards (null for downloads from before 2.1.0). */
+    val tagIds: List<Int>? = null,
 ) {
     val progress: Float get() = if (pages.isEmpty()) 0f else completed.toFloat() / pages.size
 
@@ -143,6 +149,7 @@ data class DownloadRecord(
         get() = GalleryItem(
             id = id, mediaId = mediaId, englishTitle = title, thumbnail = thumbnail,
             thumbnailWidth = thumbWidth, thumbnailHeight = thumbHeight, numPages = pages.size,
+            tagIds = tagIds ?: emptyList(),
         )
 
     companion object {
@@ -189,7 +196,38 @@ object Downloads {
         return File(folder(galleryId), page.file).takeIf { it.exists() }
     }
 
-    fun start(detail: GalleryDetail) {
+    private fun detailFile(id: Int) = File(folder(id), "gallery.json")
+
+    /**
+     * The page of a downloaded gallery without the network: the gallery's
+     * JSON saved with the download, or what the download record knows.
+     */
+    fun offlineDetail(id: Int): GalleryDetail? {
+        val record = record(id) ?: return null
+        val saved = runCatching {
+            Net.json.parseToJsonElement(detailFile(id).readText()).obj()?.let(GalleryDetail::parse)
+        }.getOrNull()
+        return saved ?: GalleryDetail.from(record)
+    }
+
+    /** Keeps the gallery's [json] (as the API sent it) with its download, for its page offline. */
+    fun saveDetail(json: JsonObject, detail: GalleryDetail) {
+        val record = record(detail.id) ?: return
+        if (record.tagIds == null) {
+            update(detail.id) { it.copy(tagIds = detail.tags.map { tag -> tag.id }) }
+            saveIndex()
+        }
+        val file = detailFile(detail.id)
+        AppScope.launch(Dispatchers.IO) {
+            runCatching {
+                file.parentFile?.mkdirs()
+                file.writeText(json.toString())
+            }
+        }
+    }
+
+    /** Downloads [detail]; [json] is its JSON, kept for its page offline. */
+    fun start(detail: GalleryDetail, json: JsonObject? = null) {
         if (record(detail.id) == null) {
             val item = detail.asItem
             val pages = detail.pages.mapIndexed { offset, page ->
@@ -209,10 +247,12 @@ object Downloads {
                     thumbnail = item.thumbnail, thumbWidth = item.thumbnailWidth,
                     thumbHeight = item.thumbnailHeight, pages = pages, completed = 0,
                     state = DownloadRecord.QUEUED, added = System.currentTimeMillis(),
+                    tagIds = detail.tags.map { it.id },
                 ),
             )
             saveIndex()
         }
+        json?.let { saveDetail(it, detail) }
         resume(detail.id)
     }
 

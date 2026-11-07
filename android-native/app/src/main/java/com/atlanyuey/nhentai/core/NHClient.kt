@@ -119,9 +119,12 @@ object NHClient {
         send("galleries/popular").arr()?.mapNotNull { it.obj()?.let(GalleryItem::parse) }
             ?.filter { !it.blacklisted } ?: emptyList()
 
-    suspend fun gallery(id: Int): GalleryDetail {
+    suspend fun gallery(id: Int): GalleryDetail = GalleryDetail.parse(galleryJson(id))
+
+    /** A gallery as the API sends it (downloads keep it for offline use). */
+    suspend fun galleryJson(id: Int): JsonObject {
         val include = if (Auth.isLoggedIn) "related,favorite" else "related"
-        return GalleryDetail.parse(send("galleries/$id", query = listOf("include" to include)).objOrThrow())
+        return send("galleries/$id", query = listOf("include" to include)).objOrThrow()
     }
 
     suspend fun comments(id: Int): List<GalleryComment> =

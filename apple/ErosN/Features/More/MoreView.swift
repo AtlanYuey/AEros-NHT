@@ -309,7 +309,11 @@ struct AppearanceSettingsView: View {
             Section {
                 Toggle("Hide Tab Bar When Scrolling", isOn: $settings.hideBarsOnScroll)
             } footer: {
-                Text("Scrolling down a list slides the tab bar away; scrolling up brings it back.")
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    Text("Scrolling down a list slides the tab bar away; scrolling up brings it back.")
+                } else {
+                    Text("Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back.")
+                }
             }
             if UIDevice.current.userInterfaceIdiom == .pad {
                 Section {

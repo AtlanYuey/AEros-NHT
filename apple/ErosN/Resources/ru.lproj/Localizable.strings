@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "При прокрутке списка вниз панель вкладок уезжает, при прокрутке вверх — возвращается.";
 "Hide Controls After" = "Скрывать элементы через";
 "The reader's controls hide on their own after this long without a touch." = "Элементы управления читалки скрываются сами, если столько времени не касаться экрана.";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "При прокрутке списка вниз панель вкладок сжимается до маленькой кнопки, при прокрутке вверх — возвращается.";

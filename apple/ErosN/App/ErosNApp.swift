@@ -44,9 +44,15 @@ struct RootView: View {
     @State private var openedFromClipboard: GalleryRoute?
 
     var body: some View {
-        // The floating glass tab bar at the bottom, on iPhone and iPad (see
-        // PadRootView). Search is on the Home page.
-        PadRootView(selection: $selection)
+        // Search is on the Home page, so neither has a search tab.
+        Group {
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                // iPad: the floating glass tab bar at the bottom (PadRootView).
+                PadRootView(selection: $selection)
+            } else {
+                phoneTabs
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { checkClipboard() }
         }
@@ -79,6 +85,34 @@ struct RootView: View {
         }
     }
 
+    /// iPhone: the system tab bar. With Hide Tab Bar When Scrolling on,
+    /// iOS 26 shrinks it to a small button while a list scrolls down.
+    private var phoneTabs: some View {
+        TabView(selection: $selection) {
+            Tab("Home", systemImage: "house", value: AppTab.home) {
+                NavigationStack {
+                    HomeView().galleryDestinations()
+                }
+            }
+            Tab("Favorites", systemImage: "heart", value: AppTab.favorites) {
+                NavigationStack {
+                    FavoritesView().galleryDestinations()
+                }
+            }
+            Tab("History", systemImage: "clock", value: AppTab.history) {
+                NavigationStack {
+                    HistoryView().galleryDestinations()
+                }
+            }
+            Tab("More", systemImage: "ellipsis.circle", value: AppTab.more) {
+                NavigationStack {
+                    MoreView().galleryDestinations()
+                }
+            }
+        }
+        .modifier(TabBarMinimize(enabled: settings.hideBarsOnScroll))
+    }
+
     /// Offers to open a gallery link found on the clipboard (once per link).
     private func checkClipboard() {
         guard settings.detectClipboard, UIPasteboard.general.hasURLs || UIPasteboard.general.hasStrings else {
@@ -98,6 +132,20 @@ struct RootView: View {
 }
 
 extension GalleryRoute: Identifiable {}
+
+/// iOS 26: the system tab bar shrinks to a small button while a list
+/// scrolls down (the system handles it, so lists don't move).
+private struct TabBarMinimize: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.tabBarMinimizeBehavior(enabled ? .onScrollDown : .never)
+        } else {
+            content
+        }
+    }
+}
 
 /// iOS 26's soft, progressive scroll edge effect under bars, for every
 /// scroll view in the app (instead of whatever the system default is).

@@ -246,3 +246,6 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "向下滚动列表时标签栏会滑走，向上滚动时回来。";
 "Hide Controls After" = "控制栏自动隐藏时间";
 "The reader's controls hide on their own after this long without a touch." = "阅读器的控制栏在这段时间内没有触摸就会自动隐藏。";
+
+/* iPhone tab bar minimize */
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "向下滚动列表时标签栏会缩成一个小按钮，向上滚动时恢复。";

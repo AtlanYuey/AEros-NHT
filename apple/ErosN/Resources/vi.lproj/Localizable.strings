@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Cuộn danh sách xuống thì thanh tab trượt đi, cuộn lên thì nó quay lại.";
 "Hide Controls After" = "Ẩn điều khiển sau";
 "The reader's controls hide on their own after this long without a touch." = "Các điều khiển của trình đọc tự ẩn sau khoảng thời gian này nếu không chạm.";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "Cuộn danh sách xuống thì thanh tab thu nhỏ thành một nút nhỏ, cuộn lên thì nó trở lại.";

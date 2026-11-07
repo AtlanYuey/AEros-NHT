@@ -207,9 +207,10 @@
     <string name="l_204">Beim Scrollen nach unten verschwindet die Tableiste, beim Scrollen nach oben kommt sie zurück.</string>
     <string name="l_205">Steuerelemente ausblenden nach</string>
     <string name="l_206">Die Steuerelemente des Readers blenden sich nach dieser Zeit ohne Berührung von selbst aus.</string>
-    <string name="l_207">Einstellungen sichern</string>
-    <string name="l_208">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_209">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_210">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_211">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_207">Beim Scrollen nach unten schrumpft die Tableiste zu einer kleinen Taste, beim Scrollen nach oben kommt sie zurück.</string>
+    <string name="l_208">Einstellungen sichern</string>
+    <string name="l_209">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_210">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_211">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_212">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

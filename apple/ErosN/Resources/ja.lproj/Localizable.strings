@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "リストを下にスクロールするとタブバーが隠れ、上にスクロールすると戻ります。";
 "Hide Controls After" = "コントロールを隠すまで";
 "The reader's controls hide on their own after this long without a touch." = "この時間タッチがないと、リーダーのコントロールが自動的に隠れます。";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "リストを下にスクロールするとタブバーが小さなボタンに縮み、上にスクロールすると元に戻ります。";

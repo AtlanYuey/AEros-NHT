@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "向下捲動列表時標籤列會滑走，向上捲動時回來。";
 "Hide Controls After" = "控制列自動隱藏時間";
 "The reader's controls hide on their own after this long without a touch." = "閱讀器的控制列在這段時間內沒有觸碰就會自動隱藏。";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "向下捲動列表時標籤列會縮成一個小按鈕，向上捲動時恢復。";

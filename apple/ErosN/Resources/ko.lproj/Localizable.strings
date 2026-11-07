@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "목록을 아래로 스크롤하면 탭 막대가 사라지고, 위로 스크롤하면 다시 나타납니다.";
 "Hide Controls After" = "컨트롤 자동 숨김 시간";
 "The reader's controls hide on their own after this long without a touch." = "이 시간 동안 터치가 없으면 리더의 컨트롤이 자동으로 숨겨집니다.";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "목록을 아래로 스크롤하면 탭 막대가 작은 버튼으로 줄어들고, 위로 스크롤하면 다시 펼쳐집니다.";

@@ -206,3 +206,4 @@
 "Scrolling down a list slides the tab bar away; scrolling up brings it back." = "Faire défiler une liste vers le bas masque la barre d’onglets ; remonter la fait revenir.";
 "Hide Controls After" = "Masquer les commandes après";
 "The reader's controls hide on their own after this long without a touch." = "Les commandes du lecteur se masquent d’elles-mêmes après cette durée sans toucher l’écran.";
+"Scrolling down a list shrinks the tab bar to a small button; scrolling up brings it back." = "Faire défiler une liste vers le bas réduit la barre d’onglets à un petit bouton ; remonter la rétablit.";

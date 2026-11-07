@@ -207,9 +207,10 @@
     <string name="l_204">Menggulir daftar ke bawah menyembunyikan bar tab; menggulir ke atas memunculkannya lagi.</string>
     <string name="l_205">Sembunyikan Kontrol Setelah</string>
     <string name="l_206">Kontrol pembaca tersembunyi sendiri setelah selama ini tanpa sentuhan.</string>
-    <string name="l_207">Cadangan Pengaturan</string>
-    <string name="l_208">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_209">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_210">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_211">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_207">Menggulir daftar ke bawah mengecilkan bar tab menjadi tombol kecil; menggulir ke atas mengembalikannya.</string>
+    <string name="l_208">Cadangan Pengaturan</string>
+    <string name="l_209">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_210">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_211">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_212">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

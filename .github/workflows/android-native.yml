@@ -1,6 +1,7 @@
 name: Android Native
 
-# Native Android app in android-native/ (Kotlin, Jetpack Compose).
+# Native Android app in android-native/ (Kotlin, Jetpack Compose). Releases
+# are made by native-release.yml, together with the iOS app.
 on:
   push:
     branches:
@@ -9,28 +10,26 @@ on:
     paths:
       - 'android-native/**'
       - '.github/workflows/android-native.yml'
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      release:
-        description: Create a draft GitHub release with the APK
+      for_release:
         type: boolean
         default: false
-      publish:
-        description: Publish the GitHub release with the APK right away
-        type: boolean
-        default: false
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: android-native-${{ github.ref }}${{ inputs.for_release && '-release' || '' }}
   cancel-in-progress: true
 
 jobs:
   build:
     name: Build APK
+    # A [publish] commit is built by native-release.yml.
+    if: inputs.for_release || !contains(github.event.head_commit.message, '[publish]')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,7 +56,7 @@ jobs:
       - name: Signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          RELEASING: ${{ contains(github.event.head_commit.message, '[android-release]') || contains(github.event.head_commit.message, '[android-publish]') || inputs.release || inputs.publish }}
+          RELEASING: ${{ inputs.for_release }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
@@ -86,8 +85,18 @@ jobs:
           mkdir -p dist
           cp app/build/outputs/apk/release/app-release.apk "dist/AEros-NHT_${VERSION}_${CODE}.apk"
           ls -lh dist
-          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "APP_BUILD=$CODE" >> "$GITHUB_ENV"
+
+      # A release must be signed with the release key, or it can't update installed copies.
+      - name: Check the signature
+        if: inputs.for_release
+        working-directory: android-native
+        run: |
+          CERT=$("$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs dist/*.apk | grep -m1 'SHA-256 digest' | awk '{print $NF}')
+          echo "Certificate SHA-256: $CERT"
+          if [ "$CERT" != "771e046f9b71d6ef6da71a5c441b4578fe8a80bc8d7c76307a1c4f353c4734a9" ]; then
+            echo "::error::The APK is not signed with the release key."
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -95,29 +104,3 @@ jobs:
           name: aeros-nht-android
           path: android-native/dist/*.apk
           if-no-files-found: error
-
-      # One release per version: publishing replaces an existing release
-      # of this version (and moves its tag to this commit).
-      - name: Replace an existing release of this version
-        if: contains(github.event.head_commit.message, '[android-publish]') || inputs.publish
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release delete "android-v${APP_VERSION}" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
-
-      # [android-release] in the commit message (or a manual run with
-      # "release") drafts a GitHub release; [android-publish] (or "publish")
-      # publishes it right away.
-      - name: GitHub release
-        if: contains(github.event.head_commit.message, '[android-release]') || contains(github.event.head_commit.message, '[android-publish]') || inputs.release || inputs.publish
-        uses: ncipollo/release-action@v1
-        with:
-          tag: android-v${{ env.APP_VERSION }}
-          commit: ${{ github.sha }}
-          name: AEros-NHT ${{ env.APP_VERSION }} (${{ env.APP_BUILD }}) · Android
-          bodyFile: android-native/RELEASE_NOTES.md
-          artifacts: android-native/dist/*.apk
-          draft: ${{ !(contains(github.event.head_commit.message, '[android-publish]') || inputs.publish) }}
-          makeLatest: false
-          allowUpdates: true
-          replacesArtifacts: true
-          removeArtifacts: true

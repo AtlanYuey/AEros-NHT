@@ -1,6 +1,7 @@
 name: iOS Native
 
-# Native SwiftUI app in apple/ (iOS 18+, iPhone and iPad).
+# Native SwiftUI app in apple/ (iOS 18+, iPhone and iPad). Releases are
+# made by native-release.yml, together with the Android app.
 on:
   push:
     branches:
@@ -9,12 +10,16 @@ on:
     paths:
       - 'apple/**'
       - '.github/workflows/ios-native.yml'
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      release:
-        description: Create a draft GitHub release with the IPA
+      for_release:
         type: boolean
         default: false
+      runner:
+        type: string
+        default: macos-26
+  workflow_dispatch:
+    inputs:
       runner:
         description: macOS runner image (both have Xcode 26)
         type: choice
@@ -24,16 +29,18 @@ on:
         default: macos-26
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ios-native-${{ github.ref }}${{ inputs.for_release && '-release' || '' }}
   cancel-in-progress: true
 
 jobs:
   build:
     name: Build unsigned IPA
+    # A [publish] commit is built by native-release.yml.
+    if: inputs.for_release || !contains(github.event.head_commit.message, '[publish]')
     runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 45
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -91,8 +98,6 @@ jobs:
           cp -R "$APP" build/ipa/Payload/
           (cd build/ipa && zip -qry "../AEros-NHT_${VERSION}_${BUILD}.ipa" Payload)
           ls -lh build/*.ipa
-          echo "APP_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "APP_BUILD=$BUILD" >> "$GITHUB_ENV"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -100,29 +105,3 @@ jobs:
           name: aeros-nht-ios
           path: apple/build/*.ipa
           if-no-files-found: error
-
-      # One release per version: publishing a version that already has a
-      # release replaces it (and moves its tag to this commit).
-      - name: Replace an existing release of this version
-        if: contains(github.event.head_commit.message, '[publish]')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release delete "ios-v${APP_VERSION}" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
-
-      # A commit message containing [release] (or a manual run with
-      # "release") drafts a GitHub release to publish on GitHub;
-      # [publish] publishes it right away.
-      - name: GitHub release
-        if: contains(github.event.head_commit.message, '[release]') || contains(github.event.head_commit.message, '[publish]') || inputs.release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ios-v${{ env.APP_VERSION }}
-          commit: ${{ github.sha }}
-          name: AEros-NHT ${{ env.APP_VERSION }} (${{ env.APP_BUILD }}) · iOS / iPadOS
-          bodyFile: apple/RELEASE_NOTES.md
-          artifacts: apple/build/*.ipa
-          draft: ${{ !contains(github.event.head_commit.message, '[publish]') }}
-          makeLatest: true
-          allowUpdates: true
-          replacesArtifacts: true
-          removeArtifacts: true

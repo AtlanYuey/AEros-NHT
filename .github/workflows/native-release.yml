@@ -1,0 +1,96 @@
+name: Native Release
+
+# One GitHub release per version with both native apps: the iOS / iPadOS
+# IPA and the Android APK, with RELEASE_NOTES.md as the description.
+# Push a commit whose message contains [publish] (or run this workflow by
+# hand). apple/project.yml and android-native/app/build.gradle.kts must
+# have the same version. Publishing a version again replaces its release.
+on:
+  push:
+    branches:
+      - 'master'
+      - 'claude/**'
+    paths:
+      - 'apple/**'
+      - 'android-native/**'
+      - 'RELEASE_NOTES.md'
+      - '.github/workflows/ios-native.yml'
+      - '.github/workflows/android-native.yml'
+      - '.github/workflows/native-release.yml'
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: macOS runner image for the iOS build (both have Xcode 26)
+        type: choice
+        options:
+          - macos-26
+          - macos-15
+        default: macos-26
+
+concurrency:
+  group: native-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ios:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish]')
+    uses: ./.github/workflows/ios-native.yml
+    with:
+      for_release: true
+      runner: ${{ inputs.runner || 'macos-26' }}
+
+  android:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[publish]')
+    uses: ./.github/workflows/android-native.yml
+    with:
+      for_release: true
+    secrets: inherit
+
+  release:
+    name: GitHub release
+    needs: [ios, android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download the apps
+        uses: actions/download-artifact@v4
+        with:
+          pattern: aeros-nht-*
+          merge-multiple: true
+          path: dist
+
+      - name: Version
+        run: |
+          ls -lh dist
+          IOS=$(grep -oP 'MARKETING_VERSION: "\K[^"]+' apple/project.yml)
+          ANDROID=$(grep -oP 'versionName = "\K[^"]+' android-native/app/build.gradle.kts)
+          if [ "$IOS" != "$ANDROID" ]; then
+            echo "::error::iOS is $IOS but Android is $ANDROID: give both apps the same version."
+            exit 1
+          fi
+          ls dist/*.ipa dist/*.apk > /dev/null
+          echo "APP_VERSION=$IOS" >> "$GITHUB_ENV"
+
+      # Also removes the per-platform releases earlier versions had.
+      - name: Replace the release of this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in "v$APP_VERSION" "ios-v$APP_VERSION" "android-v$APP_VERSION"; do
+            gh release delete "$tag" --cleanup-tag --yes --repo "$GITHUB_REPOSITORY" || true
+          done
+
+      - name: Publish
+        uses: ncipollo/release-action@v1
+        with:
+          tag: v${{ env.APP_VERSION }}
+          commit: ${{ github.sha }}
+          name: AEros-NHT ${{ env.APP_VERSION }}
+          bodyFile: RELEASE_NOTES.md
+          artifacts: dist/*.ipa,dist/*.apk
+          artifactErrorsFailBuild: true
+          makeLatest: true

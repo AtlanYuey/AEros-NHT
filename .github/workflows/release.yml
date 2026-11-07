@@ -13,6 +13,7 @@ on:
       - 'android-native/**'
       - '.github/workflows/android-native.yml'
       - '.github/workflows/ios-native.yml'
+      - '.github/workflows/native-release.yml'
       - '**.md'
   workflow_dispatch:
 

@@ -211,9 +211,13 @@
     <string name="l_208">마이페이지</string>
     <string name="l_209">기록 및 다운로드</string>
     <string name="l_210">카드</string>
-    <string name="l_211">설정 백업</string>
-    <string name="l_212">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
-    <string name="l_213">Android 기본 백업에도 이 설정이 포함됩니다.</string>
-    <string name="l_214">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
-    <string name="l_215">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
+    <string name="l_211">가로</string>
+    <string name="l_212">열 수 동기화</string>
+    <string name="l_213">카드의 열 수를 선택합니다. 기본값은 휴대폰이 세로 2열·가로 4열, 태블릿이 세로 3열·가로 5열입니다. 창이 좁을 때(Split View 등)는 열이 줄어들 수 있습니다.</string>
+    <string name="l_214">열 수는 iCloud를 통해 다른 기기와 동기화됩니다. iPhone과 iPad는 각각 따로 설정됩니다.</string>
+    <string name="l_215">설정 백업</string>
+    <string name="l_216">설정을 파일로 저장하고 다른 기기에서 가져올 수 있습니다. 이 파일은 iOS 앱에서도 사용할 수 있습니다.</string>
+    <string name="l_217">Android 기본 백업에도 이 설정이 포함됩니다.</string>
+    <string name="l_218">앱으로 돌아왔을 때 클립보드에 nhentai 링크가 있으면 열지 물어봅니다.</string>
+    <string name="l_219">검색을 시작하면 최근 검색어가 표시됩니다. 끄면 새 검색어가 저장되지 않고 목록도 숨겨집니다.</string>
 </resources>

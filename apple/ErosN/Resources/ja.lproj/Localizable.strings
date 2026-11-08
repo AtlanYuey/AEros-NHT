@@ -210,3 +210,7 @@
 "Me" = "マイページ";
 "History and Downloads" = "履歴とダウンロード";
 "Cards" = "カード";
+"Landscape" = "横向き";
+"Sync Columns" = "列数を同期";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "カードの列数を選びます。初期値はスマートフォンが縦向き 2 列・横向き 4 列、タブレットが縦向き 3 列・横向き 5 列です。ウインドウが狭いとき（Split View など）は列が減ることがあります。";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "列数は iCloud でほかのデバイスと同期されます。iPhone と iPad はそれぞれ別に設定されます。";

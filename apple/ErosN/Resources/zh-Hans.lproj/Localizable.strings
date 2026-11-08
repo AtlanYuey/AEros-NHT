@@ -252,3 +252,7 @@
 "Me" = "我的";
 "History and Downloads" = "历史和下载";
 "Cards" = "卡片";
+"Landscape" = "横屏";
+"Sync Columns" = "同步列数";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "直接选择卡片的列数。手机默认竖屏 2 列、横屏 4 列，平板默认竖屏 3 列、横屏 5 列。窗口较窄时（如分屏）可能会少显示几列。";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "列数会通过 iCloud 与你的其他设备同步，iPhone 和 iPad 各自保留自己的设置。";

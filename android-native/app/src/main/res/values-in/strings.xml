@@ -211,9 +211,13 @@
     <string name="l_208">Saya</string>
     <string name="l_209">Riwayat dan Unduhan</string>
     <string name="l_210">Kartu</string>
-    <string name="l_211">Cadangan Pengaturan</string>
-    <string name="l_212">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
-    <string name="l_213">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
-    <string name="l_214">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
-    <string name="l_215">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
+    <string name="l_211">Lanskap</string>
+    <string name="l_212">Sinkronkan Kolom</string>
+    <string name="l_213">Pilih jumlah kolom kartu. Bawaannya ponsel 2 kolom saat potret dan 4 saat lanskap, tablet 3 dan 5. Di jendela sempit (Split View) kolomnya bisa lebih sedikit.</string>
+    <string name="l_214">Jumlah kolom disinkronkan dengan perangkat lain melalui iCloud. iPhone dan iPad masing-masing punya pengaturan sendiri.</string>
+    <string name="l_215">Cadangan Pengaturan</string>
+    <string name="l_216">Simpan pengaturan sebagai file lalu impor di perangkat lain. File ini juga dapat digunakan di app iOS.</string>
+    <string name="l_217">Cadangan bawaan Android juga menyimpan pengaturan ini.</string>
+    <string name="l_218">Saat Anda kembali ke app, tawarkan untuk membuka tautan nhentai yang ada di papan klip.</string>
+    <string name="l_219">Pencarian terbaru muncul saat Anda mulai mencari. Jika dinonaktifkan, pencarian baru tidak disimpan dan daftarnya disembunyikan.</string>
 </resources>

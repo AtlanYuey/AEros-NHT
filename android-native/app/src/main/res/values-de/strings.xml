@@ -211,9 +211,13 @@
     <string name="l_208">Profil</string>
     <string name="l_209">Verlauf und Downloads</string>
     <string name="l_210">Karten</string>
-    <string name="l_211">Einstellungen sichern</string>
-    <string name="l_212">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
-    <string name="l_213">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
-    <string name="l_214">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
-    <string name="l_215">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
+    <string name="l_211">Querformat</string>
+    <string name="l_212">Spalten synchronisieren</string>
+    <string name="l_213">Wähle, wie viele Kartenspalten angezeigt werden. Standard: 2 im Hochformat und 4 im Querformat auf Telefonen, 3 und 5 auf Tablets. In einem schmalen Fenster (Split View) können es weniger sein.</string>
+    <string name="l_214">Die Spaltenzahl wird über iCloud mit deinen anderen Geräten synchronisiert. iPhone und iPad behalten jeweils ihre eigene.</string>
+    <string name="l_215">Einstellungen sichern</string>
+    <string name="l_216">Speichere die Einstellungen als Datei und importiere sie auf einem anderen Gerät. Die Datei funktioniert auch mit der iOS-App.</string>
+    <string name="l_217">Die Android-Sicherung enthält diese Einstellungen ebenfalls.</string>
+    <string name="l_218">Wenn du zur App zurückkehrst, wird angeboten, einen nhentai-Link aus der Zwischenablage zu öffnen.</string>
+    <string name="l_219">Letzte Suchen werden beim Starten einer Suche angezeigt. Ist die Option aus, werden neue Suchen nicht gesichert und die Liste wird ausgeblendet.</string>
 </resources>

@@ -311,14 +311,23 @@ fun GalleryRow(item: GalleryItem, modifier: Modifier = Modifier, subtitle: Strin
 
 // MARK: - Collections
 
-/** Number of columns for the list style, the width and the orientation. */
+/**
+ * Number of columns: the count chosen in Card Size for a phone or a tablet
+ * in the orientation (a narrow window shows fewer rather than cards
+ * narrower than 90 dp). Rows of the list style fill the width instead.
+ */
 @Composable
 fun galleryColumns(width: Dp, style: GalleryListStyle = AppSettings.listStyle, spacing: Dp = 12.dp): Int {
     val configuration = LocalConfiguration.current
     val landscape = configuration.screenWidthDp > configuration.screenHeightDp
+    val tablet = configuration.smallestScreenWidthDp >= 600
     val available = (width - 32.dp).value
-    if (available <= 0f) return 2
-    return AppSettings.cardSize(landscape).columns(available, style.preferredCardWidth, spacing.value)
+    if (style == GalleryListStyle.List) {
+        return if (available <= 0f) 1 else maxOf(1, kotlin.math.ceil(available / (style.preferredCardWidth + spacing.value)).toInt())
+    }
+    val chosen = AppSettings.columns(tablet, landscape)
+    if (available <= 0f) return chosen
+    return minOf(chosen, maxOf(1, ((available + spacing.value) / (90f + spacing.value)).toInt()))
 }
 
 /**

@@ -78,6 +78,7 @@ cd android-native
 | `apple/` | iOS / iPadOS App（SwiftUI） |
 | `android-native/` | Android App（Kotlin、Jetpack Compose） |
 | `design/app-icon/` | App 图标的生成脚本 |
+| `tools/i18n/` | 界面文字的翻译和生成脚本 |
 | `.github/workflows/` | 构建、模拟器测试和发布 |
 
 旧的 Flutter 版保存在 [`flutter` 分支](https://github.com/AtlanYuey/AEros-NHT/tree/flutter)。

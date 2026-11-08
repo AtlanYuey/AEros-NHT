@@ -211,9 +211,13 @@
     <string name="l_208">マイページ</string>
     <string name="l_209">履歴とダウンロード</string>
     <string name="l_210">カード</string>
-    <string name="l_211">設定のバックアップ</string>
-    <string name="l_212">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
-    <string name="l_213">Android 標準のバックアップにもこれらの設定が含まれます。</string>
-    <string name="l_214">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
-    <string name="l_215">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
+    <string name="l_211">横向き</string>
+    <string name="l_212">列数を同期</string>
+    <string name="l_213">カードの列数を選びます。初期値はスマートフォンが縦向き 2 列・横向き 4 列、タブレットが縦向き 3 列・横向き 5 列です。ウインドウが狭いとき（Split View など）は列が減ることがあります。</string>
+    <string name="l_214">列数は iCloud でほかのデバイスと同期されます。iPhone と iPad はそれぞれ別に設定されます。</string>
+    <string name="l_215">設定のバックアップ</string>
+    <string name="l_216">設定をファイルとして保存し、別のデバイスで読み込めます。このファイルは iOS 版でも使えます。</string>
+    <string name="l_217">Android 標準のバックアップにもこれらの設定が含まれます。</string>
+    <string name="l_218">アプリに戻ったとき、クリップボードに nhentai のリンクがあれば開くか確認します。</string>
+    <string name="l_219">検索を始めると最近の検索が表示されます。オフにすると新しい検索は保存されず、一覧も表示されません。</string>
 </resources>

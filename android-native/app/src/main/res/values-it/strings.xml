@@ -211,9 +211,13 @@
     <string name="l_208">Profilo</string>
     <string name="l_209">Cronologia e download</string>
     <string name="l_210">Schede</string>
-    <string name="l_211">Backup impostazioni</string>
-    <string name="l_212">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
-    <string name="l_213">Anche il backup di Android conserva queste impostazioni.</string>
-    <string name="l_214">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
-    <string name="l_215">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
+    <string name="l_211">Orizzontale</string>
+    <string name="l_212">Sincronizza colonne</string>
+    <string name="l_213">Scegli quante colonne di schede mostrare. Predefinito: 2 in verticale e 4 in orizzontale sui telefoni, 3 e 5 sui tablet. In una finestra stretta (Split View) possono essere meno.</string>
+    <string name="l_214">Il numero di colonne si sincronizza con gli altri dispositivi tramite iCloud. iPhone e iPad mantengono ciascuno il proprio.</string>
+    <string name="l_215">Backup impostazioni</string>
+    <string name="l_216">Salva le impostazioni in un file e importalo su un altro dispositivo. Il file funziona anche con l’app iOS.</string>
+    <string name="l_217">Anche il backup di Android conserva queste impostazioni.</string>
+    <string name="l_218">Quando torni nell’app, propone di aprire un link di nhentai presente negli appunti.</string>
+    <string name="l_219">Le ricerche recenti appaiono quando inizi una ricerca. Se disattivi l’opzione, le nuove ricerche non vengono salvate e l’elenco viene nascosto.</string>
 </resources>

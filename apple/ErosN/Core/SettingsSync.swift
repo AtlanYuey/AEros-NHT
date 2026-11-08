@@ -75,6 +75,15 @@ final class SettingsSync {
         markSynced()
     }
 
+    /// Sends this device's column counts (Sync Columns was turned on).
+    func pushColumns() {
+        guard isEnabled, isAvailable else { return }
+        for (key, value) in AppSettings.shared.snapshot() where AppSettings.columnKeys.contains(key) {
+            store.set(value, forKey: prefix + key)
+        }
+        markSynced()
+    }
+
     /// Joins the current group: takes its settings when it has any,
     /// otherwise starts it with this device's settings.
     private func connect() {
@@ -82,7 +91,7 @@ final class SettingsSync {
         guard isAvailable else { return }
         let remote = groupValues()
         if remote.isEmpty {
-            for (key, value) in AppSettings.shared.snapshot() {
+            for (key, value) in AppSettings.shared.syncedSnapshot() {
                 store.set(value, forKey: prefix + key)
             }
             store.synchronize()

@@ -1,5 +1,6 @@
 import Observation
 import SwiftUI
+import UIKit
 
 enum ThemeMode: String, CaseIterable, Identifiable {
     case system, light, dark
@@ -66,15 +67,6 @@ enum GalleryListStyle: String, CaseIterable, Identifiable {
         case .grid: "square.grid.2x2"
         case .compact: "photo.on.rectangle"
         case .list: "list.bullet"
-        }
-    }
-
-    /// Preferred card width before the card size setting is applied.
-    var preferredCardWidth: CGFloat {
-        switch self {
-        case .grid: 150
-        case .waterfall, .compact: 190
-        case .list: 600
         }
     }
 }
@@ -188,8 +180,20 @@ final class AppSettings {
     var theme: ThemeMode { didSet { save(theme.rawValue, "theme") } }
     var accent: AccentChoice { didSet { save(accent.rawValue, "accent") } }
     var listStyle: GalleryListStyle { didSet { save(listStyle.rawValue, "listStyle") } }
-    var cardSizePortrait: CardSize { didSet { save(cardSizePortrait.rawValue, "cardSizePortrait") } }
-    var cardSizeLandscape: CardSize { didSet { save(cardSizeLandscape.rawValue, "cardSizeLandscape") } }
+    /// Columns of cards in portrait and landscape, a pair for iPhones and
+    /// one for iPads: each kind of device uses its own, also when synced.
+    var phoneColumnsPortrait: Int { didSet { save(phoneColumnsPortrait, "phoneColumnsPortrait") } }
+    var phoneColumnsLandscape: Int { didSet { save(phoneColumnsLandscape, "phoneColumnsLandscape") } }
+    var padColumnsPortrait: Int { didSet { save(padColumnsPortrait, "padColumnsPortrait") } }
+    var padColumnsLandscape: Int { didSet { save(padColumnsLandscape, "padColumnsLandscape") } }
+    /// Whether the column counts sync over iCloud (stored on this device only).
+    var syncColumns: Bool {
+        didSet {
+            defaults.set(syncColumns, forKey: "syncColumns")
+            // Turned on here: this device's counts become the synced ones.
+            if syncColumns, !oldValue { SettingsSync.shared.pushColumns() }
+        }
+    }
     var blurCovers: Bool { didSet { save(blurCovers, "blurCovers") } }
     var showTags: Bool { didSet { save(showTags, "showTags") } }
     var translateTags: Bool { didSet { save(translateTags, "translateTags") } }
@@ -226,8 +230,11 @@ final class AppSettings {
         theme = ThemeMode(rawValue: d.string(forKey: "theme") ?? "") ?? .system
         accent = AccentChoice(rawValue: d.string(forKey: "accent") ?? "") ?? .blue
         listStyle = GalleryListStyle(rawValue: d.string(forKey: "listStyle") ?? "") ?? .waterfall
-        cardSizePortrait = (d.object(forKey: "cardSizePortrait") as? Int).flatMap(CardSize.init(rawValue:)) ?? .standard
-        cardSizeLandscape = (d.object(forKey: "cardSizeLandscape") as? Int).flatMap(CardSize.init(rawValue:)) ?? .standard
+        phoneColumnsPortrait = Self.columns(d.object(forKey: "phoneColumnsPortrait"), landscape: false) ?? 2
+        phoneColumnsLandscape = Self.columns(d.object(forKey: "phoneColumnsLandscape"), landscape: true) ?? 4
+        padColumnsPortrait = Self.columns(d.object(forKey: "padColumnsPortrait"), landscape: false) ?? 3
+        padColumnsLandscape = Self.columns(d.object(forKey: "padColumnsLandscape"), landscape: true) ?? 5
+        syncColumns = d.object(forKey: "syncColumns") as? Bool ?? true
         blurCovers = d.bool(forKey: "blurCovers")
         showTags = d.object(forKey: "showTags") as? Bool ?? true
         translateTags = d.object(forKey: "translateTags") as? Bool
@@ -257,9 +264,26 @@ final class AppSettings {
 
     private func save(_ value: Any, _ key: String) {
         defaults.set(value, forKey: key)
-        if !isApplyingSynced {
+        if !isApplyingSynced, syncColumns || !Self.columnKeys.contains(key) {
             SettingsSync.shared.settingChanged(key, value)
         }
+    }
+
+    static let columnKeys: Set<String> = ["phoneColumnsPortrait", "phoneColumnsLandscape",
+                                          "padColumnsPortrait", "padColumnsLandscape"]
+    static let portraitColumns = 1...6
+    static let landscapeColumns = 1...10
+
+    private static func columns(_ value: Any?, landscape: Bool) -> Int? {
+        guard let number = value as? Int else { return nil }
+        let range = landscape ? landscapeColumns : portraitColumns
+        return min(max(number, range.lowerBound), range.upperBound)
+    }
+
+    /// The settings iCloud sync shares: all of them, but the column counts
+    /// only while Sync Columns is on.
+    func syncedSnapshot() -> [String: Any] {
+        snapshot().filter { syncColumns || !Self.columnKeys.contains($0.key) }
     }
 
     /// Every setting, keyed as in UserDefaults (used by iCloud sync and
@@ -269,8 +293,10 @@ final class AppSettings {
         values["theme"] = theme.rawValue
         values["accent"] = accent.rawValue
         values["listStyle"] = listStyle.rawValue
-        values["cardSizePortrait"] = cardSizePortrait.rawValue
-        values["cardSizeLandscape"] = cardSizeLandscape.rawValue
+        values["phoneColumnsPortrait"] = phoneColumnsPortrait
+        values["phoneColumnsLandscape"] = phoneColumnsLandscape
+        values["padColumnsPortrait"] = padColumnsPortrait
+        values["padColumnsLandscape"] = padColumnsLandscape
         values["blurCovers"] = blurCovers
         values["showTags"] = showTags
         values["translateTags"] = translateTags
@@ -304,6 +330,8 @@ final class AppSettings {
         isApplyingSynced = fromSync
         defer { isApplyingSynced = false }
         for (key, value) in values {
+            // Column counts from iCloud only while they are synced.
+            if fromSync, !syncColumns, Self.columnKeys.contains(key) { continue }
             apply(value, forKey: key)
         }
     }
@@ -320,8 +348,10 @@ final class AppSettings {
         case "theme": set(\.theme, string.flatMap(ThemeMode.init(rawValue:)))
         case "accent": set(\.accent, string.flatMap(AccentChoice.init(rawValue:)))
         case "listStyle": set(\.listStyle, string.flatMap(GalleryListStyle.init(rawValue:)))
-        case "cardSizePortrait": set(\.cardSizePortrait, number.flatMap { CardSize(rawValue: $0.intValue) })
-        case "cardSizeLandscape": set(\.cardSizeLandscape, number.flatMap { CardSize(rawValue: $0.intValue) })
+        case "phoneColumnsPortrait": set(\.phoneColumnsPortrait, Self.columns(number?.intValue, landscape: false))
+        case "phoneColumnsLandscape": set(\.phoneColumnsLandscape, Self.columns(number?.intValue, landscape: true))
+        case "padColumnsPortrait": set(\.padColumnsPortrait, Self.columns(number?.intValue, landscape: false))
+        case "padColumnsLandscape": set(\.padColumnsLandscape, Self.columns(number?.intValue, landscape: true))
         case "blurCovers": set(\.blurCovers, number?.boolValue)
         case "showTags": set(\.showTags, number?.boolValue)
         case "translateTags": set(\.translateTags, number?.boolValue)
@@ -349,8 +379,12 @@ final class AppSettings {
         }
     }
 
-    func cardSize(isLandscape: Bool) -> CardSize {
-        isLandscape ? cardSizeLandscape : cardSizePortrait
+    /// Columns of cards on this device in the orientation.
+    func columns(isLandscape: Bool) -> Int {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            return isLandscape ? padColumnsLandscape : padColumnsPortrait
+        }
+        return isLandscape ? phoneColumnsLandscape : phoneColumnsPortrait
     }
 
     // MARK: Search history
@@ -380,49 +414,3 @@ final class AppSettings {
     }
 }
 
-/// How large gallery cards are: scales the preferred card width. The
-/// column count always follows the available width (rotation, iPad split
-/// view, Stage Manager), and every step changes it by at least one column
-/// until a single column is left. `standard` keeps the automatic count.
-enum CardSize: Int, CaseIterable, Identifiable {
-    case small = 0, smaller, standard, larger, large
-
-    var id: Int { rawValue }
-
-    var scale: CGFloat {
-        switch self {
-        case .small: 0.62
-        case .smaller: 0.8
-        case .standard: 1
-        case .larger: 1.3
-        case .large: 1.75
-        }
-    }
-
-    var title: String {
-        switch self {
-        case .small: String(localized: "Small")
-        case .smaller: String(localized: "Smaller")
-        case .standard: String(localized: "Standard")
-        case .larger: String(localized: "Larger")
-        case .large: String(localized: "Large")
-        }
-    }
-
-    func columns(width: CGFloat, preferred: CGFloat, spacing: CGFloat) -> Int {
-        func count(_ scale: CGFloat) -> Int {
-            max(1, Int((width / (preferred * scale + spacing)).rounded(.up)))
-        }
-        let standardCount = count(1)
-        if self == .standard { return standardCount }
-        var columns = standardCount
-        let step = rawValue < CardSize.standard.rawValue ? -1 : 1
-        var index = CardSize.standard.rawValue + step
-        while step < 0 ? index >= rawValue : index <= rawValue {
-            let scaled = count(CardSize(rawValue: index)!.scale)
-            columns = step < 0 ? max(scaled, columns + 1) : max(1, min(scaled, columns - 1))
-            index += step
-        }
-        return columns
-    }
-}

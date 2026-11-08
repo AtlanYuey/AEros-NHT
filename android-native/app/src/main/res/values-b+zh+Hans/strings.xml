@@ -211,9 +211,13 @@
     <string name="l_208">我的</string>
     <string name="l_209">历史和下载</string>
     <string name="l_210">卡片</string>
-    <string name="l_211">设置备份</string>
-    <string name="l_212">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
-    <string name="l_213">Android 系统自带的备份也会保存这些设置。</string>
-    <string name="l_214">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
-    <string name="l_215">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
+    <string name="l_211">横屏</string>
+    <string name="l_212">同步列数</string>
+    <string name="l_213">直接选择卡片的列数。手机默认竖屏 2 列、横屏 4 列，平板默认竖屏 3 列、横屏 5 列。窗口较窄时（如分屏）可能会少显示几列。</string>
+    <string name="l_214">列数会通过 iCloud 与你的其他设备同步，iPhone 和 iPad 各自保留自己的设置。</string>
+    <string name="l_215">设置备份</string>
+    <string name="l_216">把设置存成文件，再在其他设备上导入。这个文件也可以导入 iOS 版。</string>
+    <string name="l_217">Android 系统自带的备份也会保存这些设置。</string>
+    <string name="l_218">回到 App 时，如果剪贴板里有 nhentai 链接，提示是否打开。</string>
+    <string name="l_219">开始搜索时会显示最近的搜索。关闭后不再保存新的搜索，列表也会隐藏。</string>
 </resources>

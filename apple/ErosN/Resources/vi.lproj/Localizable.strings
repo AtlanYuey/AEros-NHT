@@ -210,3 +210,7 @@
 "Me" = "Tôi";
 "History and Downloads" = "Lịch sử và tải xuống";
 "Cards" = "Thẻ";
+"Landscape" = "Ngang";
+"Sync Columns" = "Đồng bộ số cột";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "Chọn số cột thẻ hiển thị. Mặc định điện thoại có 2 cột khi dọc và 4 cột khi ngang, máy tính bảng có 3 và 5. Khi cửa sổ hẹp (Split View) có thể hiển thị ít cột hơn.";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "Số cột được đồng bộ với các thiết bị khác qua iCloud. iPhone và iPad giữ cài đặt riêng.";

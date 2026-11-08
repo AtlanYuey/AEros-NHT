@@ -210,3 +210,7 @@
 "Me" = "Perfil";
 "History and Downloads" = "Historial y descargas";
 "Cards" = "Tarjetas";
+"Landscape" = "Horizontal";
+"Sync Columns" = "Sincronizar columnas";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "Elige cuántas columnas de tarjetas mostrar. Por defecto, los teléfonos usan 2 en vertical y 4 en horizontal, y las tabletas 3 y 5. En una ventana estrecha (Split View) pueden verse menos.";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "El número de columnas se sincroniza con tus otros dispositivos mediante iCloud. El iPhone y el iPad tienen cada uno el suyo.";

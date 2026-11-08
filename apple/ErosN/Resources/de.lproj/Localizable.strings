@@ -210,3 +210,7 @@
 "Me" = "Profil";
 "History and Downloads" = "Verlauf und Downloads";
 "Cards" = "Karten";
+"Landscape" = "Querformat";
+"Sync Columns" = "Spalten synchronisieren";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "Wähle, wie viele Kartenspalten angezeigt werden. Standard: 2 im Hochformat und 4 im Querformat auf Telefonen, 3 und 5 auf Tablets. In einem schmalen Fenster (Split View) können es weniger sein.";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "Die Spaltenzahl wird über iCloud mit deinen anderen Geräten synchronisiert. iPhone und iPad behalten jeweils ihre eigene.";

@@ -211,9 +211,13 @@
     <string name="l_208">Perfil</string>
     <string name="l_209">Histórico e downloads</string>
     <string name="l_210">Cartões</string>
-    <string name="l_211">Backup dos ajustes</string>
-    <string name="l_212">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
-    <string name="l_213">O backup do próprio Android também guarda esses ajustes.</string>
-    <string name="l_214">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
-    <string name="l_215">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
+    <string name="l_211">Paisagem</string>
+    <string name="l_212">Sincronizar colunas</string>
+    <string name="l_213">Escolha quantas colunas de cartões mostrar. Padrão: 2 em retrato e 4 em paisagem nos celulares, 3 e 5 nos tablets. Em uma janela estreita (Split View) podem aparecer menos.</string>
+    <string name="l_214">O número de colunas é sincronizado com seus outros dispositivos pelo iCloud. iPhone e iPad mantêm cada um o seu.</string>
+    <string name="l_215">Backup dos ajustes</string>
+    <string name="l_216">Salve os ajustes em um arquivo e importe-o em outro dispositivo. O arquivo também funciona no app para iOS.</string>
+    <string name="l_217">O backup do próprio Android também guarda esses ajustes.</string>
+    <string name="l_218">Ao voltar para o app, oferece abrir um link do nhentai que esteja na área de transferência.</string>
+    <string name="l_219">As buscas recentes aparecem quando você começa uma busca. Quando desativado, as novas buscas não são salvas e a lista fica oculta.</string>
 </resources>

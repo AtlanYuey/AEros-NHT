@@ -211,9 +211,13 @@
     <string name="l_208">Me</string>
     <string name="l_209">History and Downloads</string>
     <string name="l_210">Cards</string>
-    <string name="l_211">Settings Backup</string>
-    <string name="l_212">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
-    <string name="l_213">Android\'s own backup also keeps these settings.</string>
-    <string name="l_214">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
-    <string name="l_215">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
+    <string name="l_211">Landscape</string>
+    <string name="l_212">Sync Columns</string>
+    <string name="l_213">Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer.</string>
+    <string name="l_214">The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own.</string>
+    <string name="l_215">Settings Backup</string>
+    <string name="l_216">Save the settings as a file and import it on another device. The file also works with the iOS app.</string>
+    <string name="l_217">Android\'s own backup also keeps these settings.</string>
+    <string name="l_218">When you return to the app, offer to open an nhentai link found on the clipboard.</string>
+    <string name="l_219">Recent searches show when you start a search. When this is off, new searches aren\'t saved and the list is hidden.</string>
 </resources>

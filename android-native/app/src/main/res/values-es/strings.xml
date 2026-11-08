@@ -211,9 +211,13 @@
     <string name="l_208">Perfil</string>
     <string name="l_209">Historial y descargas</string>
     <string name="l_210">Tarjetas</string>
-    <string name="l_211">Copia de los ajustes</string>
-    <string name="l_212">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
-    <string name="l_213">La copia de seguridad de Android también guarda estos ajustes.</string>
-    <string name="l_214">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
-    <string name="l_215">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
+    <string name="l_211">Horizontal</string>
+    <string name="l_212">Sincronizar columnas</string>
+    <string name="l_213">Elige cuántas columnas de tarjetas mostrar. Por defecto, los teléfonos usan 2 en vertical y 4 en horizontal, y las tabletas 3 y 5. En una ventana estrecha (Split View) pueden verse menos.</string>
+    <string name="l_214">El número de columnas se sincroniza con tus otros dispositivos mediante iCloud. El iPhone y el iPad tienen cada uno el suyo.</string>
+    <string name="l_215">Copia de los ajustes</string>
+    <string name="l_216">Guarda los ajustes en un archivo e impórtalo en otro dispositivo. El archivo también sirve para la app de iOS.</string>
+    <string name="l_217">La copia de seguridad de Android también guarda estos ajustes.</string>
+    <string name="l_218">Al volver a la app, ofrece abrir un enlace de nhentai que esté en el portapapeles.</string>
+    <string name="l_219">Las búsquedas recientes aparecen al empezar a buscar. Si lo desactivas, las nuevas búsquedas no se guardan y la lista se oculta.</string>
 </resources>

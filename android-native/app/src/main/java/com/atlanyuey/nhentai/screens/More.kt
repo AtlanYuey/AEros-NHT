@@ -66,7 +66,6 @@ import com.atlanyuey.nhentai.R
 import com.atlanyuey.nhentai.core.AccentChoice
 import com.atlanyuey.nhentai.core.AppLanguage
 import com.atlanyuey.nhentai.core.AppSettings
-import com.atlanyuey.nhentai.core.CardSize
 import com.atlanyuey.nhentai.core.DownloadRecord
 import com.atlanyuey.nhentai.core.Downloads
 import com.atlanyuey.nhentai.core.GalleryListStyle
@@ -94,6 +93,7 @@ import com.atlanyuey.nhentai.ui.components.ListRow
 import com.atlanyuey.nhentai.ui.components.LocalNavigator
 import com.atlanyuey.nhentai.ui.components.LocalOverlays
 import com.atlanyuey.nhentai.ui.components.MenuItem
+import com.atlanyuey.nhentai.ui.components.Stepper
 import com.atlanyuey.nhentai.ui.components.fullLine
 import com.atlanyuey.nhentai.ui.components.LocalGalleryMenuItems
 import com.atlanyuey.nhentai.ui.components.LocalCoverBadge
@@ -490,11 +490,9 @@ class AppearanceScreen : Screen() {
                     { tr(it.title) },
                     { AppSettings.libraryStyle = it },
                 )
-                val portrait = AppSettings.cardSizePortrait
-                val landscape = AppSettings.cardSizeLandscape
                 ListRow(
                     tr("Card Size"),
-                    value = if (portrait == landscape) tr(portrait.title) else "${tr(portrait.title)} / ${tr(landscape.title)}",
+                    value = "${AppSettings.columns(large, false)} / ${AppSettings.columns(large, true)}",
                     chevron = true,
                     onClick = { navigator.push(CardSizeScreen()) },
                 )
@@ -587,36 +585,38 @@ class CardSizeScreen : Screen() {
     @Composable
     override fun Content() {
         GroupedListScreen(tr("Card Size")) {
-            section(header = "Portrait") { CardSizeEditor(false) }
+            section(header = "Portrait") { ColumnsEditor(false) }
             section(
-                header = "Landscape · follows split view",
+                header = "Landscape",
                 footer = {
-                    FooterText(tr("Columns are calculated from the width of the pane: rotating, Split View and Stage Manager add or remove columns automatically. “Standard” matches the automatic column count."))
+                    FooterText(tr("Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer."))
                 },
-            ) { CardSizeEditor(true) }
+            ) { ColumnsEditor(true) }
         }
     }
 
+    /** The columns of one orientation on this kind of device: a preview, the count and a stepper. */
     @Composable
-    private fun CardSizeEditor(landscape: Boolean) {
-        val configuration = LocalConfiguration.current
-        val size = if (landscape) AppSettings.cardSizeLandscape else AppSettings.cardSizePortrait
-        val short = minOf(configuration.screenWidthDp, configuration.screenHeightDp)
-        val long = maxOf(configuration.screenWidthDp, configuration.screenHeightDp)
-        val width = (if (landscape) long else short) - 32f
-        val style = AppSettings.listStyle
-        val columns = size.columns(width, style.preferredCardWidth, 12f)
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GlassSlider(size.raw.toFloat(), { value ->
-                val next = CardSize.of(Math.round(value))
-                if (landscape) AppSettings.cardSizeLandscape = next else AppSettings.cardSizePortrait = next
-            }, 0f..4f)
-            Txt(tr(size.title), Modifier.fillMaxWidth(), style = Type.subheadline.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.tint, align = TextAlign.Center)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                MiniScreen(columns, landscape, style != GalleryListStyle.Grid)
-                Column {
-                    Txt("$columns", style = Type.largeTitle)
-                    Txt(tr("columns"), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
+    private fun ColumnsEditor(landscape: Boolean) {
+        val tablet = LocalConfiguration.current.smallestScreenWidthDp >= 600
+        val columns = AppSettings.columns(tablet, landscape)
+        val range = if (landscape) AppSettings.LANDSCAPE_COLUMNS else AppSettings.PORTRAIT_COLUMNS
+        Row(
+            Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            MiniScreen(columns, landscape, AppSettings.listStyle != GalleryListStyle.Grid)
+            Column(Modifier.weight(1f)) {
+                Txt("$columns", style = Type.largeTitle)
+                Txt(tr("columns"), style = Type.subheadline, color = AppTheme.colors.secondaryLabel)
+            }
+            Stepper(columns, range) { value ->
+                when {
+                    tablet && landscape -> AppSettings.padColumnsLandscape = value
+                    tablet -> AppSettings.padColumnsPortrait = value
+                    landscape -> AppSettings.phoneColumnsLandscape = value
+                    else -> AppSettings.phoneColumnsPortrait = value
                 }
             }
         }
@@ -626,7 +626,7 @@ class CardSizeScreen : Screen() {
     private fun MiniScreen(columns: Int, landscape: Boolean, waterfall: Boolean) {
         val colors = AppTheme.colors
         val tint = AppTheme.tint
-        Canvas(Modifier.size(if (landscape) 170.dp else 78.dp, if (landscape) 82.dp else 160.dp)) {
+        Canvas(Modifier.size(if (landscape) 132.dp else 70.dp, if (landscape) 66.dp else 140.dp)) {
             drawRoundRect(colors.background, cornerRadius = CornerRadius(10.dp.toPx()))
             drawRoundRect(colors.separator, cornerRadius = CornerRadius(10.dp.toPx()), style = Stroke(1.dp.toPx()))
             val pad = 5.dp.toPx()

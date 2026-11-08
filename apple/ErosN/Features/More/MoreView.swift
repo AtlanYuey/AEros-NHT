@@ -395,7 +395,8 @@ struct AppearanceSettingsView: View {
                 NavigationLink {
                     CardSizeView()
                 } label: {
-                    LabeledContent("Card Size", value: cardSizeSummary)
+                    LabeledContent("Card Size",
+                                   value: "\(settings.columns(isLandscape: false)) / \(settings.columns(isLandscape: true))")
                 }
                 Toggle("Blur Covers", isOn: $settings.blurCovers)
             } header: {
@@ -432,12 +433,6 @@ struct AppearanceSettingsView: View {
         }
         .navigationTitle("Appearance")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private var cardSizeSummary: String {
-        settings.cardSizePortrait == settings.cardSizeLandscape
-            ? settings.cardSizePortrait.title
-            : "\(settings.cardSizePortrait.title) / \(settings.cardSizeLandscape.title)"
     }
 }
 
@@ -512,16 +507,25 @@ private struct TagSettingsSection: View {
 
 struct CardSizeView: View {
     @Environment(AppSettings.self) private var settings
+    @State private var sync = SettingsSync.shared
+
+    /// iPhone and iPad keep their own column counts.
+    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     var body: some View {
         @Bindable var settings = settings
         Form {
-            CardSizeSection(title: "Portrait", isLandscape: false, size: $settings.cardSizePortrait)
-            CardSizeSection(title: "Landscape · follows split view", isLandscape: true,
-                            size: $settings.cardSizeLandscape)
-            Section {
-            } footer: {
-                Text("Columns are calculated from the width of the pane: rotating, Split View and Stage Manager add or remove columns automatically. \u{201C}Standard\u{201D} matches the automatic column count.")
+            ColumnsSection(title: "Portrait", isLandscape: false, range: AppSettings.portraitColumns,
+                           columns: isPad ? $settings.padColumnsPortrait : $settings.phoneColumnsPortrait)
+            ColumnsSection(title: "Landscape", isLandscape: true, range: AppSettings.landscapeColumns,
+                           columns: isPad ? $settings.padColumnsLandscape : $settings.phoneColumnsLandscape,
+                           footer: "Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer.")
+            if sync.isEnabled {
+                Section {
+                    Toggle("Sync Columns", isOn: $settings.syncColumns)
+                } footer: {
+                    Text("The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own.")
+                }
             }
         }
         .navigationTitle("Card Size")
@@ -529,36 +533,21 @@ struct CardSizeView: View {
     }
 }
 
-private struct CardSizeSection: View {
+/// The columns for one orientation: a preview, the count and a stepper.
+private struct ColumnsSection: View {
     let title: LocalizedStringKey
     let isLandscape: Bool
-    @Binding var size: CardSize
+    let range: ClosedRange<Int>
+    @Binding var columns: Int
+    var footer: LocalizedStringKey? = nil
 
     @Environment(AppSettings.self) private var settings
 
     var body: some View {
-        Section(title) {
-            VStack(spacing: 6) {
-                Slider(
-                    value: Binding(get: { Double(size.rawValue) },
-                                   set: { size = CardSize(rawValue: Int($0.rounded())) ?? .standard }),
-                    in: 0...4,
-                    step: 1
-                ) {
-                    Text(title)
-                } minimumValueLabel: {
-                    Image(systemName: "square.grid.4x3.fill").font(.footnote)
-                } maximumValueLabel: {
-                    Image(systemName: "square.grid.2x2.fill").font(.body)
-                }
-                .sensoryFeedback(.selection, trigger: size)
-                Text(size.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.tint)
-            }
-            HStack(spacing: 18) {
+        Section {
+            HStack(spacing: 16) {
                 MiniScreen(columns: columns, isLandscape: isLandscape, waterfall: settings.listStyle != .grid)
-                    .frame(width: isLandscape ? 170 : 78, height: isLandscape ? 82 : 160)
+                    .frame(width: isLandscape ? 132 : 70, height: isLandscape ? 66 : 140)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(columns)")
                         .font(.largeTitle.bold())
@@ -567,19 +556,18 @@ private struct CardSizeSection: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
+                Spacer(minLength: 0)
+                Stepper(title, value: $columns, in: range)
+                    .labelsHidden()
             }
             .padding(.vertical, 6)
             .animation(.smooth, value: columns)
+            .sensoryFeedback(.selection, trigger: columns)
+        } header: {
+            Text(title)
+        } footer: {
+            if let footer { Text(footer) }
         }
-    }
-
-    private var columns: Int {
-        let screen = UIScreen.main.bounds.size
-        let short = min(screen.width, screen.height)
-        let long = max(screen.width, screen.height)
-        let width = (isLandscape ? long : short) - 32
-        return size.columns(width: width, preferred: settings.listStyle.preferredCardWidth, spacing: 12)
     }
 }
 

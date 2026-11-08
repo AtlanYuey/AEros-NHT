@@ -239,6 +239,12 @@ class ScreenshotTest {
         AppSettings.clearRecentSearches()
     }
 
+    @Test fun cardSize() {
+        val tabs = Tabs()
+        tabs.more.push(com.atlanyuey.nhentai.screens.CardSizeScreen())
+        shoot("33_card_size", tabs, tab = 3)
+    }
+
     @Test fun appearance() {
         val tabs = Tabs()
         tabs.more.push(com.atlanyuey.nhentai.screens.AppearanceScreen())
@@ -312,6 +318,9 @@ class ScreenshotTest {
         shoot("14_tablet_right")
         AppSettings.tabBarPosition = com.atlanyuey.nhentai.core.TabBarPosition.Center
     }
+
+    @Config(qualifiers = "w1194dp-h834dp-xhdpi")
+    @Test fun tabletLandscape() = shoot("34_tablet_landscape")
 
     @Test fun reading() {
         val tabs = Tabs()

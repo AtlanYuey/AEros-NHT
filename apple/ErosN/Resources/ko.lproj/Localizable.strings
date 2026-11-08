@@ -210,3 +210,7 @@
 "Me" = "마이페이지";
 "History and Downloads" = "기록 및 다운로드";
 "Cards" = "카드";
+"Landscape" = "가로";
+"Sync Columns" = "열 수 동기화";
+"Choose how many columns of cards to show. Phones start with 2 in portrait and 4 in landscape, tablets with 3 and 5. A narrow window (Split View) may show fewer." = "카드의 열 수를 선택합니다. 기본값은 휴대폰이 세로 2열·가로 4열, 태블릿이 세로 3열·가로 5열입니다. 창이 좁을 때(Split View 등)는 열이 줄어들 수 있습니다.";
+"The column counts sync with your other devices over iCloud. iPhone and iPad each keep their own." = "열 수는 iCloud를 통해 다른 기기와 동기화됩니다. iPhone과 iPad는 각각 따로 설정됩니다.";

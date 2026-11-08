@@ -364,14 +364,14 @@ struct GalleryCollection: View {
         }
     }
 
+    /// The columns chosen in Card Size for this device and orientation; a
+    /// narrow pane (Split View, Slide Over) shows fewer rather than cards
+    /// narrower than 90 pt.
     private var columnCount: Int {
         let available = max(0, width - 32)
-        guard available > 0 else { return 2 }
-        return settings.cardSize(isLandscape: isLandscape).columns(
-            width: available,
-            preferred: settings.listStyle.preferredCardWidth,
-            spacing: spacing
-        )
+        guard available > 0 else { return settings.columns(isLandscape: isLandscape) }
+        let fit = max(1, Int((available + spacing) / (90 + spacing)))
+        return min(settings.columns(isLandscape: isLandscape), fit)
     }
 
     private var gridColumns: [GridItem] {

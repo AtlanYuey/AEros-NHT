@@ -211,9 +211,13 @@
     <string name="l_208">Profil</string>
     <string name="l_209">Historique et téléchargements</string>
     <string name="l_210">Cartes</string>
-    <string name="l_211">Sauvegarde des réglages</string>
-    <string name="l_212">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
-    <string name="l_213">La sauvegarde d’Android conserve aussi ces réglages.</string>
-    <string name="l_214">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
-    <string name="l_215">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
+    <string name="l_211">Paysage</string>
+    <string name="l_212">Synchroniser les colonnes</string>
+    <string name="l_213">Choisissez le nombre de colonnes de vignettes. Par défaut : 2 en portrait et 4 en paysage sur téléphone, 3 et 5 sur tablette. Une fenêtre étroite (Split View) peut en afficher moins.</string>
+    <string name="l_214">Le nombre de colonnes se synchronise avec vos autres appareils via iCloud. L’iPhone et l’iPad gardent chacun le leur.</string>
+    <string name="l_215">Sauvegarde des réglages</string>
+    <string name="l_216">Enregistrez les réglages dans un fichier et importez-le sur un autre appareil. Le fichier fonctionne aussi avec l’app iOS.</string>
+    <string name="l_217">La sauvegarde d’Android conserve aussi ces réglages.</string>
+    <string name="l_218">Lorsque vous revenez dans l’app, propose d’ouvrir un lien nhentai présent dans le presse-papiers.</string>
+    <string name="l_219">Les recherches récentes s’affichent quand vous lancez une recherche. Si l’option est désactivée, les nouvelles recherches ne sont pas enregistrées et la liste est masquée.</string>
 </resources>

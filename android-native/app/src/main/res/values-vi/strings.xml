@@ -211,9 +211,13 @@
     <string name="l_208">Tôi</string>
     <string name="l_209">Lịch sử và tải xuống</string>
     <string name="l_210">Thẻ</string>
-    <string name="l_211">Sao lưu cài đặt</string>
-    <string name="l_212">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
-    <string name="l_213">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
-    <string name="l_214">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
-    <string name="l_215">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
+    <string name="l_211">Ngang</string>
+    <string name="l_212">Đồng bộ số cột</string>
+    <string name="l_213">Chọn số cột thẻ hiển thị. Mặc định điện thoại có 2 cột khi dọc và 4 cột khi ngang, máy tính bảng có 3 và 5. Khi cửa sổ hẹp (Split View) có thể hiển thị ít cột hơn.</string>
+    <string name="l_214">Số cột được đồng bộ với các thiết bị khác qua iCloud. iPhone và iPad giữ cài đặt riêng.</string>
+    <string name="l_215">Sao lưu cài đặt</string>
+    <string name="l_216">Lưu cài đặt thành tệp rồi nhập trên thiết bị khác. Tệp này cũng dùng được với bản iOS.</string>
+    <string name="l_217">Bản sao lưu của Android cũng lưu các cài đặt này.</string>
+    <string name="l_218">Khi quay lại ứng dụng, đề nghị mở liên kết nhentai có trong bộ nhớ tạm.</string>
+    <string name="l_219">Các tìm kiếm gần đây hiện khi bạn bắt đầu tìm. Khi tắt, tìm kiếm mới không được lưu và danh sách bị ẩn.</string>
 </resources>

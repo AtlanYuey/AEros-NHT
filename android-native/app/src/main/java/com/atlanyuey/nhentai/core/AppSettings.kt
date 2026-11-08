@@ -156,38 +156,6 @@ enum class LanguageFilter(val raw: String, val title: String) {
     }
 }
 
-/**
- * How large gallery cards are: scales the preferred card width. Every step
- * changes the column count by at least one until a single column is left;
- * `Standard` keeps the automatic count.
- */
-enum class CardSize(val raw: Int, val scale: Float, val title: String) {
-    Small(0, 0.62f, "Small"),
-    Smaller(1, 0.8f, "Smaller"),
-    Standard(2, 1f, "Standard"),
-    Larger(3, 1.3f, "Larger"),
-    Large(4, 1.75f, "Large");
-
-    fun columns(width: Float, preferred: Float, spacing: Float): Int {
-        fun count(scale: Float) = max(1, ceil(width / (preferred * scale + spacing)).toInt())
-        val standardCount = count(1f)
-        if (this == Standard) return standardCount
-        var columns = standardCount
-        val step = if (raw < Standard.raw) -1 else 1
-        var index = Standard.raw + step
-        while (if (step < 0) index >= raw else index <= raw) {
-            val scaled = count(of(index).scale)
-            columns = if (step < 0) max(scaled, columns + 1) else max(1, min(scaled, columns - 1))
-            index += step
-        }
-        return columns
-    }
-
-    companion object {
-        fun of(raw: Int?) = entries.firstOrNull { it.raw == raw } ?: Standard
-    }
-}
-
 /** A setting kept in Compose state and saved to SharedPreferences. */
 private class Pref<T>(initial: T, private val onSet: (T) -> Unit) : ReadWriteProperty<Any?, T> {
     private val state = mutableStateOf(initial)
@@ -211,8 +179,10 @@ object AppSettings {
         theme = ThemeMode.of(p.getString("theme", null))
         accent = AccentChoice.of(p.getString("accent", null))
         listStyle = GalleryListStyle.of(p.getString("listStyle", null))
-        cardSizePortrait = CardSize.of(p.intOrNull("cardSizePortrait"))
-        cardSizeLandscape = CardSize.of(p.intOrNull("cardSizeLandscape"))
+        phoneColumnsPortrait = portraitColumns(p.intOrNull("phoneColumnsPortrait")) ?: 2
+        phoneColumnsLandscape = landscapeColumns(p.intOrNull("phoneColumnsLandscape")) ?: 4
+        padColumnsPortrait = portraitColumns(p.intOrNull("padColumnsPortrait")) ?: 3
+        padColumnsLandscape = landscapeColumns(p.intOrNull("padColumnsLandscape")) ?: 5
         blurCovers = p.getBoolean("blurCovers", false)
         showTags = p.getBoolean("showTags", true)
         translateTags = if (p.contains("translateTags")) p.getBoolean("translateTags", false)
@@ -261,8 +231,28 @@ object AppSettings {
     var theme by Pref(ThemeMode.System) { save("theme", it.raw) }
     var accent by Pref(AccentChoice.Blue) { save("accent", it.raw) }
     var listStyle by Pref(GalleryListStyle.Waterfall) { save("listStyle", it.raw) }
-    var cardSizePortrait by Pref(CardSize.Standard) { save("cardSizePortrait", it.raw) }
-    var cardSizeLandscape by Pref(CardSize.Standard) { save("cardSizeLandscape", it.raw) }
+    /**
+     * Columns of cards in portrait and landscape, a pair for phones and one
+     * for tablets (the same keys as the iOS app's iPhone / iPad settings).
+     */
+    var phoneColumnsPortrait by Pref(2) { save("phoneColumnsPortrait", it) }
+    var phoneColumnsLandscape by Pref(4) { save("phoneColumnsLandscape", it) }
+    var padColumnsPortrait by Pref(3) { save("padColumnsPortrait", it) }
+    var padColumnsLandscape by Pref(5) { save("padColumnsLandscape", it) }
+
+    val PORTRAIT_COLUMNS = 1..6
+    val LANDSCAPE_COLUMNS = 1..10
+
+    private fun portraitColumns(value: Int?) = value?.coerceIn(PORTRAIT_COLUMNS)
+    private fun landscapeColumns(value: Int?) = value?.coerceIn(LANDSCAPE_COLUMNS)
+
+    /** Columns of cards on a phone or a [tablet] in the orientation. */
+    fun columns(tablet: Boolean, landscape: Boolean) = when {
+        tablet && landscape -> padColumnsLandscape
+        tablet -> padColumnsPortrait
+        landscape -> phoneColumnsLandscape
+        else -> phoneColumnsPortrait
+    }
     var blurCovers by Pref(false) { save("blurCovers", it) }
     var showTags by Pref(true) { save("showTags", it) }
     var translateTags by Pref(false) { save("translateTags", it) }
@@ -328,15 +318,16 @@ object AppSettings {
 
     private const val RECENT_SEARCH_LIMIT = 20
 
-    fun cardSize(landscape: Boolean) = if (landscape) cardSizeLandscape else cardSizePortrait
 
     /** Every setting, keyed as on iOS (used by export). */
     fun snapshot(): Map<String, Any> = mapOf(
         "theme" to theme.raw,
         "accent" to accent.raw,
         "listStyle" to listStyle.raw,
-        "cardSizePortrait" to cardSizePortrait.raw,
-        "cardSizeLandscape" to cardSizeLandscape.raw,
+        "phoneColumnsPortrait" to phoneColumnsPortrait,
+        "phoneColumnsLandscape" to phoneColumnsLandscape,
+        "padColumnsPortrait" to padColumnsPortrait,
+        "padColumnsLandscape" to padColumnsLandscape,
         "blurCovers" to blurCovers,
         "showTags" to showTags,
         "translateTags" to translateTags,
@@ -372,8 +363,10 @@ object AppSettings {
                 "theme" -> string?.let { theme = ThemeMode.of(it) }
                 "accent" -> string?.let { accent = AccentChoice.of(it) }
                 "listStyle" -> string?.let { listStyle = GalleryListStyle.of(it) }
-                "cardSizePortrait" -> number?.let { cardSizePortrait = CardSize.of(it.toInt()) }
-                "cardSizeLandscape" -> number?.let { cardSizeLandscape = CardSize.of(it.toInt()) }
+                "phoneColumnsPortrait" -> number?.let { phoneColumnsPortrait = it.toInt().coerceIn(PORTRAIT_COLUMNS) }
+                "phoneColumnsLandscape" -> number?.let { phoneColumnsLandscape = it.toInt().coerceIn(LANDSCAPE_COLUMNS) }
+                "padColumnsPortrait" -> number?.let { padColumnsPortrait = it.toInt().coerceIn(PORTRAIT_COLUMNS) }
+                "padColumnsLandscape" -> number?.let { padColumnsLandscape = it.toInt().coerceIn(LANDSCAPE_COLUMNS) }
                 "blurCovers" -> bool?.let { blurCovers = it }
                 "showTags" -> bool?.let { showTags = it }
                 "translateTags" -> bool?.let { translateTags = it }

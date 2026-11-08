@@ -78,6 +78,7 @@ A commit whose message contains `[publish]` makes [native-release.yml](.github/w
 | `apple/` | the iOS / iPadOS app (SwiftUI) |
 | `android-native/` | the Android app (Kotlin, Jetpack Compose) |
 | `design/app-icon/` | builds the app icon |
+| `tools/i18n/` | the translations and the scripts that write the apps' strings |
 | `.github/workflows/` | builds, emulator tests and releases |
 
 The former Flutter app is kept on the [`flutter` branch](https://github.com/AtlanYuey/AEros-NHT/tree/flutter).

@@ -34,10 +34,10 @@ From the Android app, with sample covers and pages.
 
 ## Features
 
-- **Home**: popular and recent galleries, filtered by language and sorted; waterfall, compact waterfall, grid and list styles, with card sizes for portrait and landscape
+- **Home**: popular and recent galleries, filtered by language and sorted; waterfall, compact waterfall, grid and list styles, with column counts for portrait and landscape
 - **Search**: right on the Home page, with tag suggestions and search history; a gallery number shows that gallery
 - **Gallery page**: grouped tags (optionally translated to Chinese), page previews, similar galleries, comments
-- **Reader**: left to right, right to left, top to bottom, continuous (webtoon, with or without gaps); zoom, auto reading, preloading, controls that hide on their own
+- **Reader**: left to right, right to left, top to bottom, continuous (webtoon, with or without gaps); zoom, auto reading, preloading, controls that hide on their own; pages turn by sliding or by fading in place
 - **Favorites, History, Downloads**: cards or a list; offline downloads whose gallery page also opens without the network
 - **Account**: log in to nhentai to keep favorites and post comments
 - **Design**: Liquid Glass tab bar and buttons; on iPad and Android tablets the tab bar sits left, center or right, or follows the hand in use

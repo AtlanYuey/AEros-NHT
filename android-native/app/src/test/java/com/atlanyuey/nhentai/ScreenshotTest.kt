@@ -6,6 +6,7 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -111,6 +112,31 @@ class ScreenshotTest {
         compose.mainClock.advanceTimeBy(1200)
         compose.waitForIdle()
         compose.onRoot().captureRoboImage("build/screens/23_reader_idle.png")
+    }
+
+    @Test fun readerFade() {
+        // Without the page turn animation, a tap on the edge fades the next page in where it is.
+        AppSettings.animatePageTurns = false
+        try {
+            val tabs = Tabs()
+            val source = ReaderSource(
+                500001, "Sample Gallery", (0 until 24).map { com.atlanyuey.nhentai.screens.ReaderPage(it, "https://i.nhentai.net/galleries/9/${it + 1}.jpg", 0.7f) },
+                "https://nhentai.net/g/500001/", com.atlanyuey.nhentai.core.GalleryItem(500001), 24,
+            )
+            tabs.home.push(ReaderScreen(source, 3))
+            shoot("35_reader_fade_before", tabs, settle = 500)
+            compose.mainClock.autoAdvance = false
+            compose.onRoot().performTouchInput { click(androidx.compose.ui.geometry.Offset(width * 0.92f, centerY)) }
+            // A second tap during the fade ends it and turns on from the page it was showing.
+            compose.mainClock.advanceTimeBy(100)
+            compose.onRoot().performTouchInput { click(androidx.compose.ui.geometry.Offset(width * 0.92f, centerY)) }
+            compose.mainClock.advanceTimeBy(120)
+            compose.onRoot().captureRoboImage("build/screens/36_reader_fade_mid.png")
+            compose.mainClock.advanceTimeBy(600)
+            compose.onRoot().captureRoboImage("build/screens/37_reader_fade_after.png")
+        } finally {
+            AppSettings.animatePageTurns = true
+        }
     }
 
     @Test fun homeScrolled() {

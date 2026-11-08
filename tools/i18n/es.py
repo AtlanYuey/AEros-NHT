@@ -52,7 +52,7 @@ T = [
     "Perfil", "Mostrar etiquetas en las tarjetas", "Traducir etiquetas al chino", "Actualizar base de datos de etiquetas",
     "%1$lld etiquetas, %2$lld traducciones (EhTagTranslation). Se actualiza automáticamente cada semana.",
     "Continuo con separación", "Separación entre páginas", "Animación al pasar página",
-    "Sin la animación, al tocar un borde se muestra la página siguiente al instante.",
+    "Sin la animación, las páginas no se deslizan: la siguiente aparece con un fundido en el mismo sitio, más cómodo para la vista al pasar páginas rápido.",
     "Sincronización con iCloud",
     # 160
     "Sincronizar ajustes con iCloud", "Sincronizar con", "Todos los dispositivos", "Solo otros iPad", "Solo otros iPhone",

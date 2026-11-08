@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "Непрерывно с отступами";
 "Page Gap" = "Отступ между страницами";
 "Page Turn Animation" = "Анимация перелистывания";
-"Without the animation, tapping an edge shows the next page at once." = "Без анимации следующая страница появляется сразу после касания края.";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Без анимации страницы не сдвигаются: следующая плавно проявляется на месте — глазам легче при быстром листании.";
 "iCloud Sync" = "Синхронизация iCloud";
 "Sync Settings with iCloud" = "Синхронизировать настройки через iCloud";
 "Sync With" = "Синхронизировать с";

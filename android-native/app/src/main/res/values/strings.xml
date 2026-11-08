@@ -158,7 +158,7 @@
     <string name="l_155">Continuous with Gaps</string>
     <string name="l_156">Page Gap</string>
     <string name="l_157">Page Turn Animation</string>
-    <string name="l_158">Without the animation, tapping an edge shows the next page at once.</string>
+    <string name="l_158">Without the animation, pages don\'t slide: the next one fades in where you are, easier on the eyes when turning quickly.</string>
     <string name="l_159">iCloud Sync</string>
     <string name="l_160">Sync Settings with iCloud</string>
     <string name="l_161">Sync With</string>

@@ -157,7 +157,7 @@
  "Continuous with Gaps",
  "Page Gap",
  "Page Turn Animation",
- "Without the animation, tapping an edge shows the next page at once.",
+ "Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.",
  "iCloud Sync",
  "Sync Settings with iCloud",
  "Sync With",

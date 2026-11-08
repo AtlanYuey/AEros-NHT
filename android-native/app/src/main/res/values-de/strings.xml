@@ -158,7 +158,7 @@
     <string name="l_155">Fortlaufend mit Abstand</string>
     <string name="l_156">Seitenabstand</string>
     <string name="l_157">Blätteranimation</string>
-    <string name="l_158">Ohne Animation erscheint die nächste Seite sofort, wenn du an den Rand tippst.</string>
+    <string name="l_158">Ohne Animation gleiten die Seiten nicht: Die nächste wird an Ort und Stelle eingeblendet, das schont die Augen beim schnellen Blättern.</string>
     <string name="l_159">iCloud-Synchronisierung</string>
     <string name="l_160">Einstellungen mit iCloud synchronisieren</string>
     <string name="l_161">Synchronisieren mit</string>

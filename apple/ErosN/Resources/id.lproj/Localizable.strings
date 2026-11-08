@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "Bersambung dengan Jarak";
 "Page Gap" = "Jarak Halaman";
 "Page Turn Animation" = "Animasi Balik Halaman";
-"Without the animation, tapping an edge shows the next page at once." = "Tanpa animasi, mengetuk tepi langsung menampilkan halaman berikutnya.";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Tanpa animasi, halaman tidak bergeser: halaman berikutnya muncul memudar di tempat, lebih nyaman di mata saat membalik dengan cepat.";
 "iCloud Sync" = "Sinkronisasi iCloud";
 "Sync Settings with iCloud" = "Sinkronkan Pengaturan dengan iCloud";
 "Sync With" = "Sinkronkan Dengan";

@@ -158,7 +158,7 @@
     <string name="l_155">上下連續（有間距）</string>
     <string name="l_156">頁面間距</string>
     <string name="l_157">翻頁動畫</string>
-    <string name="l_158">關閉動畫後，點按螢幕邊緣會立即顯示下一頁。</string>
+    <string name="l_158">關閉動畫後，頁面不會滑動，而是在原處淡入下一頁，快速翻頁時眼睛更舒適。</string>
     <string name="l_159">iCloud 同步</string>
     <string name="l_160">透過 iCloud 同步設定</string>
     <string name="l_161">同步範圍</string>

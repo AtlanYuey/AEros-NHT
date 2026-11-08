@@ -179,7 +179,7 @@
 "Continuous with Gaps" = "上下连续（有间距）";
 "Page Gap" = "页面间距";
 "Page Turn Animation" = "翻页动画";
-"Without the animation, tapping an edge shows the next page at once." = "关闭动画后，点按屏幕边缘会立即显示下一页。";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "关闭动画后，页面不再滑动，而是在原处淡入下一页，快速翻页时眼睛更舒适。";
 
 /* iCloud sync */
 "iCloud Sync" = "iCloud 同步";

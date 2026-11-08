@@ -158,7 +158,7 @@
     <string name="l_155">Continuo con spaziatura</string>
     <string name="l_156">Spaziatura tra le pagine</string>
     <string name="l_157">Animazione cambio pagina</string>
-    <string name="l_158">Senza animazione, toccando un bordo la pagina successiva appare subito.</string>
+    <string name="l_158">Senza animazione le pagine non scorrono: la successiva appare in dissolvenza sul posto, più riposante per gli occhi quando sfogli velocemente.</string>
     <string name="l_159">Sincronizzazione iCloud</string>
     <string name="l_160">Sincronizza impostazioni con iCloud</string>
     <string name="l_161">Sincronizza con</string>

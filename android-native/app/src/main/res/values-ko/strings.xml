@@ -158,7 +158,7 @@
     <string name="l_155">세로 스크롤(간격 있음)</string>
     <string name="l_156">페이지 간격</string>
     <string name="l_157">페이지 넘김 애니메이션</string>
-    <string name="l_158">애니메이션을 끄면 가장자리를 탭할 때 다음 페이지가 바로 표시됩니다.</string>
+    <string name="l_158">애니메이션을 끄면 페이지가 밀려나지 않고 제자리에서 다음 페이지가 서서히 나타나, 빠르게 넘길 때 눈이 덜 피로합니다.</string>
     <string name="l_159">iCloud 동기화</string>
     <string name="l_160">iCloud로 설정 동기화</string>
     <string name="l_161">동기화 대상</string>

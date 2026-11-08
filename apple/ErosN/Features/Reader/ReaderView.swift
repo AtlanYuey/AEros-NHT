@@ -273,6 +273,7 @@ struct ReaderView: View {
         if settings.readMode.isPaged {
             page = target
         } else if settings.animatePageTurns {
+            // Continuous modes scroll, or jump without moving.
             withAnimation(.smooth(duration: 0.3)) { position = target }
         } else {
             position = target
@@ -448,7 +449,7 @@ struct ReadingSettingsSections: View {
             Toggle("Page Turn Animation", isOn: $settings.animatePageTurns)
             Toggle("Keep Screen On", isOn: $settings.keepScreenOn)
         } footer: {
-            Text("Without the animation, tapping an edge shows the next page at once.")
+            Text("Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")
         }
         Section {
             VStack(alignment: .leading) {
@@ -503,6 +504,16 @@ enum ReaderTapZones {
 
 // MARK: - Paged reader (UIPageViewController)
 
+/// How the paged reader shows another page.
+enum PageTurn {
+    /// The old page slides away as the new one slides in.
+    case slide
+    /// The pages change in place, the old one fading out: no motion.
+    case fade
+    /// The page shows at once.
+    case instant
+}
+
 /// One page at a time, left-to-right, right-to-left or top-to-bottom.
 /// UIPageViewController keeps the neighbouring pages alive, so turning a
 /// page shows an already decoded image instead of a blank one.
@@ -534,19 +545,21 @@ struct PagedReader: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIPageViewController, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        // A running page turn picks up the newest page when it ends.
-        guard !coordinator.isAnimating,
-              let current = (controller.viewControllers?.first as? PageController)?.index,
+        guard let current = (controller.viewControllers?.first as? PageController)?.index,
               current != page
         else { return }
-        coordinator.show(page, from: current, in: controller,
-                         animated: AppSettings.shared.animatePageTurns && abs(page - current) == 1)
+        // A turn of one page slides, or fades without the animation; a jump
+        // (the slider) shows the page at once.
+        let turn: PageTurn = abs(page - current) != 1 ? .instant
+            : AppSettings.shared.animatePageTurns ? .slide : .fade
+        coordinator.show(page, from: current, in: controller, turn: turn)
     }
 
     final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
         var parent: PagedReader
-        private(set) var isAnimating = false
-        private var animationID = 0
+        /// The page turn drawn over the page view controller, if one runs.
+        private var running: (id: Int, cover: UIView, page: UIView)?
+        private var turnID = 0
         /// Page controllers near the current page, reused so a tap shows
         /// the very page that was already laid out next to this one.
         private var cache: [Int: PageController] = [:]
@@ -566,7 +579,12 @@ struct PagedReader: UIViewControllerRepresentable {
             return controller
         }
 
-        func show(_ index: Int, from current: Int, in pageController: UIPageViewController, animated: Bool) {
+        /// Shows [index]. The page view controller switches to it at once and
+        /// the turn is drawn over it: the old page (a snapshot) slides away
+        /// as the new one slides in, or fades out over it. A turn asked for
+        /// while another runs ends that one at once and starts its own, so
+        /// fast taps keep turning a page each instead of waiting and jumping.
+        func show(_ index: Int, from current: Int, in pageController: UIPageViewController, turn style: PageTurn) {
             guard let target = controller(for: index) else { return }
             let forward = index > current
             let direction: UIPageViewController.NavigationDirection
@@ -575,38 +593,54 @@ struct PagedReader: UIViewControllerRepresentable {
             } else {
                 direction = forward ? .forward : .reverse
             }
-            guard animated else {
-                pageController.setViewControllers([target], direction: direction, animated: false)
+            endTurn()
+            let container = pageController.view!
+            var cover: UIView?
+            if style != .instant, let old = pageController.viewControllers?.first?.view,
+               let snapshot = old.snapshotView(afterScreenUpdates: false) {
+                snapshot.frame = old.convert(old.bounds, to: container)
+                // Taps go through to the new page (fast turns).
+                snapshot.isUserInteractionEnabled = false
+                cover = snapshot
+            }
+            pageController.setViewControllers([target], direction: direction, animated: false)
+            guard let cover, let page = target.view else { return }
+            container.addSubview(cover)
+            turnID += 1
+            let id = turnID
+            running = (id, cover, page)
+            if style == .fade {
+                UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
+                    cover.alpha = 0
+                } completion: { [weak self] _ in
+                    self?.endTurn(id)
+                }
                 return
             }
-            animationID += 1
-            let id = animationID
-            isAnimating = true
-            pageController.setViewControllers([target], direction: direction, animated: true) { [weak self, weak pageController] _ in
-                DispatchQueue.main.async {
-                    self?.finishTurn(id, at: index, target: target, direction: direction, in: pageController)
-                }
+            // The new page comes in from the side the turn goes to.
+            let vertical = parent.mode == .verticalPaged
+            let distance = (vertical ? container.bounds.height : container.bounds.width) + 16
+            let offset = direction == .forward ? distance : -distance
+            let move = { (amount: CGFloat) in
+                vertical ? CGAffineTransform(translationX: 0, y: amount) : CGAffineTransform(translationX: amount, y: 0)
             }
-            // In case the completion never comes, taps must keep working.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self, weak pageController] in
-                self?.finishTurn(id, at: index, target: target, direction: direction, in: pageController)
+            page.transform = move(offset)
+            UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
+                page.transform = .identity
+                cover.transform = move(-offset)
+            } completion: { [weak self] _ in
+                self?.endTurn(id)
             }
         }
 
-        private func finishTurn(_ id: Int, at index: Int, target: PageController,
-                                direction: UIPageViewController.NavigationDirection,
-                                in pageController: UIPageViewController?) {
-            guard id == animationID, isAnimating, let pageController else { return }
-            isAnimating = false
-            let wanted = parent.page
-            if wanted != index {
-                // Tapped again during the turn: go straight there.
-                show(wanted, from: index, in: pageController, animated: false)
-            } else {
-                // Refreshes the neighbours UIPageViewController keeps
-                // (they can be stale after an animated jump).
-                pageController.setViewControllers([target], direction: direction, animated: false)
-            }
+        /// Ends the running turn at once (only turn [id], when given).
+        private func endTurn(_ id: Int? = nil) {
+            guard let turn = running, id == nil || id == turn.id else { return }
+            running = nil
+            turn.cover.layer.removeAllAnimations()
+            turn.cover.removeFromSuperview()
+            turn.page.layer.removeAllAnimations()
+            turn.page.transform = .identity
         }
 
         private func neighbour(of controller: UIViewController, _ delta: Int) -> UIViewController? {

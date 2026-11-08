@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "Contínuo com espaçamento";
 "Page Gap" = "Espaçamento entre páginas";
 "Page Turn Animation" = "Animação ao virar a página";
-"Without the animation, tapping an edge shows the next page at once." = "Sem a animação, tocar em uma borda mostra a próxima página na hora.";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Sem a animação, as páginas não deslizam: a próxima aparece com um esmaecimento no mesmo lugar, mais confortável para os olhos ao virar rápido.";
 "iCloud Sync" = "Sincronização com o iCloud";
 "Sync Settings with iCloud" = "Sincronizar ajustes com o iCloud";
 "Sync With" = "Sincronizar com";

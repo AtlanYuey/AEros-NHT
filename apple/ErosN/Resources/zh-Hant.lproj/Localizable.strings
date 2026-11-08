@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "上下連續（有間距）";
 "Page Gap" = "頁面間距";
 "Page Turn Animation" = "翻頁動畫";
-"Without the animation, tapping an edge shows the next page at once." = "關閉動畫後，點按螢幕邊緣會立即顯示下一頁。";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "關閉動畫後，頁面不會滑動，而是在原處淡入下一頁，快速翻頁時眼睛更舒適。";
 "iCloud Sync" = "iCloud 同步";
 "Sync Settings with iCloud" = "透過 iCloud 同步設定";
 "Sync With" = "同步範圍";

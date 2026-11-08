@@ -52,7 +52,7 @@ T = [
     "Profilo", "Mostra tag sulle schede", "Traduci i tag in cinese", "Aggiorna database dei tag",
     "%1$lld tag, %2$lld traduzioni (EhTagTranslation). Aggiornato automaticamente ogni settimana.",
     "Continuo con spaziatura", "Spaziatura tra le pagine", "Animazione cambio pagina",
-    "Senza animazione, toccando un bordo la pagina successiva appare subito.",
+    "Senza animazione le pagine non scorrono: la successiva appare in dissolvenza sul posto, più riposante per gli occhi quando sfogli velocemente.",
     "Sincronizzazione iCloud",
     # 160
     "Sincronizza impostazioni con iCloud", "Sincronizza con", "Tutti i dispositivi", "Solo altri iPad", "Solo altri iPhone",

@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "เลื่อนต่อเนื่องแบบมีระยะห่าง";
 "Page Gap" = "ระยะห่างระหว่างหน้า";
 "Page Turn Animation" = "ภาพเคลื่อนไหวการพลิกหน้า";
-"Without the animation, tapping an edge shows the next page at once." = "เมื่อปิดภาพเคลื่อนไหว การแตะขอบจะแสดงหน้าถัดไปทันที";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "เมื่อปิดภาพเคลื่อนไหว หน้าจะไม่เลื่อน แต่หน้าถัดไปจะค่อยๆ ปรากฏขึ้นตรงที่เดิม ช่วยให้สบายตาขึ้นเมื่อพลิกหน้าเร็วๆ";
 "iCloud Sync" = "ซิงค์ iCloud";
 "Sync Settings with iCloud" = "ซิงค์การตั้งค่าด้วย iCloud";
 "Sync With" = "ซิงค์กับ";

@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "Cuộn liên tục có khoảng cách";
 "Page Gap" = "Khoảng cách trang";
 "Page Turn Animation" = "Hiệu ứng lật trang";
-"Without the animation, tapping an edge shows the next page at once." = "Khi tắt hiệu ứng, chạm vào cạnh sẽ hiện ngay trang tiếp theo.";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "Khi tắt hiệu ứng, trang không trượt mà trang tiếp theo hiện mờ dần ngay tại chỗ, dễ chịu cho mắt hơn khi lật nhanh.";
 "iCloud Sync" = "Đồng bộ iCloud";
 "Sync Settings with iCloud" = "Đồng bộ cài đặt qua iCloud";
 "Sync With" = "Đồng bộ với";

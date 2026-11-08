@@ -158,7 +158,7 @@
     <string name="l_155">Contínuo com espaçamento</string>
     <string name="l_156">Espaçamento entre páginas</string>
     <string name="l_157">Animação ao virar a página</string>
-    <string name="l_158">Sem a animação, tocar em uma borda mostra a próxima página na hora.</string>
+    <string name="l_158">Sem a animação, as páginas não deslizam: a próxima aparece com um esmaecimento no mesmo lugar, mais confortável para os olhos ao virar rápido.</string>
     <string name="l_159">Sincronização com o iCloud</string>
     <string name="l_160">Sincronizar ajustes com o iCloud</string>
     <string name="l_161">Sincronizar com</string>

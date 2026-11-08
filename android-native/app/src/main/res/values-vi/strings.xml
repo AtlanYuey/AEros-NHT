@@ -158,7 +158,7 @@
     <string name="l_155">Cuộn liên tục có khoảng cách</string>
     <string name="l_156">Khoảng cách trang</string>
     <string name="l_157">Hiệu ứng lật trang</string>
-    <string name="l_158">Khi tắt hiệu ứng, chạm vào cạnh sẽ hiện ngay trang tiếp theo.</string>
+    <string name="l_158">Khi tắt hiệu ứng, trang không trượt mà trang tiếp theo hiện mờ dần ngay tại chỗ, dễ chịu cho mắt hơn khi lật nhanh.</string>
     <string name="l_159">Đồng bộ iCloud</string>
     <string name="l_160">Đồng bộ cài đặt qua iCloud</string>
     <string name="l_161">Đồng bộ với</string>

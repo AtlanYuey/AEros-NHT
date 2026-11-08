@@ -52,7 +52,7 @@ T = [
     "Hồ sơ", "Hiện thẻ trên thẻ truyện", "Dịch thẻ sang tiếng Trung", "Cập nhật cơ sở dữ liệu thẻ",
     "%1$lld thẻ, %2$lld bản dịch (EhTagTranslation). Tự động cập nhật mỗi tuần.",
     "Cuộn liên tục có khoảng cách", "Khoảng cách trang", "Hiệu ứng lật trang",
-    "Khi tắt hiệu ứng, chạm vào cạnh sẽ hiện ngay trang tiếp theo.",
+    "Khi tắt hiệu ứng, trang không trượt mà trang tiếp theo hiện mờ dần ngay tại chỗ, dễ chịu cho mắt hơn khi lật nhanh.",
     "Đồng bộ iCloud",
     # 160
     "Đồng bộ cài đặt qua iCloud", "Đồng bộ với", "Tất cả thiết bị", "Chỉ các iPad khác", "Chỉ các iPhone khác",

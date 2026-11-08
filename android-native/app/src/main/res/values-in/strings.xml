@@ -158,7 +158,7 @@
     <string name="l_155">Bersambung dengan Jarak</string>
     <string name="l_156">Jarak Halaman</string>
     <string name="l_157">Animasi Balik Halaman</string>
-    <string name="l_158">Tanpa animasi, mengetuk tepi langsung menampilkan halaman berikutnya.</string>
+    <string name="l_158">Tanpa animasi, halaman tidak bergeser: halaman berikutnya muncul memudar di tempat, lebih nyaman di mata saat membalik dengan cepat.</string>
     <string name="l_159">Sinkronisasi iCloud</string>
     <string name="l_160">Sinkronkan Pengaturan dengan iCloud</string>
     <string name="l_161">Sinkronkan Dengan</string>

@@ -48,6 +48,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -140,6 +143,13 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     /** The reader's composition scope (pager animations need its frame clock). */
     private var uiScope: kotlinx.coroutines.CoroutineScope = scope
 
+    /** What the pages show, recorded each frame (a fade turn starts from it). */
+    private var pagesLayer: androidx.compose.ui.graphics.layer.GraphicsLayer? = null
+    /** Without the page turn animation: the page before a turn, fading out over the new one. */
+    private var fadeCover by mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+    private val fadeAlpha = androidx.compose.animation.core.Animatable(0f)
+    private var fadeJob: Job? = null
+
     private fun record() {
         HistoryStore.record(source.item, source.title, source.numPages, page)
     }
@@ -148,18 +158,43 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
         if (target !in 0 until count) return
         val paged = AppSettings.readMode.isPaged
         val animate = AppSettings.animatePageTurns
-        uiScope.launch {
-            if (paged) {
-                if (animate) pager.animateScrollToPage(target) else pager.scrollToPage(target)
-            } else {
-                if (animate) list.animateScrollToItem(target) else list.scrollToItem(target)
+        if (paged && !animate) {
+            // A turn during another one ends that one and starts its own.
+            fadeJob?.cancel()
+            fadeJob = uiScope.launch { fadeTo(target) }
+        } else {
+            uiScope.launch {
+                if (paged) {
+                    // A later turn takes over from wherever this one has got to.
+                    pager.animateScrollToPage(target)
+                } else {
+                    if (animate) list.animateScrollToItem(target) else list.scrollToItem(target)
+                }
             }
         }
         page = target
     }
 
+    /** Shows [target] in place: the page shown now fades out over it (no motion). */
+    private suspend fun fadeTo(target: Int) {
+        val cover = runCatching { pagesLayer?.toImageBitmap() }.getOrNull()
+        pager.scrollToPage(target)
+        if (cover == null) return
+        fadeCover = cover
+        try {
+            fadeAlpha.snapTo(1f)
+            fadeAlpha.animateTo(0f, androidx.compose.animation.core.tween(250))
+        } finally {
+            if (fadeCover === cover) fadeCover = null
+        }
+    }
+
     /** The page a turn starts from (the target while a turn is running). */
-    private val turnBase: Int get() = if (pager.isScrollInProgress) pager.targetPage else pager.currentPage
+    private val turnBase: Int get() = when {
+        fadeJob?.isActive == true -> page
+        pager.isScrollInProgress -> pager.targetPage
+        else -> pager.currentPage
+    }
 
     private fun turn(fraction: Float) {
         // Turning pages from the edges hides the controls.
@@ -324,14 +359,35 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
     @Composable
     private fun Paged(mode: ReadMode) {
         val content: @Composable (Int) -> Unit = { index -> ZoomPage(index) }
-        if (mode == ReadMode.VerticalPaged) {
-            VerticalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { content(it) }
-        } else {
-            val direction = if (mode == ReadMode.RightToLeft) LayoutDirection.Rtl else LayoutDirection.Ltr
-            CompositionLocalProvider(LocalLayoutDirection provides direction) {
-                HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { index ->
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { content(index) }
+        val layer = androidx.compose.ui.graphics.rememberGraphicsLayer()
+        pagesLayer = layer
+        Box(Modifier.fillMaxSize()) {
+            // The pages, drawn through a layer that a fade turn can copy.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        layer.record { this@drawWithContent.drawContent() }
+                        drawLayer(layer)
+                    },
+            ) {
+                if (mode == ReadMode.VerticalPaged) {
+                    VerticalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { content(it) }
+                } else {
+                    val direction = if (mode == ReadMode.RightToLeft) LayoutDirection.Rtl else LayoutDirection.Ltr
+                    CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                        HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1, pageSpacing = 16.dp, key = { it }) { index ->
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) { content(index) }
+                        }
+                    }
                 }
+            }
+            fadeCover?.let { cover ->
+                androidx.compose.foundation.Image(
+                    cover, null,
+                    Modifier.fillMaxSize().graphicsLayer { alpha = fadeAlpha.value },
+                    contentScale = ContentScale.FillBounds,
+                )
             }
         }
     }
@@ -514,7 +570,7 @@ class ReaderScreen(private val source: ReaderSource, start: Int) : Screen() {
 /** Shared by the reader sheet and More > Reading. */
 fun androidx.compose.foundation.lazy.LazyListScope.readingSettings() {
     run {
-        section(footer = { FooterText(tr("Without the animation, tapping an edge shows the next page at once.")) }) {
+        section(footer = { FooterText(tr("Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly.")) }) {
             PickerRow(
                 tr("Reading Direction"), ReadMode.entries, AppSettings.readMode,
                 label = { tr(it.title) }, onSelect = { AppSettings.readMode = it },

@@ -157,7 +157,7 @@
 "Continuous with Gaps" = "縦スクロール（間隔あり）";
 "Page Gap" = "ページの間隔";
 "Page Turn Animation" = "ページめくりのアニメーション";
-"Without the animation, tapping an edge shows the next page at once." = "アニメーションをオフにすると、端をタップしたときにすぐ次のページが表示されます。";
+"Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." = "アニメーションをオフにすると、ページは動かずにその場でフェードして切り替わります。素早くめくっても目が疲れにくくなります。";
 "iCloud Sync" = "iCloud同期";
 "Sync Settings with iCloud" = "iCloudで設定を同期";
 "Sync With" = "同期先";

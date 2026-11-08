@@ -163,7 +163,7 @@ object L10nKeys {
         "Continuous with Gaps" to R.string.l_155,
         "Page Gap" to R.string.l_156,
         "Page Turn Animation" to R.string.l_157,
-        "Without the animation, tapping an edge shows the next page at once." to R.string.l_158,
+        "Without the animation, pages don't slide: the next one fades in where you are, easier on the eyes when turning quickly." to R.string.l_158,
         "iCloud Sync" to R.string.l_159,
         "Sync Settings with iCloud" to R.string.l_160,
         "Sync With" to R.string.l_161,

@@ -158,7 +158,7 @@
     <string name="l_155">Continu avec espacement</string>
     <string name="l_156">Espacement des pages</string>
     <string name="l_157">Animation de changement de page</string>
-    <string name="l_158">Sans l’animation, toucher un bord affiche immédiatement la page suivante.</string>
+    <string name="l_158">Sans l’animation, les pages ne glissent pas : la suivante apparaît en fondu sur place, plus reposant pour les yeux quand vous tournez vite.</string>
     <string name="l_159">Synchronisation iCloud</string>
     <string name="l_160">Synchroniser les réglages avec iCloud</string>
     <string name="l_161">Synchroniser avec</string>

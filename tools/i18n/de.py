@@ -52,7 +52,7 @@ T = [
     "Profil", "Tags auf Karten anzeigen", "Tags ins Chinesische übersetzen", "Tag-Datenbank aktualisieren",
     "%1$lld Tags, %2$lld Übersetzungen (EhTagTranslation). Wird jede Woche automatisch aktualisiert.",
     "Fortlaufend mit Abstand", "Seitenabstand", "Blätteranimation",
-    "Ohne Animation erscheint die nächste Seite sofort, wenn du an den Rand tippst.",
+    "Ohne Animation gleiten die Seiten nicht: Die nächste wird an Ort und Stelle eingeblendet, das schont die Augen beim schnellen Blättern.",
     "iCloud-Synchronisierung",
     # 160
     "Einstellungen mit iCloud synchronisieren", "Synchronisieren mit", "Alle Geräte", "Nur andere iPads", "Nur andere iPhones",

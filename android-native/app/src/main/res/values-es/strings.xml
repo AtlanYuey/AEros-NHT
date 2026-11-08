@@ -158,7 +158,7 @@
     <string name="l_155">Continuo con separación</string>
     <string name="l_156">Separación entre páginas</string>
     <string name="l_157">Animación al pasar página</string>
-    <string name="l_158">Sin la animación, al tocar un borde se muestra la página siguiente al instante.</string>
+    <string name="l_158">Sin la animación, las páginas no se deslizan: la siguiente aparece con un fundido en el mismo sitio, más cómodo para la vista al pasar páginas rápido.</string>
     <string name="l_159">Sincronización con iCloud</string>
     <string name="l_160">Sincronizar ajustes con iCloud</string>
     <string name="l_161">Sincronizar con</string>

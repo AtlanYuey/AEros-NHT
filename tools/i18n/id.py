@@ -52,7 +52,7 @@ T = [
     "Profil", "Tampilkan Tag di Kartu", "Terjemahkan Tag ke Bahasa Mandarin", "Perbarui Basis Data Tag",
     "%1$lld tag, %2$lld terjemahan (EhTagTranslation). Diperbarui otomatis setiap minggu.",
     "Bersambung dengan Jarak", "Jarak Halaman", "Animasi Balik Halaman",
-    "Tanpa animasi, mengetuk tepi langsung menampilkan halaman berikutnya.",
+    "Tanpa animasi, halaman tidak bergeser: halaman berikutnya muncul memudar di tempat, lebih nyaman di mata saat membalik dengan cepat.",
     "Sinkronisasi iCloud",
     # 160
     "Sinkronkan Pengaturan dengan iCloud", "Sinkronkan Dengan", "Semua Perangkat", "Hanya iPad Lain", "Hanya iPhone Lain",

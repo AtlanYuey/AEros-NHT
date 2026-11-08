@@ -72,11 +72,14 @@ struct TouchInfo {
     let location: CGPoint
     let windowSize: CGSize
     let safeArea: UIEdgeInsets
+    /// On a menu, or on something presented over the observing view (a
+    /// sheet, a share sheet): not a touch on the screen's own content.
+    let onOverlay: Bool
 }
 
 /// Watches touches anywhere in the window without taking part in them.
 private final class TouchRecorder: UIGestureRecognizer {
-    var onTouch: (@MainActor (TouchInfo) -> Void)?
+    var onTouch: (@MainActor (UITouch) -> Void)?
 
     override init(target: Any?, action: Selector?) {
         super.init(target: target, action: action)
@@ -86,9 +89,8 @@ private final class TouchRecorder: UIGestureRecognizer {
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-        if let touch = touches.first, let view, view.bounds.width > 0 {
-            onTouch?(TouchInfo(location: touch.location(in: view), windowSize: view.bounds.size,
-                               safeArea: view.safeAreaInsets))
+        if let touch = touches.first {
+            onTouch?(touch)
         }
         state = .failed
     }
@@ -122,9 +124,35 @@ struct TouchObserver: UIViewRepresentable {
             }
             guard let window, recorder == nil else { return }
             let recorder = TouchRecorder(target: nil, action: nil)
-            recorder.onTouch = { [weak self] touch in self?.onTouch?(touch) }
+            recorder.onTouch = { [weak self] touch in self?.report(touch) }
             window.addGestureRecognizer(recorder)
             self.recorder = recorder
+        }
+
+        private func report(_ touch: UITouch) {
+            guard let window, window.bounds.width > 0 else { return }
+            onTouch?(TouchInfo(location: touch.location(in: window), windowSize: window.bounds.size,
+                               safeArea: window.safeAreaInsets, onOverlay: isOverlay(touch.view)))
+        }
+
+        /// Whether [hit] is in a menu, or in a view controller presented
+        /// over the one showing this view.
+        private func isOverlay(_ hit: UIView?) -> Bool {
+            var view = hit
+            while let current = view {
+                if NSStringFromClass(type(of: current)).contains("ContextMenu") { return true }
+                view = current.superview
+            }
+            var responder: UIResponder? = self
+            while let current = responder {
+                if let controller = current as? UIViewController,
+                   let presented = controller.presentedViewController,
+                   !isDescendant(of: presented.view) {
+                    return true
+                }
+                responder = current.next
+            }
+            return false
         }
     }
 }
@@ -155,7 +183,9 @@ struct PadRootView: View {
                 .padding(.bottom, 6)
         })
         .background(TouchObserver { touch in
-            guard isPad, settings.followHand, !chrome.hidesTabBar, !chrome.barsHidden,
+            // Menus and sheets aren't the hand on the screen (and moving the
+            // bar under an open menu would close it).
+            guard isPad, settings.followHand, !touch.onOverlay, !chrome.hidesTabBar, !chrome.barsHidden,
                   !barFrame.insetBy(dx: -10, dy: -10).contains(touch.location) else { return }
             hand.record(touch.location.x / touch.windowSize.width, touches: settings.followSpeed.touches)
         })

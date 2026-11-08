@@ -70,11 +70,9 @@ struct ReaderView: View {
     @State private var autoRead = false
     @State private var showSettings = false
     @State private var sliderValue: Double
-    /// Bumped by every touch while the controls show: they hide 1 s after the last one.
-    @State private var chromeActivity = 0
     @State private var sliderEditing = false
-    /// A touch in the top bar (its menu may be open): the controls stay until the next touch elsewhere.
-    @State private var topBarTouched = false
+    /// Hides the controls a while after the last touch.
+    @State private var hider = ChromeHider()
     /// The page was changed with the controls, which then stay.
     @State private var turnFromPanel = false
 
@@ -149,19 +147,21 @@ struct ReaderView: View {
             .environment(\.colorScheme, .dark)
             .animation(.smooth(duration: 0.25), value: chromeVisible)
             .background(TouchObserver { touch in
+                // No view state changes here: one while the Options menu is
+                // open rebuilds the toolbar and closes the menu under the
+                // finger, before its item acts.
                 guard chromeVisible else { return }
-                topBarTouched = touch.location.y < touch.safeArea.top + 64
-                chromeActivity += 1
+                if touch.onOverlay || touch.location.y < touch.safeArea.top + 64 {
+                    // A menu, a sheet, or the top bar (its menu may be
+                    // opening): the controls stay until a touch elsewhere.
+                    hider.cancel()
+                } else {
+                    scheduleHide()
+                }
             })
-            .task(id: ChromeTimer(visible: chromeVisible, activity: chromeActivity,
-                                  held: sliderEditing || showSettings || topBarTouched)) {
-                // The controls hide on their own a while (Reading settings,
-                // 3 s at least) after they were last touched.
-                guard chromeVisible, !sliderEditing, !showSettings, !topBarTouched else { return }
-                try? await Task.sleep(for: .seconds(settings.readerControlsDelay))
-                guard !Task.isCancelled else { return }
-                chromeVisible = false
-            }
+            .onChange(of: chromeVisible) { scheduleHide() }
+            .onChange(of: sliderEditing) { scheduleHide() }
+            .onChange(of: showSettings) { scheduleHide() }
             .onChange(of: page) { _, new in
                 sliderValue = Double(new)
                 if position != new { position = new }
@@ -191,8 +191,10 @@ struct ReaderView: View {
                 UIApplication.shared.isIdleTimerDisabled = settings.keepScreenOn
                 prefetch(around: page)
                 recordPage()
+                scheduleHide()
             }
             .onDisappear {
+                hider.cancel()
                 UIApplication.shared.isIdleTimerDisabled = false
                 prefetcher.stopPrefetching()
                 recordPage()
@@ -233,6 +235,19 @@ struct ReaderView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { chromeVisible.toggle() }
+        }
+    }
+
+    /// The controls hide on their own a while (Reading settings, 3 s at
+    /// least) after they were last touched, unless the slider or the
+    /// settings are in use.
+    private func scheduleHide() {
+        guard chromeVisible, !sliderEditing, !showSettings else {
+            hider.cancel()
+            return
+        }
+        hider.schedule(after: settings.readerControlsDelay) {
+            if !sliderEditing, !showSettings { chromeVisible = false }
         }
     }
 
@@ -353,11 +368,25 @@ struct ReaderView: View {
     }
 }
 
-/// What restarts the timer that hides the reader controls.
-private struct ChromeTimer: Hashable {
-    let visible: Bool
-    let activity: Int
-    let held: Bool
+/// Runs [hide] a while after the last [schedule]. It holds no view state,
+/// so a touch changes nothing on screen until the controls actually hide.
+@MainActor
+private final class ChromeHider {
+    private var task: Task<Void, Never>?
+
+    func schedule(after seconds: Double, _ hide: @escaping @MainActor () -> Void) {
+        task?.cancel()
+        task = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled else { return }
+            hide()
+        }
+    }
+
+    func cancel() {
+        task?.cancel()
+        task = nil
+    }
 }
 
 /// A floating panel: Liquid Glass on iOS 26, material before.

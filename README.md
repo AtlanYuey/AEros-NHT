@@ -1,3 +1,11 @@
+<h1 align="center">⚠️ 本项目已停止更新</h1>
+
+<h2 align="center">AEros-NHT 已与我的另一个项目合并，<br>建议大家改用 <a href="https://github.com/AtlanYuey/AENHT">AENHT</a></h2>
+
+<p align="center"><b>👉 <a href="https://github.com/AtlanYuey/AENHT">https://github.com/AtlanYuey/AENHT</a></b></p>
+
+---
+
 <p align="center">
   <img src="apple/ErosN/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" width="128" alt="AEros-NHT">
 </p>
